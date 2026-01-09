@@ -46,7 +46,7 @@ for ((i=1; i<=$1; i++)); do
   echo "Starting fresh Claude context..."
   echo ""
 
-  result=$(docker sandbox run claude --model opus --permission-mode acceptEdits -p "@prd.json @progress.txt @review.txt
+  result=$(docker sandbox run claude -- --model opus --permission-mode bypassPermissions --dangerously-skip-permissions -p "@prd.json @progress.txt @review.txt
 
 ========================================
 QUALITY EXPECTATIONS
