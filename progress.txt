@@ -213,3 +213,70 @@
 - Cart functionality ready for nanostores integration in Task 2.8
 - All components have proper TypeScript interfaces for props
 - Ready for Task 2.4 (Merchant API client)
+
+## 2026-01-09: Task 2.4 - Create Merchant API client
+
+### Completed
+- Created packages/api package with TypeScript configuration
+- Created comprehensive type definitions in src/types.ts:
+  - Core types: PaginationParams, PaginatedResponse, ApiError
+  - Product types: Product, Variant, ProductListItem, CreateProductParams, UpdateProductParams
+  - Inventory types: InventoryItem, AdjustInventoryParams
+  - Cart types: Cart, CartItem, CreateCartParams, AddToCartParams, CheckoutParams, CheckoutResult
+  - Order types: Order, OrderItem, OrderListItem, UpdateOrderParams, RefundParams
+  - Customer types: Customer, CustomerAddress, UpdateCustomerParams, CreateAddressParams
+  - Discount types: Discount, CreateDiscountParams, UpdateDiscountParams
+  - Webhook types: Webhook, WebhookDelivery, WebhookWithDeliveries
+  - Image types: ImageUploadResult
+  - List filter types: ListProductsParams, ListInventoryParams, ListOrdersParams, ListCustomersParams
+- Created MerchantClient class in src/merchant-client.ts:
+  - Typed fetch wrapper with Bearer token authentication
+  - Core request method with URL param handling and JSON serialization
+  - Error handling with specific error classes for different HTTP status codes
+  - Methods for all Merchant API endpoints:
+    - Products: getProducts, getProduct, createProduct, updateProduct, deleteProduct
+    - Variants: createVariant, updateVariant, deleteVariant
+    - Inventory: getInventory, adjustInventory
+    - Cart: getCart, createCart, addToCart, applyDiscount, removeDiscount, checkout
+    - Orders: getOrders, getOrder, updateOrder, refundOrder
+    - Customers: getCustomers, getCustomer, getCustomerOrders, updateCustomer, createCustomerAddress, deleteCustomerAddress
+    - Discounts: getDiscounts, getDiscount, createDiscount, updateDiscount, deleteDiscount
+    - Images: uploadImage, getImageUrl, deleteImage
+    - Webhooks: getWebhooks, getWebhook, createWebhook, updateWebhook, deleteWebhook
+- Created error classes for API error handling:
+  - MerchantApiError (base class)
+  - AuthenticationError (401)
+  - ForbiddenError (403)
+  - NotFoundError (404)
+  - ConflictError (409)
+  - ValidationError (400)
+  - NetworkError (connection failures)
+- Created barrel export in src/index.ts
+
+### Files Created/Modified
+- packages/api/package.json (new)
+- packages/api/tsconfig.json (new)
+- packages/api/src/types.ts (new)
+- packages/api/src/merchant-client.ts (new)
+- packages/api/src/index.ts (new)
+
+### Acceptance Criteria Verified
+- [x] Client is fully typed (all methods have TypeScript return types and parameter types)
+- [x] All CRUD operations work (Products, Variants, Inventory, Cart, Orders, Customers, Discounts, Webhooks, Images)
+- [x] Error handling implemented (specific error classes for 400, 401, 403, 404, 409, and network errors)
+
+### Test Results
+- Type Check (packages/api): PASSED (tsc --noEmit)
+- Build: PASSED (tsc compiles to dist/)
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 0 hints in 9 files)
+- Type Check (packages/ui): PASSED
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- API client supports both public (pk_) and admin (sk_) API keys
+- Uses native fetch API (no external dependencies)
+- Custom fetch implementation can be injected for testing or SSR
+- All list methods support cursor-based pagination
+- Image upload uses FormData for multipart/form-data
+- API methods documented with JSDoc comments
+- Ready for Task 2.5 (Build homepage with API integration)

@@ -103,3 +103,43 @@
 - Newsletter form needs backend integration (Task 5.x)
 - Cart icon badge needs nanostores integration (Task 2.8)
 - Consider extracting Button component for consistency across CTAs
+
+## [2.4]: Create Merchant API client
+**Status:** PASSED
+**Tests Written:** N/A (client library, unit tests with mocking would be beneficial)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (tsc --noEmit for packages/api)
+**Build:** PASSED (tsc compiles to dist/)
+**Lint:** N/A (no linter configured for packages/api yet)
+**Findings:**
+- Created packages/api with full TypeScript client for Merchant.dev API
+- Comprehensive type definitions cover all API entities:
+  - Products and Variants (with CRUD params)
+  - Inventory (with adjustment reasons)
+  - Cart and CartItems (with checkout flow)
+  - Orders and OrderItems (with refund support)
+  - Customers and Addresses
+  - Discounts (percentage and fixed amount)
+  - Webhooks (with delivery tracking)
+  - Images (upload/delete)
+- MerchantClient class provides typed methods for all endpoints:
+  - 8 product/variant methods
+  - 2 inventory methods
+  - 6 cart methods
+  - 4 order methods
+  - 6 customer methods
+  - 5 discount methods
+  - 5 webhook methods
+  - 3 image methods
+- Error handling with specific error classes:
+  - MerchantApiError (base), AuthenticationError, ForbiddenError
+  - NotFoundError, ConflictError, ValidationError, NetworkError
+- Client is dependency-free (uses native fetch)
+- Custom fetch can be injected for SSR/testing
+
+**Recommendations:**
+- Next task: PRD 2.5 - Build homepage with API integration
+- Consider adding unit tests with mock fetch for client methods
+- Add ESLint configuration to packages/api for code consistency
+- Consider adding retry logic for transient network failures
+- Consider adding request/response logging for debugging
