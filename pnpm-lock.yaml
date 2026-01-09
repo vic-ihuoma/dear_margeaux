@@ -86,6 +86,12 @@ importers:
         specifier: ^4.45.0
         version: 4.58.0(@cloudflare/workers-types@4.20260109.0)
 
+  packages/ui:
+    devDependencies:
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
 packages:
 
   '@alloc/quick-lru@5.2.0':

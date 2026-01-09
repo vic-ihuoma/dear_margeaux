@@ -2,13 +2,102 @@
 @tailwind components;
 @tailwind utilities;
 
-/* CSS Custom Properties for design system */
+/* Dear Margeaux Design System - CSS Custom Properties */
 :root {
-  /* Colors will be defined in Task 2.2 */
-  --font-sans: 'Inter', system-ui, sans-serif;
+  /* Primary - Warm Brown */
+  --color-primary: #8B4513;
+  --color-primary-50: #F7F0EB;
+  --color-primary-100: #EDE0D4;
+  --color-primary-200: #DBC1A9;
+  --color-primary-300: #C9A27E;
+  --color-primary-400: #B78353;
+  --color-primary-500: #8B4513;
+  --color-primary-600: #7A3D11;
+  --color-primary-700: #69350F;
+  --color-primary-800: #582D0D;
+  --color-primary-900: #47250B;
+
+  /* Secondary - Cream */
+  --color-secondary: #FFF8DC;
+  --color-secondary-50: #FFFEFB;
+  --color-secondary-100: #FFFDF7;
+  --color-secondary-200: #FFFBEF;
+  --color-secondary-300: #FFF9E7;
+  --color-secondary-400: #FFF8DC;
+  --color-secondary-500: #FFF3C4;
+
+  /* Accent - Terracotta */
+  --color-accent: #E2725B;
+  --color-accent-50: #FCF0ED;
+  --color-accent-100: #F9E1DB;
+  --color-accent-200: #F3C3B7;
+  --color-accent-300: #EDA593;
+  --color-accent-400: #E7876F;
+  --color-accent-500: #E2725B;
+  --color-accent-600: #D95A40;
+  --color-accent-700: #C14832;
+
+  /* Text Colors */
+  --color-text: #333333;
+  --color-text-secondary: #666666;
+  --color-text-muted: #999999;
+  --color-text-inverse: #FFFFFF;
+
+  /* Background Colors */
+  --color-background: #FAFAFA;
+  --color-background-secondary: #FFFFFF;
+  --color-background-tertiary: #F5F5F5;
+
+  /* Border Colors */
+  --color-border: #E5E5E5;
+  --color-border-light: #F0F0F0;
+  --color-border-dark: #CCCCCC;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
+
+  /* Transitions */
+  --transition-fast: 150ms;
+  --transition-normal: 200ms;
+  --transition-slow: 300ms;
+  --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Base styles */
+/* Base Styles */
 html {
   font-family: var(--font-sans);
+  color: var(--color-text);
+  background-color: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+}
+
+/* Typography Base */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+/* Focus Styles */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--color-primary-100);
+  color: var(--color-primary-800);
+}
+
+/* Smooth Scrolling */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }

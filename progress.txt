@@ -98,3 +98,49 @@
 - Using tailwindcss@3.4.19
 - Using react@19.2.3, react-dom@19.2.3
 - Design tokens (colors, typography) to be added in Task 2.2
+
+## 2026-01-09: Task 2.2 - Implement design system foundation
+
+### Completed
+- Created packages/ui package with TypeScript configuration
+- Created design tokens file (packages/ui/src/tokens.ts) with:
+  - Color palette: primary (warm brown #8B4513), secondary (cream #FFF8DC), accent (terracotta #E2725B)
+  - Text colors: primary, secondary, muted, inverse
+  - Background colors: primary, secondary, tertiary, inverse
+  - Border colors: default, light, dark
+  - Status colors: success, warning, error, info
+  - Typography: Inter font with 9-point scale (xs to 5xl)
+  - Spacing, border radius, shadows, transitions
+- Updated tailwind.config.mjs with custom design system values
+- Updated global.css with CSS custom properties for design tokens
+- Created sample page demonstrating:
+  - Color palette swatches (primary, secondary, accent scales)
+  - Typography scale with all sizes and weights
+  - Button component examples (primary, accent, secondary)
+  - Product card preview
+  - Status badges
+
+### Files Created/Modified
+- packages/ui/package.json (new)
+- packages/ui/tsconfig.json (new)
+- packages/ui/src/tokens.ts (new)
+- packages/ui/src/index.ts (new)
+- apps/storefront/tailwind.config.mjs (modified: added design system)
+- apps/storefront/src/styles/global.css (modified: added CSS custom properties)
+- apps/storefront/src/pages/index.astro (modified: design system preview)
+
+### Acceptance Criteria Verified
+- [x] Design tokens defined and documented (in packages/ui/src/tokens.ts)
+- [x] Tailwind config extends with custom values
+- [x] Sample page renders with correct fonts/colors
+
+### Test Results
+- Type Check (packages/ui): PASSED
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 0 hints)
+- Build: PASSED (1 page built in 1.66s)
+
+### Notes
+- Inter font loaded via Google Fonts CDN
+- Design inspired by oru.club with warm, sophisticated palette
+- CSS custom properties available for non-Tailwind usage
+- Ready for Task 2.3 (base layouts and components)
