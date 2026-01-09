@@ -1,0 +1,1305 @@
+{
+  "project": {
+    "name": "dear_margeaux",
+    "description": "Boutique e-commerce website for selling bags through limited drops",
+    "version": "0.1.0",
+    "repository": "github.com/victorihuoma/dear_margeaux"
+  },
+  "architecture": {
+    "type": "hybrid-cloudflare-aws",
+    "commerce_backend": "merchant.dev",
+    "frontend_framework": "astro",
+    "styling": "tailwindcss",
+    "database": "cloudflare-d1",
+    "storage": "cloudflare-r2",
+    "email": "aws-ses",
+    "payments": "stripe",
+    "deployment": "cloudflare-pages-and-workers"
+  },
+  "phases": [
+    {
+      "id": "phase-1",
+      "name": "Repository & Infrastructure Setup",
+      "tasks": [
+        {
+          "id": "1.1",
+          "title": "Initialize monorepo with pnpm",
+          "description": "Set up pnpm workspace with turbo for managing multiple packages",
+          "commands": [
+            "pnpm init",
+            "pnpm add -Dw turbo",
+            "touch pnpm-workspace.yaml turbo.json"
+          ],
+          "files_to_create": [
+            {
+              "path": "pnpm-workspace.yaml",
+              "content": "packages:\n  - 'apps/*'\n  - 'packages/*'\n  - 'merchant'"
+            },
+            {
+              "path": "turbo.json",
+              "content_description": "Configure turbo with build, dev, lint pipelines"
+            }
+          ],
+          "acceptance_criteria": [
+            "pnpm workspace configured",
+            "turbo.json exists with build/dev/lint pipelines",
+            "pnpm install runs without errors"
+          ]
+        },
+        {
+          "id": "1.2",
+          "title": "Clone and configure Merchant.dev",
+          "description": "Add Merchant.dev as the commerce backend",
+          "commands": [
+            "git clone https://github.com/ygwyg/merchant.git merchant",
+            "cd merchant && pnpm install"
+          ],
+          "files_to_modify": [
+            {
+              "path": "merchant/wrangler.toml",
+              "changes": "Update name to 'dear-margeaux-api', configure D1 and R2 bindings"
+            }
+          ],
+          "acceptance_criteria": [
+            "Merchant cloned into /merchant directory",
+            "wrangler.toml configured for dear_margeaux",
+            "pnpm run dev starts local server"
+          ]
+        },
+        {
+          "id": "1.3",
+          "title": "Create Cloudflare resources",
+          "description": "Set up D1 database and R2 bucket in Cloudflare dashboard",
+          "manual_steps": [
+            "Log into Cloudflare dashboard",
+            "Create D1 database named 'dear-margeaux-db'",
+            "Create R2 bucket named 'dear-margeaux-images'",
+            "Note the database_id and bucket name"
+          ],
+          "commands": [
+            "cd merchant && wrangler d1 migrations apply dear-margeaux-db"
+          ],
+          "acceptance_criteria": [
+            "D1 database created and migrations applied",
+            "R2 bucket created",
+            "wrangler.toml updated with correct IDs"
+          ]
+        },
+        {
+          "id": "1.4",
+          "title": "Connect Stripe (test mode)",
+          "description": "Configure Stripe test keys for payment processing",
+          "manual_steps": [
+            "Get Stripe test API keys from dashboard.stripe.com",
+            "Add STRIPE_SECRET_KEY to wrangler.toml secrets",
+            "Configure Stripe webhook endpoint"
+          ],
+          "commands": [
+            "wrangler secret put STRIPE_SECRET_KEY"
+          ],
+          "acceptance_criteria": [
+            "Stripe test keys configured",
+            "Webhook endpoint registered in Stripe dashboard",
+            "Test checkout creates Stripe session"
+          ]
+        },
+        {
+          "id": "1.5",
+          "title": "Deploy Merchant API",
+          "description": "Deploy commerce API to Cloudflare Workers",
+          "commands": [
+            "cd merchant && wrangler deploy"
+          ],
+          "acceptance_criteria": [
+            "API deployed to *.workers.dev",
+            "GET /v1/products returns empty array",
+            "Health check passes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-2",
+      "name": "Storefront Foundation",
+      "tasks": [
+        {
+          "id": "2.1",
+          "title": "Create Astro storefront project",
+          "description": "Initialize Astro project with Tailwind and React",
+          "commands": [
+            "cd apps && pnpm create astro@latest storefront -- --template minimal --typescript strict",
+            "cd apps/storefront && pnpm astro add tailwind react"
+          ],
+          "files_to_create": [
+            {
+              "path": "apps/storefront/src/styles/global.css",
+              "content_description": "Tailwind imports and CSS custom properties for design system"
+            }
+          ],
+          "acceptance_criteria": [
+            "Astro project created at apps/storefront",
+            "Tailwind CSS configured",
+            "React integration enabled",
+            "pnpm run dev starts at localhost:4321"
+          ]
+        },
+        {
+          "id": "2.2",
+          "title": "Implement design system foundation",
+          "description": "Create color palette, typography, and spacing based on oru.club inspiration",
+          "files_to_create": [
+            {
+              "path": "apps/storefront/tailwind.config.mjs",
+              "content_description": "Custom colors (warm palette), Inter font, custom spacing scale"
+            },
+            {
+              "path": "packages/ui/src/tokens.ts",
+              "content_description": "Design tokens exported as TypeScript constants"
+            }
+          ],
+          "design_tokens": {
+            "colors": {
+              "primary": "warm brown (#8B4513)",
+              "secondary": "cream (#FFF8DC)",
+              "accent": "terracotta (#E2725B)",
+              "text": "charcoal (#333333)",
+              "background": "off-white (#FAFAFA)"
+            },
+            "typography": {
+              "font_family": "Inter",
+              "scale": ["12px", "14px", "16px", "18px", "20px", "24px", "30px", "36px", "48px"]
+            }
+          },
+          "acceptance_criteria": [
+            "Design tokens defined and documented",
+            "Tailwind config extends with custom values",
+            "Sample page renders with correct fonts/colors"
+          ]
+        },
+        {
+          "id": "2.3",
+          "title": "Create base layouts and components",
+          "description": "Build reusable layout components for storefront",
+          "files_to_create": [
+            {
+              "path": "apps/storefront/src/layouts/BaseLayout.astro",
+              "content_description": "HTML shell with head, navigation, footer"
+            },
+            {
+              "path": "apps/storefront/src/components/Header.astro",
+              "content_description": "Logo, navigation links, cart icon"
+            },
+            {
+              "path": "apps/storefront/src/components/Footer.astro",
+              "content_description": "Links, newsletter signup, social icons"
+            },
+            {
+              "path": "apps/storefront/src/components/ProductCard.astro",
+              "content_description": "Product image, title, price, sold-out badge"
+            },
+            {
+              "path": "apps/storefront/src/components/ProductGrid.astro",
+              "content_description": "Responsive grid layout for product cards"
+            }
+          ],
+          "acceptance_criteria": [
+            "BaseLayout renders with header/footer",
+            "ProductCard displays product info",
+            "ProductGrid is responsive (1-4 columns)"
+          ]
+        },
+        {
+          "id": "2.4",
+          "title": "Create Merchant API client",
+          "description": "TypeScript client for calling Merchant.dev API",
+          "files_to_create": [
+            {
+              "path": "packages/api/src/merchant-client.ts",
+              "content_description": "Typed fetch wrapper for Merchant API endpoints"
+            },
+            {
+              "path": "packages/api/src/types.ts",
+              "content_description": "TypeScript types for Product, Variant, Cart, Order"
+            }
+          ],
+          "api_methods": [
+            "getProducts(): Product[]",
+            "getProduct(id): Product",
+            "createCart(): Cart",
+            "addToCart(cartId, variantId, quantity): Cart",
+            "checkout(cartId): CheckoutSession"
+          ],
+          "acceptance_criteria": [
+            "Client is fully typed",
+            "All CRUD operations work",
+            "Error handling implemented"
+          ]
+        },
+        {
+          "id": "2.5",
+          "title": "Build homepage",
+          "description": "Create homepage showcasing current drop and featured products",
+          "files_to_create": [
+            {
+              "path": "apps/storefront/src/pages/index.astro",
+              "content_description": "Hero section, current drop preview, featured products"
+            }
+          ],
+          "sections": [
+            "Hero with brand message and CTA",
+            "Current drop banner with countdown (if applicable)",
+            "Featured products grid",
+            "Newsletter signup",
+            "About/story teaser"
+          ],
+          "acceptance_criteria": [
+            "Homepage renders all sections",
+            "Products fetched from Merchant API",
+            "Responsive on mobile/tablet/desktop"
+          ]
+        },
+        {
+          "id": "2.6",
+          "title": "Build product listing page",
+          "description": "Page showing all products in a drop",
+          "files_to_create": [
+            {
+              "path": "apps/storefront/src/pages/shop/index.astro",
+              "content_description": "Product grid with filters"
+            },
+            {
+              "path": "apps/storefront/src/pages/shop/[drop].astro",
+              "content_description": "Products filtered by drop"
+            }
+          ],
+          "acceptance_criteria": [
+            "Products load from API",
+            "Grid displays correctly",
+            "Sold-out products marked"
+          ]
+        },
+        {
+          "id": "2.7",
+          "title": "Build product detail page",
+          "description": "Individual product page with variants and add-to-cart",
+          "files_to_create": [
+            {
+              "path": "apps/storefront/src/pages/product/[id].astro",
+              "content_description": "Product images, description, variant selector, add to cart"
+            },
+            {
+              "path": "apps/storefront/src/components/VariantSelector.tsx",
+              "content_description": "React component for selecting product variants"
+            },
+            {
+              "path": "apps/storefront/src/components/AddToCart.tsx",
+              "content_description": "React component for add to cart button with quantity"
+            }
+          ],
+          "acceptance_criteria": [
+            "Product details display correctly",
+            "Variant selection works",
+            "Add to cart updates cart state",
+            "Sold out variants disabled"
+          ]
+        },
+        {
+          "id": "2.8",
+          "title": "Implement shopping cart",
+          "description": "Cart drawer/page with cart management",
+          "files_to_create": [
+            {
+              "path": "apps/storefront/src/components/CartDrawer.tsx",
+              "content_description": "Slide-out cart with items, quantities, totals"
+            },
+            {
+              "path": "apps/storefront/src/components/CartIcon.tsx",
+              "content_description": "Header cart icon with item count badge"
+            },
+            {
+              "path": "apps/storefront/src/stores/cart.ts",
+              "content_description": "Nanostores cart state management"
+            }
+          ],
+          "state_management": "nanostores (lightweight, Astro-native)",
+          "acceptance_criteria": [
+            "Cart persists across page navigation",
+            "Items can be added/removed/updated",
+            "Cart totals calculate correctly",
+            "Checkout button redirects to Stripe"
+          ]
+        },
+        {
+          "id": "2.9",
+          "title": "Implement Stripe checkout flow",
+          "description": "Connect cart to Stripe Checkout",
+          "files_to_create": [
+            {
+              "path": "apps/storefront/src/pages/checkout/success.astro",
+              "content_description": "Order confirmation page"
+            },
+            {
+              "path": "apps/storefront/src/pages/checkout/cancel.astro",
+              "content_description": "Checkout cancelled page"
+            }
+          ],
+          "flow": [
+            "User clicks checkout",
+            "Frontend calls Merchant API /v1/carts/:id/checkout",
+            "API creates Stripe Checkout session",
+            "User redirects to Stripe hosted page",
+            "On success, redirect to /checkout/success",
+            "Webhook updates order status"
+          ],
+          "acceptance_criteria": [
+            "Checkout creates Stripe session",
+            "User can complete payment in Stripe",
+            "Success page shows order details",
+            "Cart clears after successful checkout"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-3",
+      "name": "Custom Admin CMS",
+      "tasks": [
+        {
+          "id": "3.1",
+          "title": "Create admin Astro project",
+          "description": "Initialize admin app with Astro + React",
+          "commands": [
+            "cd apps && pnpm create astro@latest admin -- --template minimal --typescript strict",
+            "cd apps/admin && pnpm astro add tailwind react"
+          ],
+          "acceptance_criteria": [
+            "Admin project at apps/admin",
+            "Separate from storefront",
+            "Shares packages/ui components"
+          ]
+        },
+        {
+          "id": "3.2",
+          "title": "Implement admin authentication",
+          "description": "Secure admin routes with authentication",
+          "options": [
+            {
+              "name": "Clerk",
+              "pros": "Easy setup, social login, good UI",
+              "cons": "Paid at scale"
+            },
+            {
+              "name": "Lucia",
+              "pros": "Free, flexible, D1 compatible",
+              "cons": "More setup work"
+            }
+          ],
+          "recommended": "Lucia for cost control",
+          "files_to_create": [
+            {
+              "path": "packages/auth/src/lucia.ts",
+              "content_description": "Lucia auth configuration with D1 adapter"
+            },
+            {
+              "path": "apps/admin/src/middleware/auth.ts",
+              "content_description": "Middleware to protect admin routes"
+            },
+            {
+              "path": "apps/admin/src/pages/login.astro",
+              "content_description": "Admin login page"
+            }
+          ],
+          "acceptance_criteria": [
+            "Admin routes require authentication",
+            "Login/logout works",
+            "Session persists across requests"
+          ]
+        },
+        {
+          "id": "3.3",
+          "title": "Build admin dashboard",
+          "description": "Overview page with stats and recent activity (Iheanyi-style)",
+          "files_to_create": [
+            {
+              "path": "apps/admin/src/pages/index.astro",
+              "content_description": "Dashboard with Quick Stats cards and Recent Activity list"
+            },
+            {
+              "path": "apps/admin/src/components/StatCard.tsx",
+              "content_description": "Reusable stat display card"
+            },
+            {
+              "path": "apps/admin/src/components/ActivityFeed.tsx",
+              "content_description": "Recent orders/products activity list"
+            }
+          ],
+          "dashboard_elements": [
+            "Quick Stats: Total Products, Total Orders, Revenue (30d), Active Drop",
+            "Recent Activity: Last 10 orders/product updates with timestamps"
+          ],
+          "acceptance_criteria": [
+            "Dashboard loads with real stats from API",
+            "Clean, minimal design matching inspiration",
+            "Responsive layout"
+          ]
+        },
+        {
+          "id": "3.4",
+          "title": "Build products management",
+          "description": "CRUD interface for products and variants",
+          "files_to_create": [
+            {
+              "path": "apps/admin/src/pages/products/index.astro",
+              "content_description": "Products list with search and filters"
+            },
+            {
+              "path": "apps/admin/src/pages/products/new.astro",
+              "content_description": "Create new product form"
+            },
+            {
+              "path": "apps/admin/src/pages/products/[id].astro",
+              "content_description": "Edit product page"
+            },
+            {
+              "path": "apps/admin/src/components/ProductForm.tsx",
+              "content_description": "React form for product details"
+            },
+            {
+              "path": "apps/admin/src/components/VariantForm.tsx",
+              "content_description": "Form for adding/editing variants"
+            },
+            {
+              "path": "apps/admin/src/components/ImageUploader.tsx",
+              "content_description": "Drag-drop image upload to R2"
+            }
+          ],
+          "acceptance_criteria": [
+            "Can create/edit/delete products",
+            "Can add/edit/remove variants",
+            "Image upload works to R2",
+            "Form validation in place"
+          ]
+        },
+        {
+          "id": "3.5",
+          "title": "Build inventory management",
+          "description": "View and adjust inventory levels",
+          "files_to_create": [
+            {
+              "path": "apps/admin/src/pages/inventory/index.astro",
+              "content_description": "Inventory list with stock levels"
+            },
+            {
+              "path": "apps/admin/src/components/InventoryAdjuster.tsx",
+              "content_description": "Component to adjust stock with reason"
+            }
+          ],
+          "inventory_features": [
+            "View on_hand, reserved, available per SKU",
+            "Adjust stock with reason (restock, damaged, correction, return)",
+            "Low stock alerts"
+          ],
+          "acceptance_criteria": [
+            "Inventory displays correctly",
+            "Can adjust stock levels",
+            "Adjustment reasons recorded"
+          ]
+        },
+        {
+          "id": "3.6",
+          "title": "Build orders management",
+          "description": "View and manage customer orders",
+          "files_to_create": [
+            {
+              "path": "apps/admin/src/pages/orders/index.astro",
+              "content_description": "Orders list with status filters"
+            },
+            {
+              "path": "apps/admin/src/pages/orders/[id].astro",
+              "content_description": "Order detail page"
+            },
+            {
+              "path": "apps/admin/src/components/OrderStatusUpdater.tsx",
+              "content_description": "Component to update fulfillment status"
+            }
+          ],
+          "order_states": ["pending", "paid", "processing", "shipped", "delivered", "refunded", "canceled"],
+          "acceptance_criteria": [
+            "Orders list with pagination",
+            "Can view order details",
+            "Can update fulfillment status",
+            "Can process refunds via Stripe"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-4",
+      "name": "Drops System",
+      "tasks": [
+        {
+          "id": "4.1",
+          "title": "Extend D1 schema for drops",
+          "description": "Add drops table and link to products",
+          "files_to_create": [
+            {
+              "path": "merchant/migrations/0002_add_drops.sql",
+              "content_description": "CREATE TABLE drops with id, name, description, start_date, end_date, status"
+            },
+            {
+              "path": "merchant/migrations/0003_product_drop_link.sql",
+              "content_description": "ALTER products ADD drop_id REFERENCES drops(id)"
+            }
+          ],
+          "schema": {
+            "drops": {
+              "id": "TEXT PRIMARY KEY",
+              "name": "TEXT NOT NULL",
+              "description": "TEXT",
+              "slug": "TEXT UNIQUE NOT NULL",
+              "start_date": "TEXT (ISO date)",
+              "end_date": "TEXT (ISO date)",
+              "status": "TEXT (draft|scheduled|active|ended)",
+              "created_at": "TEXT",
+              "updated_at": "TEXT"
+            }
+          },
+          "acceptance_criteria": [
+            "Migrations run successfully",
+            "Drops table created",
+            "Products can be linked to drops"
+          ]
+        },
+        {
+          "id": "4.2",
+          "title": "Add drops API routes",
+          "description": "CRUD endpoints for drops in Merchant",
+          "files_to_create": [
+            {
+              "path": "merchant/src/routes/drops.ts",
+              "content_description": "Hono routes for GET/POST/PUT/DELETE drops"
+            }
+          ],
+          "endpoints": [
+            "GET /v1/drops - List all drops",
+            "GET /v1/drops/:id - Get single drop",
+            "GET /v1/drops/:slug/products - Get products in drop",
+            "POST /v1/drops - Create drop (admin)",
+            "PUT /v1/drops/:id - Update drop (admin)",
+            "DELETE /v1/drops/:id - Delete drop (admin)"
+          ],
+          "acceptance_criteria": [
+            "All endpoints implemented",
+            "Admin endpoints require authentication",
+            "Products filter by drop works"
+          ]
+        },
+        {
+          "id": "4.3",
+          "title": "Build drops admin UI",
+          "description": "Admin interface for managing drops",
+          "files_to_create": [
+            {
+              "path": "apps/admin/src/pages/drops/index.astro",
+              "content_description": "List of all drops with status badges"
+            },
+            {
+              "path": "apps/admin/src/pages/drops/new.astro",
+              "content_description": "Create new drop form"
+            },
+            {
+              "path": "apps/admin/src/pages/drops/[id].astro",
+              "content_description": "Edit drop and assign products"
+            },
+            {
+              "path": "apps/admin/src/components/DropForm.tsx",
+              "content_description": "Form for drop details and scheduling"
+            },
+            {
+              "path": "apps/admin/src/components/ProductAssigner.tsx",
+              "content_description": "Drag-drop interface to assign products to drop"
+            }
+          ],
+          "acceptance_criteria": [
+            "Can create/edit/delete drops",
+            "Can schedule drops with start/end dates",
+            "Can assign products to drops",
+            "Status updates correctly (draft→scheduled→active→ended)"
+          ]
+        },
+        {
+          "id": "4.4",
+          "title": "Update storefront for drops",
+          "description": "Show products by drop, handle sold-out state",
+          "files_to_modify": [
+            {
+              "path": "apps/storefront/src/pages/shop/[drop].astro",
+              "changes": "Fetch products by drop slug"
+            },
+            {
+              "path": "apps/storefront/src/pages/index.astro",
+              "changes": "Show current active drop"
+            },
+            {
+              "path": "apps/storefront/src/components/ProductCard.astro",
+              "changes": "Add sold-out badge when available=0"
+            }
+          ],
+          "acceptance_criteria": [
+            "Drop pages show correct products",
+            "Sold-out products clearly marked",
+            "Past drops viewable but not purchasable",
+            "Active drop highlighted on homepage"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-5",
+      "name": "Waitlist & Notifications",
+      "tasks": [
+        {
+          "id": "5.1",
+          "title": "Create waitlist database schema",
+          "description": "Store waitlist signups in D1",
+          "files_to_create": [
+            {
+              "path": "merchant/migrations/0004_waitlist.sql",
+              "content_description": "CREATE TABLE waitlist_entries"
+            }
+          ],
+          "schema": {
+            "waitlist_entries": {
+              "id": "TEXT PRIMARY KEY",
+              "email": "TEXT NOT NULL",
+              "drop_id": "TEXT REFERENCES drops(id)",
+              "subscribed_at": "TEXT",
+              "notified_at": "TEXT NULL",
+              "unsubscribed": "INTEGER DEFAULT 0"
+            }
+          },
+          "acceptance_criteria": [
+            "Table created",
+            "Email uniqueness per drop enforced",
+            "Can query by drop"
+          ]
+        },
+        {
+          "id": "5.2",
+          "title": "Build waitlist API endpoints",
+          "description": "API for subscribing to drop notifications",
+          "files_to_create": [
+            {
+              "path": "merchant/src/routes/waitlist.ts",
+              "content_description": "POST /v1/waitlist, DELETE /v1/waitlist/:id"
+            }
+          ],
+          "endpoints": [
+            "POST /v1/waitlist - Subscribe email to drop",
+            "DELETE /v1/waitlist/:id - Unsubscribe",
+            "GET /v1/waitlist?drop_id=X - List subscribers (admin)"
+          ],
+          "acceptance_criteria": [
+            "Can subscribe to waitlist",
+            "Duplicate emails rejected",
+            "Can unsubscribe"
+          ]
+        },
+        {
+          "id": "5.3",
+          "title": "Build waitlist signup UI",
+          "description": "Storefront component for joining waitlist",
+          "files_to_create": [
+            {
+              "path": "apps/storefront/src/components/WaitlistForm.tsx",
+              "content_description": "Email input with submit for upcoming drops"
+            },
+            {
+              "path": "apps/storefront/src/pages/drops/[slug]/waitlist.astro",
+              "content_description": "Dedicated waitlist page for scheduled drops"
+            }
+          ],
+          "acceptance_criteria": [
+            "Waitlist form on scheduled drop pages",
+            "Success/error messages displayed",
+            "Form validates email format"
+          ]
+        },
+        {
+          "id": "5.4",
+          "title": "Configure AWS SES",
+          "description": "Set up email sending infrastructure",
+          "manual_steps": [
+            "Create SES identity for sending domain",
+            "Verify domain with DNS records",
+            "Create IAM user with SES send permissions",
+            "Get access key and secret"
+          ],
+          "files_to_create": [
+            {
+              "path": "packages/email/src/ses-client.ts",
+              "content_description": "AWS SDK v3 SES client configuration"
+            }
+          ],
+          "acceptance_criteria": [
+            "Domain verified in SES",
+            "Can send test email",
+            "IAM credentials stored securely"
+          ]
+        },
+        {
+          "id": "5.5",
+          "title": "Create email templates",
+          "description": "Build email templates with React Email",
+          "commands": [
+            "cd packages/email && pnpm add react-email @react-email/components"
+          ],
+          "files_to_create": [
+            {
+              "path": "packages/email/src/templates/drop-launch.tsx",
+              "content_description": "Email announcing drop is live"
+            },
+            {
+              "path": "packages/email/src/templates/order-confirmation.tsx",
+              "content_description": "Email confirming order placed"
+            },
+            {
+              "path": "packages/email/src/templates/shipping-update.tsx",
+              "content_description": "Email with shipping tracking info"
+            }
+          ],
+          "acceptance_criteria": [
+            "Templates render correctly",
+            "Preview available in dev",
+            "All dynamic content works"
+          ]
+        },
+        {
+          "id": "5.6",
+          "title": "Implement notification triggers",
+          "description": "Send emails on key events",
+          "triggers": [
+            {
+              "event": "Drop goes active",
+              "action": "Send drop-launch email to all waitlist subscribers"
+            },
+            {
+              "event": "Order placed (Stripe webhook)",
+              "action": "Send order-confirmation email"
+            },
+            {
+              "event": "Order shipped (admin action)",
+              "action": "Send shipping-update email"
+            }
+          ],
+          "files_to_create": [
+            {
+              "path": "merchant/src/services/notifications.ts",
+              "content_description": "Functions to send each email type"
+            },
+            {
+              "path": "merchant/src/cron/drop-notifications.ts",
+              "content_description": "Scheduled job to check for drops becoming active"
+            }
+          ],
+          "acceptance_criteria": [
+            "Emails send on each trigger",
+            "Failed sends logged/retried",
+            "Unsubscribed users not emailed"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-6",
+      "name": "Blog",
+      "tasks": [
+        {
+          "id": "6.1",
+          "title": "Set up Astro Content Collections for blog",
+          "description": "Configure MDX blog posts in storefront",
+          "files_to_create": [
+            {
+              "path": "apps/storefront/src/content/config.ts",
+              "content_description": "Define blog and lookbook collections with schemas"
+            },
+            {
+              "path": "apps/storefront/src/content/blog/.gitkeep",
+              "content_description": "Directory for blog MDX files"
+            },
+            {
+              "path": "apps/storefront/src/content/lookbooks/.gitkeep",
+              "content_description": "Directory for lookbook MDX files"
+            }
+          ],
+          "schema": {
+            "blog": {
+              "title": "string",
+              "description": "string",
+              "date": "date",
+              "author": "string",
+              "tags": "string[]",
+              "image": "string (optional)",
+              "draft": "boolean"
+            },
+            "lookbook": {
+              "title": "string",
+              "drop": "reference to drop",
+              "date": "date",
+              "images": "string[]",
+              "draft": "boolean"
+            }
+          },
+          "acceptance_criteria": [
+            "Content collections configured",
+            "Sample posts render",
+            "TypeScript types generated"
+          ]
+        },
+        {
+          "id": "6.2",
+          "title": "Build blog listing and detail pages",
+          "description": "Public blog pages on storefront",
+          "files_to_create": [
+            {
+              "path": "apps/storefront/src/pages/blog/index.astro",
+              "content_description": "Blog posts listing with previews"
+            },
+            {
+              "path": "apps/storefront/src/pages/blog/[...slug].astro",
+              "content_description": "Individual blog post page"
+            },
+            {
+              "path": "apps/storefront/src/layouts/BlogPost.astro",
+              "content_description": "Layout for blog posts with metadata"
+            }
+          ],
+          "acceptance_criteria": [
+            "Blog index shows all published posts",
+            "Individual posts render MDX correctly",
+            "Draft posts hidden from listing",
+            "SEO meta tags present"
+          ]
+        },
+        {
+          "id": "6.3",
+          "title": "Build lookbook pages",
+          "description": "Visual campaign/lookbook pages",
+          "files_to_create": [
+            {
+              "path": "apps/storefront/src/pages/lookbook/index.astro",
+              "content_description": "Lookbook gallery"
+            },
+            {
+              "path": "apps/storefront/src/pages/lookbook/[...slug].astro",
+              "content_description": "Individual lookbook page"
+            },
+            {
+              "path": "apps/storefront/src/layouts/Lookbook.astro",
+              "content_description": "Full-bleed image-heavy layout"
+            }
+          ],
+          "acceptance_criteria": [
+            "Lookbooks display large images beautifully",
+            "Can link to products/drops",
+            "Responsive image handling"
+          ]
+        },
+        {
+          "id": "6.4",
+          "title": "Build blog admin",
+          "description": "Admin interface for creating/editing blog posts",
+          "files_to_create": [
+            {
+              "path": "apps/admin/src/pages/blog/index.astro",
+              "content_description": "Blog posts list with status"
+            },
+            {
+              "path": "apps/admin/src/pages/blog/new.astro",
+              "content_description": "Create new blog post"
+            },
+            {
+              "path": "apps/admin/src/pages/blog/[id].astro",
+              "content_description": "Edit blog post"
+            },
+            {
+              "path": "apps/admin/src/components/MDXEditor.tsx",
+              "content_description": "Rich text editor with MDX preview"
+            }
+          ],
+          "editor_features": [
+            "Bold, italic, headings",
+            "Links, images",
+            "Code blocks",
+            "Split/preview modes",
+            "Save as draft or publish"
+          ],
+          "acceptance_criteria": [
+            "Can create/edit blog posts",
+            "MDX editor works with preview",
+            "Can save drafts",
+            "Publishing updates storefront"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-7",
+      "name": "Advanced Features",
+      "tasks": [
+        {
+          "id": "7.1",
+          "title": "Implement discount codes",
+          "description": "Promotional codes for checkout",
+          "files_to_create": [
+            {
+              "path": "merchant/migrations/0005_discounts.sql",
+              "content_description": "CREATE TABLE discount_codes"
+            },
+            {
+              "path": "merchant/src/routes/discounts.ts",
+              "content_description": "CRUD for discount codes"
+            },
+            {
+              "path": "apps/admin/src/pages/discounts/index.astro",
+              "content_description": "Manage discount codes"
+            }
+          ],
+          "schema": {
+            "discount_codes": {
+              "id": "TEXT PRIMARY KEY",
+              "code": "TEXT UNIQUE NOT NULL",
+              "type": "TEXT (percentage|fixed)",
+              "value": "INTEGER (cents or percentage)",
+              "min_order": "INTEGER (cents, optional)",
+              "max_uses": "INTEGER (optional)",
+              "uses": "INTEGER DEFAULT 0",
+              "valid_from": "TEXT",
+              "valid_until": "TEXT",
+              "active": "INTEGER DEFAULT 1"
+            }
+          },
+          "checkout_integration": "Use Stripe Coupons for actual discount application",
+          "acceptance_criteria": [
+            "Can create discount codes in admin",
+            "Codes validate at checkout",
+            "Discounts apply correctly",
+            "Usage limits enforced"
+          ]
+        },
+        {
+          "id": "7.2",
+          "title": "Enable multi-currency",
+          "description": "Accept payments in different currencies",
+          "approach": "Use Stripe Checkout's automatic currency detection",
+          "configuration": [
+            "Enable multiple currencies in Stripe dashboard",
+            "Set product prices in base currency (USD)",
+            "Stripe converts based on customer's location"
+          ],
+          "files_to_modify": [
+            {
+              "path": "merchant/src/routes/checkout.ts",
+              "changes": "Add currency parameter to Stripe session creation"
+            }
+          ],
+          "acceptance_criteria": [
+            "Checkout shows local currency",
+            "Conversion happens automatically",
+            "Orders record original currency"
+          ]
+        },
+        {
+          "id": "7.3",
+          "title": "Build analytics dashboard",
+          "description": "Sales and traffic analytics for admin",
+          "files_to_create": [
+            {
+              "path": "apps/admin/src/pages/analytics/index.astro",
+              "content_description": "Analytics dashboard with charts"
+            },
+            {
+              "path": "apps/admin/src/components/SalesChart.tsx",
+              "content_description": "Revenue over time chart"
+            },
+            {
+              "path": "apps/admin/src/components/TopProducts.tsx",
+              "content_description": "Best selling products table"
+            }
+          ],
+          "metrics": [
+            "Total revenue (period)",
+            "Number of orders",
+            "Average order value",
+            "Top selling products",
+            "Revenue by drop"
+          ],
+          "data_source": "Query orders table in D1",
+          "acceptance_criteria": [
+            "Dashboard shows key metrics",
+            "Can filter by date range",
+            "Charts render correctly"
+          ]
+        },
+        {
+          "id": "7.4",
+          "title": "Implement optional user accounts",
+          "description": "Allow customers to create accounts",
+          "files_to_create": [
+            {
+              "path": "apps/storefront/src/pages/account/login.astro",
+              "content_description": "Customer login page"
+            },
+            {
+              "path": "apps/storefront/src/pages/account/register.astro",
+              "content_description": "Account creation page"
+            },
+            {
+              "path": "apps/storefront/src/pages/account/orders.astro",
+              "content_description": "Order history page"
+            },
+            {
+              "path": "merchant/migrations/0006_customer_accounts.sql",
+              "content_description": "Add password hash to customers table"
+            }
+          ],
+          "features": [
+            "Register with email/password",
+            "Login/logout",
+            "View order history",
+            "Link guest orders to account by email"
+          ],
+          "acceptance_criteria": [
+            "Customers can register",
+            "Login works and persists",
+            "Order history shows past orders",
+            "Guest checkout still works"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-8",
+      "name": "Launch Preparation",
+      "tasks": [
+        {
+          "id": "8.1",
+          "title": "Security audit",
+          "description": "Review and harden security",
+          "checklist": [
+            "All admin routes require authentication",
+            "API keys properly scoped (pk_ vs sk_)",
+            "HTTPS enforced everywhere",
+            "CSP headers configured",
+            "Input validation on all forms",
+            "SQL injection prevention verified",
+            "XSS prevention verified",
+            "Stripe webhook signatures validated",
+            "Rate limiting enabled",
+            "Secrets not in code/git"
+          ],
+          "acceptance_criteria": [
+            "All checklist items verified",
+            "No vulnerabilities found",
+            "Security headers present"
+          ]
+        },
+        {
+          "id": "8.2",
+          "title": "Performance optimization",
+          "description": "Optimize for fast page loads",
+          "optimizations": [
+            "Image optimization (WebP, proper sizing)",
+            "Lazy loading for images below fold",
+            "Static page generation where possible",
+            "Edge caching with Cloudflare",
+            "Bundle size analysis and reduction",
+            "Core Web Vitals optimization"
+          ],
+          "tools": [
+            "Lighthouse audits",
+            "WebPageTest",
+            "Cloudflare Analytics"
+          ],
+          "acceptance_criteria": [
+            "Lighthouse performance > 90",
+            "LCP < 2.5s",
+            "FID < 100ms",
+            "CLS < 0.1"
+          ]
+        },
+        {
+          "id": "8.3",
+          "title": "SEO optimization",
+          "description": "Ensure search engine visibility",
+          "tasks": [
+            "Meta titles and descriptions on all pages",
+            "Open Graph tags for social sharing",
+            "Structured data (Product, Organization)",
+            "XML sitemap generation",
+            "robots.txt configuration",
+            "Canonical URLs"
+          ],
+          "files_to_create": [
+            {
+              "path": "apps/storefront/src/components/SEO.astro",
+              "content_description": "Reusable SEO component"
+            },
+            {
+              "path": "apps/storefront/public/robots.txt",
+              "content_description": "Search engine crawl rules"
+            }
+          ],
+          "acceptance_criteria": [
+            "All pages have unique titles/descriptions",
+            "Structured data validates",
+            "Sitemap accessible and correct"
+          ]
+        },
+        {
+          "id": "8.4",
+          "title": "Error monitoring setup",
+          "description": "Add error tracking for production",
+          "recommended": "Sentry (free tier)",
+          "files_to_create": [
+            {
+              "path": "apps/storefront/src/lib/sentry.ts",
+              "content_description": "Sentry client initialization"
+            }
+          ],
+          "acceptance_criteria": [
+            "Sentry project created",
+            "Client-side errors captured",
+            "Server errors captured",
+            "Source maps uploaded"
+          ]
+        },
+        {
+          "id": "8.5",
+          "title": "Production deployment",
+          "description": "Deploy to production with live credentials",
+          "steps": [
+            "Verify all environment variables set",
+            "Switch Stripe to live mode",
+            "Move SES out of sandbox",
+            "Configure custom domain",
+            "Enable Cloudflare proxying",
+            "Test complete purchase flow",
+            "Monitor error rates"
+          ],
+          "acceptance_criteria": [
+            "Site live at custom domain",
+            "SSL certificate active",
+            "Real payment works",
+            "Emails send correctly",
+            "No errors in monitoring"
+          ]
+        }
+      ]
+    }
+  ],
+  "file_structure": {
+    "root": "dear_margeaux/",
+    "directories": [
+      {
+        "path": "apps/storefront",
+        "description": "Astro storefront for customers"
+      },
+      {
+        "path": "apps/admin",
+        "description": "Astro + React admin CMS"
+      },
+      {
+        "path": "packages/api",
+        "description": "Shared API client and types"
+      },
+      {
+        "path": "packages/ui",
+        "description": "Shared UI components"
+      },
+      {
+        "path": "packages/email",
+        "description": "React Email templates"
+      },
+      {
+        "path": "packages/auth",
+        "description": "Authentication utilities"
+      },
+      {
+        "path": "merchant",
+        "description": "Merchant.dev commerce backend"
+      },
+      {
+        "path": "docs",
+        "description": "Project documentation"
+      }
+    ]
+  },
+  "environment_variables": {
+    "merchant": [
+      "CLOUDFLARE_ACCOUNT_ID",
+      "CLOUDFLARE_API_TOKEN",
+      "D1_DATABASE_ID",
+      "R2_BUCKET_NAME",
+      "STRIPE_SECRET_KEY",
+      "STRIPE_WEBHOOK_SECRET",
+      "ADMIN_API_KEY"
+    ],
+    "storefront": [
+      "PUBLIC_MERCHANT_API_URL",
+      "PUBLIC_STRIPE_PUBLISHABLE_KEY"
+    ],
+    "admin": [
+      "MERCHANT_API_URL",
+      "MERCHANT_ADMIN_KEY",
+      "SESSION_SECRET"
+    ],
+    "email": [
+      "AWS_ACCESS_KEY_ID",
+      "AWS_SECRET_ACCESS_KEY",
+      "AWS_REGION",
+      "SES_FROM_EMAIL"
+    ]
+  },
+  "dependencies": {
+    "storefront": [
+      "astro",
+      "@astrojs/tailwind",
+      "@astrojs/react",
+      "nanostores",
+      "@nanostores/react",
+      "react",
+      "react-dom"
+    ],
+    "admin": [
+      "astro",
+      "@astrojs/tailwind",
+      "@astrojs/react",
+      "react",
+      "react-dom",
+      "lucia",
+      "@lucia-auth/adapter-sqlite"
+    ],
+    "merchant": [
+      "hono",
+      "drizzle-orm",
+      "stripe",
+      "zod"
+    ],
+    "email": [
+      "@aws-sdk/client-ses",
+      "react-email",
+      "@react-email/components"
+    ]
+  },
+  "commands": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "deploy:merchant": "cd merchant && wrangler deploy",
+    "deploy:storefront": "cd apps/storefront && wrangler pages deploy dist",
+    "deploy:admin": "cd apps/admin && wrangler pages deploy dist",
+    "db:migrate": "cd merchant && wrangler d1 migrations apply dear-margeaux-db",
+    "email:preview": "cd packages/email && pnpm email dev"
+  }
+}
