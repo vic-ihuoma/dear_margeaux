@@ -31,3 +31,22 @@
 - Next task: PRD 1.3 - Create Cloudflare resources (manual steps in dashboard)
 - After 1.3, update wrangler.jsonc with actual database_id and bucket IDs
 - Consider upgrading stripe from 17.7.0 to 20.1.2 when stable
+
+## [2.1]: Create Astro storefront project
+**Status:** PASSED
+**Tests Written:** N/A (infrastructure setup, no tests applicable)
+**Test Results:** N/A
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 0 hints in 4 files)
+**Build:** PASSED (1 page built in 1.51s)
+**Findings:**
+- Astro 5.16.7 storefront created at apps/storefront
+- Tailwind CSS 3.4.19 integration configured with @astrojs/tailwind
+- React 19.2.3 integration configured with @astrojs/react
+- Dev server starts successfully at localhost:4321
+- Build produces static output to dist/ directory
+- global.css created with Tailwind directives and CSS custom properties placeholder
+
+**Recommendations:**
+- Next task: PRD 2.2 - Implement design system foundation (colors, typography)
+- Note: Tasks 1.3-1.5 (Cloudflare resources, Stripe, Deploy) require manual dashboard steps
+- Consider adding ESLint configuration for the storefront
