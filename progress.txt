@@ -144,3 +144,72 @@
 - Design inspired by oru.club with warm, sophisticated palette
 - CSS custom properties available for non-Tailwind usage
 - Ready for Task 2.3 (base layouts and components)
+
+## 2026-01-09: Task 2.3 - Create base layouts and components
+
+### Completed
+- Created layouts directory at apps/storefront/src/layouts/
+- Created components directory at apps/storefront/src/components/
+- Implemented BaseLayout.astro:
+  - HTML shell with proper meta tags and SEO support
+  - Includes Header and Footer components
+  - Flexible slot-based content area
+  - Google Fonts preconnect for Inter
+- Implemented Header.astro:
+  - Sticky header with backdrop blur effect
+  - Logo linking to homepage
+  - Desktop navigation (Shop, Drops, About)
+  - Cart icon with badge (ready for cart state)
+  - Mobile hamburger menu with responsive navigation
+  - Accessible ARIA labels
+- Implemented Footer.astro:
+  - Brand column with description
+  - Social icons (Instagram, X/Twitter, Pinterest)
+  - Shop links (All Products, Current Drops, Past Drops)
+  - Company links (About, Contact, Shipping, Returns)
+  - Newsletter signup form
+  - Copyright and legal links
+- Implemented ProductCard.astro:
+  - Product image with hover scale effect
+  - Placeholder image when no image provided
+  - Sold out overlay badge
+  - Collection label
+  - Title with hover state
+  - Formatted price (currency-aware, cents to dollars)
+  - Strikethrough price when sold out
+- Implemented ProductGrid.astro:
+  - Responsive grid layout (1-4 columns)
+  - Configurable column count
+  - Configurable gap sizes (sm, md, lg)
+  - Slot-based children
+- Updated index.astro homepage:
+  - Uses BaseLayout for consistent structure
+  - Hero section with CTAs
+  - Featured products section with ProductGrid and ProductCards
+  - Story/About teaser section
+  - Newsletter signup section
+
+### Files Created/Modified
+- apps/storefront/src/layouts/BaseLayout.astro (new)
+- apps/storefront/src/components/Header.astro (new)
+- apps/storefront/src/components/Footer.astro (new)
+- apps/storefront/src/components/ProductCard.astro (new)
+- apps/storefront/src/components/ProductGrid.astro (new)
+- apps/storefront/src/pages/index.astro (modified: now uses layout and components)
+
+### Acceptance Criteria Verified
+- [x] BaseLayout renders with header/footer
+- [x] ProductCard displays product info (title, price, collection, sold-out badge)
+- [x] ProductGrid is responsive (1-4 columns based on viewport)
+
+### Test Results
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 0 hints in 9 files)
+- Build: PASSED (1 page built in 1.70s)
+
+### Notes
+- Components use design tokens from Task 2.2
+- ProductCard accepts price in cents, formats to currency
+- Mobile menu uses vanilla JS for toggle (no React needed)
+- Cart functionality ready for nanostores integration in Task 2.8
+- All components have proper TypeScript interfaces for props
+- Ready for Task 2.4 (Merchant API client)

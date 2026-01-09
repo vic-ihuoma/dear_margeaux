@@ -77,3 +77,29 @@
 - Consider self-hosting Inter font for better performance (download to public/fonts)
 - Design tokens can be imported in other packages via @dear-margeaux/ui
 - Consider adding dark mode support in future iteration
+
+## [2.3]: Create base layouts and components
+**Status:** PASSED
+**Tests Written:** N/A (Astro components, visual testing recommended)
+**Test Results:** N/A
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 0 hints in 9 files)
+**Build:** PASSED (1 page built in 1.70s)
+**Findings:**
+- Created complete layout and component foundation:
+  - BaseLayout.astro: HTML shell with Header/Footer integration, SEO-ready
+  - Header.astro: Sticky nav with backdrop blur, mobile menu, cart icon
+  - Footer.astro: Multi-column layout, social icons, newsletter signup
+  - ProductCard.astro: Image, title, price, sold-out badge, collection label
+  - ProductGrid.astro: Responsive 1-4 column grid with configurable gaps
+- All components use design tokens from packages/ui
+- TypeScript interfaces defined for all component props
+- Homepage updated to demonstrate all components working together
+- Mobile-responsive design implemented across all components
+- Accessibility: ARIA labels on buttons, semantic HTML structure
+
+**Recommendations:**
+- Next task: PRD 2.4 - Create Merchant API client
+- Consider adding visual regression testing (Playwright or Storybook)
+- Newsletter form needs backend integration (Task 5.x)
+- Cart icon badge needs nanostores integration (Task 2.8)
+- Consider extracting Button component for consistency across CTAs

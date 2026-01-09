@@ -1,167 +1,151 @@
 ---
-import '../styles/global.css';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductCard from '../components/ProductCard.astro';
+import ProductGrid from '../components/ProductGrid.astro';
+
+const sampleProducts = [
+  {
+    id: '1',
+    title: 'Classic Leather Tote',
+    price: 45000,
+    collection: 'Spring 2026',
+    soldOut: false,
+  },
+  {
+    id: '2',
+    title: 'Mini Crossbody',
+    price: 28500,
+    collection: 'Spring 2026',
+    soldOut: false,
+  },
+  {
+    id: '3',
+    title: 'Structured Satchel',
+    price: 52000,
+    collection: 'Spring 2026',
+    soldOut: true,
+  },
+  {
+    id: '4',
+    title: 'Weekend Duffle',
+    price: 68000,
+    collection: 'Spring 2026',
+    soldOut: false,
+  },
+];
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Dear Margeaux - Boutique Bags</title>
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-	</head>
-	<body class="bg-background min-h-screen">
-		<main class="container mx-auto px-4 py-12 max-w-4xl">
-			<!-- Hero Section -->
-			<header class="text-center mb-16">
-				<h1 class="text-5xl font-bold text-text tracking-tight mb-4">Dear Margeaux</h1>
-				<p class="text-xl text-text-secondary">Boutique bags, limited drops.</p>
-			</header>
+<BaseLayout title="Boutique Bags">
+  <!-- Hero Section -->
+  <section class="relative bg-secondary py-20 md:py-32">
+    <div class="container mx-auto px-4 max-w-6xl text-center">
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-text tracking-tight mb-6">
+        Timeless Bags,<br />Limited Releases
+      </h1>
+      <p class="text-lg md:text-xl text-text-secondary max-w-2xl mx-auto mb-8">
+        Handcrafted leather bags designed for the modern woman. Each collection is released in limited quantities.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+          href="/shop"
+          class="px-8 py-4 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+        >
+          Shop Now
+        </a>
+        <a
+          href="/drops"
+          class="px-8 py-4 bg-background text-text font-medium rounded-lg border border-border hover:bg-background-tertiary transition-colors duration-normal"
+        >
+          View Drops
+        </a>
+      </div>
+    </div>
+  </section>
 
-			<!-- Design System Preview -->
-			<section class="space-y-12">
-				<!-- Color Palette -->
-				<div>
-					<h2 class="text-2xl font-semibold text-text mb-6">Color Palette</h2>
-					<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-						<!-- Primary -->
-						<div class="space-y-3">
-							<h3 class="text-sm font-medium text-text-muted uppercase tracking-wider">Primary (Warm Brown)</h3>
-							<div class="space-y-2">
-								<div class="h-16 rounded-lg bg-primary flex items-end p-3">
-									<span class="text-text-inverse text-sm font-medium">#8B4513</span>
-								</div>
-								<div class="grid grid-cols-5 gap-1">
-									<div class="h-8 rounded bg-primary-100"></div>
-									<div class="h-8 rounded bg-primary-300"></div>
-									<div class="h-8 rounded bg-primary-500"></div>
-									<div class="h-8 rounded bg-primary-700"></div>
-									<div class="h-8 rounded bg-primary-900"></div>
-								</div>
-							</div>
-						</div>
+  <!-- Featured Products Section -->
+  <section class="py-16 md:py-24">
+    <div class="container mx-auto px-4 max-w-6xl">
+      <div class="flex justify-between items-end mb-8">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-bold text-text">Featured Products</h2>
+          <p class="text-text-secondary mt-2">From our latest collection</p>
+        </div>
+        <a
+          href="/shop"
+          class="hidden md:inline-flex text-sm font-medium text-primary hover:text-primary-600 transition-colors duration-normal"
+        >
+          View All &rarr;
+        </a>
+      </div>
 
-						<!-- Secondary -->
-						<div class="space-y-3">
-							<h3 class="text-sm font-medium text-text-muted uppercase tracking-wider">Secondary (Cream)</h3>
-							<div class="space-y-2">
-								<div class="h-16 rounded-lg bg-secondary border border-border flex items-end p-3">
-									<span class="text-text text-sm font-medium">#FFF8DC</span>
-								</div>
-								<div class="grid grid-cols-5 gap-1">
-									<div class="h-8 rounded bg-secondary-100 border border-border-light"></div>
-									<div class="h-8 rounded bg-secondary-200 border border-border-light"></div>
-									<div class="h-8 rounded bg-secondary-300 border border-border-light"></div>
-									<div class="h-8 rounded bg-secondary-400 border border-border-light"></div>
-									<div class="h-8 rounded bg-secondary-500"></div>
-								</div>
-							</div>
-						</div>
+      <ProductGrid columns={4} gap="md">
+        {sampleProducts.map((product) => (
+          <ProductCard
+            id={product.id}
+            title={product.title}
+            price={product.price}
+            collection={product.collection}
+            soldOut={product.soldOut}
+          />
+        ))}
+      </ProductGrid>
 
-						<!-- Accent -->
-						<div class="space-y-3">
-							<h3 class="text-sm font-medium text-text-muted uppercase tracking-wider">Accent (Terracotta)</h3>
-							<div class="space-y-2">
-								<div class="h-16 rounded-lg bg-accent flex items-end p-3">
-									<span class="text-text-inverse text-sm font-medium">#E2725B</span>
-								</div>
-								<div class="grid grid-cols-5 gap-1">
-									<div class="h-8 rounded bg-accent-100"></div>
-									<div class="h-8 rounded bg-accent-300"></div>
-									<div class="h-8 rounded bg-accent-500"></div>
-									<div class="h-8 rounded bg-accent-600"></div>
-									<div class="h-8 rounded bg-accent-700"></div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
+      <div class="mt-8 text-center md:hidden">
+        <a
+          href="/shop"
+          class="inline-flex text-sm font-medium text-primary hover:text-primary-600 transition-colors duration-normal"
+        >
+          View All Products &rarr;
+        </a>
+      </div>
+    </div>
+  </section>
 
-				<!-- Typography -->
-				<div>
-					<h2 class="text-2xl font-semibold text-text mb-6">Typography</h2>
-					<div class="bg-background-secondary rounded-xl p-8 border border-border space-y-6">
-						<div class="space-y-4">
-							<p class="text-5xl font-bold text-text">The quick brown fox</p>
-							<p class="text-4xl font-semibold text-text">The quick brown fox</p>
-							<p class="text-3xl font-semibold text-text">The quick brown fox</p>
-							<p class="text-2xl font-medium text-text">The quick brown fox</p>
-							<p class="text-xl text-text">The quick brown fox jumps over the lazy dog</p>
-							<p class="text-lg text-text-secondary">The quick brown fox jumps over the lazy dog</p>
-							<p class="text-base text-text-secondary">The quick brown fox jumps over the lazy dog</p>
-							<p class="text-sm text-text-muted">The quick brown fox jumps over the lazy dog</p>
-							<p class="text-xs text-text-muted uppercase tracking-widest">The quick brown fox</p>
-						</div>
-						<p class="text-sm text-text-muted pt-4 border-t border-border">
-							Font: Inter | Weights: 300, 400, 500, 600, 700
-						</p>
-					</div>
-				</div>
+  <!-- About/Story Teaser -->
+  <section class="py-16 md:py-24 bg-background-secondary">
+    <div class="container mx-auto px-4 max-w-6xl">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div class="aspect-[4/3] rounded-lg bg-secondary flex items-center justify-center">
+          <span class="text-text-muted">Image</span>
+        </div>
+        <div>
+          <h2 class="text-2xl md:text-3xl font-bold text-text mb-4">Our Story</h2>
+          <p class="text-text-secondary mb-6">
+            Dear Margeaux began with a simple belief: that beautiful, well-crafted bags shouldn't be reserved for the few. Each piece is designed with intention and made with care, released in limited quantities to ensure quality never compromises.
+          </p>
+          <a
+            href="/about"
+            class="inline-flex text-sm font-medium text-primary hover:text-primary-600 transition-colors duration-normal"
+          >
+            Learn More &rarr;
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
 
-				<!-- Sample Components -->
-				<div>
-					<h2 class="text-2xl font-semibold text-text mb-6">Sample Components</h2>
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-						<!-- Buttons -->
-						<div class="bg-background-secondary rounded-xl p-6 border border-border">
-							<h3 class="text-sm font-medium text-text-muted uppercase tracking-wider mb-4">Buttons</h3>
-							<div class="flex flex-wrap gap-3">
-								<button class="px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal">
-									Primary
-								</button>
-								<button class="px-6 py-3 bg-accent text-text-inverse font-medium rounded-lg hover:bg-accent-600 transition-colors duration-normal">
-									Accent
-								</button>
-								<button class="px-6 py-3 bg-background-tertiary text-text font-medium rounded-lg border border-border hover:bg-border-light transition-colors duration-normal">
-									Secondary
-								</button>
-							</div>
-						</div>
-
-						<!-- Card -->
-						<div class="bg-background-secondary rounded-xl p-6 border border-border">
-							<h3 class="text-sm font-medium text-text-muted uppercase tracking-wider mb-4">Product Card</h3>
-							<div class="bg-background-tertiary rounded-lg p-4">
-								<div class="aspect-square bg-secondary rounded-lg mb-4 flex items-center justify-center">
-									<span class="text-text-muted">Image</span>
-								</div>
-								<h4 class="font-semibold text-text">Classic Leather Tote</h4>
-								<p class="text-sm text-text-secondary mt-1">Limited Edition</p>
-								<p class="text-lg font-semibold text-primary mt-2">$450</p>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Status Colors -->
-				<div>
-					<h2 class="text-2xl font-semibold text-text mb-6">Status Colors</h2>
-					<div class="flex flex-wrap gap-4">
-						<span class="px-4 py-2 bg-status-success/10 text-status-success rounded-full text-sm font-medium">
-							In Stock
-						</span>
-						<span class="px-4 py-2 bg-status-warning/10 text-status-warning rounded-full text-sm font-medium">
-							Low Stock
-						</span>
-						<span class="px-4 py-2 bg-status-error/10 text-status-error rounded-full text-sm font-medium">
-							Sold Out
-						</span>
-						<span class="px-4 py-2 bg-status-info/10 text-status-info rounded-full text-sm font-medium">
-							Coming Soon
-						</span>
-					</div>
-				</div>
-			</section>
-
-			<!-- Footer -->
-			<footer class="mt-16 pt-8 border-t border-border text-center">
-				<p class="text-text-muted text-sm">
-					Design System Preview - Task 2.2
-				</p>
-			</footer>
-		</main>
-	</body>
-</html>
+  <!-- Newsletter Section -->
+  <section class="py-16 md:py-24">
+    <div class="container mx-auto px-4 max-w-6xl text-center">
+      <h2 class="text-2xl md:text-3xl font-bold text-text mb-4">Stay in the Know</h2>
+      <p class="text-text-secondary max-w-xl mx-auto mb-8">
+        Subscribe to be the first to know about new drops, exclusive offers, and behind-the-scenes content.
+      </p>
+      <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+        <input
+          type="email"
+          name="email"
+          placeholder="Enter your email"
+          required
+          class="flex-1 px-4 py-3 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow duration-normal"
+        />
+        <button
+          type="submit"
+          class="px-8 py-3 bg-primary text-text-inverse text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+        >
+          Subscribe
+        </button>
+      </form>
+    </div>
+  </section>
+</BaseLayout>
