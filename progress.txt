@@ -26,3 +26,39 @@
 - Using pnpm@10.27.0
 - Using turbo@2.7.3
 - Node.js >= 20 required
+
+## 2026-01-09: Task 1.2 - Clone and configure Merchant.dev
+
+### Completed
+- Cloned Merchant.dev from https://github.com/ygwyg/merchant.git into /merchant
+- Installed dependencies with pnpm (hono, stripe, wrangler, vitest, etc.)
+- Configured wrangler.jsonc for dear-margeaux:
+  - Updated name to 'dear-margeaux-api'
+  - Set database_name to 'dear-margeaux-db'
+  - Set R2 bucket_name to 'dear-margeaux-images'
+  - Added comments for future Cloudflare resource IDs (Task 1.3)
+- Initialized local D1 database with `pnpm run db:init`
+- Verified dev server starts at localhost:8787
+- Removed merchant/.git to integrate into monorepo
+
+### Files Created/Modified
+- merchant/ directory (new: cloned from upstream)
+- merchant/wrangler.jsonc (modified: dear-margeaux configuration)
+- merchant/node_modules/ (new: installed dependencies)
+- merchant/.wrangler/ (new: local D1 database state)
+
+### Acceptance Criteria Verified
+- [x] Merchant cloned into /merchant directory
+- [x] wrangler.jsonc configured for dear_margeaux
+- [x] pnpm run dev starts local server at localhost:8787
+
+### Test Results
+- TypeScript typecheck: PASSED
+- ESLint: 0 errors, 143 warnings (upstream code, not our changes)
+- Vitest: 18 tests passed (2 test files)
+
+### Notes
+- Using hono@4.11.3 (HTTP framework)
+- Using stripe@17.7.0 (payments)
+- Using wrangler@4.58.0 (Cloudflare CLI)
+- Database ID and R2 bucket need to be updated after Cloudflare dashboard setup (Task 1.3)

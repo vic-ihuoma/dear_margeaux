@@ -13,3 +13,21 @@
 **Recommendations:**
 - Next task: PRD 1.2 - Clone and configure Merchant.dev
 - Consider adding ESLint/Prettier config at root level for consistency
+
+## [1.2]: Clone and configure Merchant.dev
+**Status:** PASSED
+**Tests Written:** N/A (using upstream tests)
+**Test Results:** 18 tests passed (2 test files: helpers.test.ts, discounts.test.ts)
+**Type Check:** PASSED (tsc --noEmit)
+**Lint:** PASSED (0 errors, 143 warnings from upstream code)
+**Findings:**
+- Successfully cloned Merchant.dev commerce backend
+- wrangler.jsonc configured with dear-margeaux naming
+- Local D1 database initialized with schema (37 commands)
+- Dev server starts successfully at localhost:8787
+- Merchant integrated into pnpm workspace (removed .git subdirectory)
+
+**Recommendations:**
+- Next task: PRD 1.3 - Create Cloudflare resources (manual steps in dashboard)
+- After 1.3, update wrangler.jsonc with actual database_id and bucket IDs
+- Consider upgrading stripe from 17.7.0 to 20.1.2 when stable
