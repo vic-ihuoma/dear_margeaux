@@ -2,7 +2,9 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductCard from '../components/ProductCard.astro';
 import ProductGrid from '../components/ProductGrid.astro';
+import type { ProductListItem } from '@dear-margeaux/api';
 
+// Sample products for development/fallback when API is unavailable
 const sampleProducts = [
   {
     id: '1',
@@ -33,6 +35,73 @@ const sampleProducts = [
     soldOut: false,
   },
 ];
+
+interface DisplayProduct {
+  id: string;
+  title: string;
+  price: number;
+  image?: string;
+  collection?: string;
+  soldOut: boolean;
+}
+
+// Fetch products from the Merchant API
+let products: DisplayProduct[] = sampleProducts;
+
+// Only try to fetch from API if environment variables are set
+const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
+const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY;
+
+if (apiUrl && apiKey) {
+  try {
+    const { MerchantClient } = await import('@dear-margeaux/api');
+    const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
+
+    const response = await client.getProducts({ status: 'active', limit: 8 });
+
+    if (response.items.length > 0) {
+      // For each product, fetch full details to get variants (for price and image)
+      const productDetails = await Promise.all(
+        response.items.slice(0, 4).map(async (item: ProductListItem) => {
+          try {
+            const product = await client.getProduct(item.id);
+            const firstVariant = product.variants[0];
+
+            return {
+              id: product.id,
+              title: product.title,
+              price: firstVariant?.price_cents ?? 0,
+              image: firstVariant?.image_url ?? undefined,
+              collection: undefined, // Will be populated when drops are implemented
+              soldOut: false, // Will be determined by inventory in future
+            };
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      const validProducts = productDetails.filter(
+        (p): p is NonNullable<typeof p> => p !== null
+      );
+      if (validProducts.length > 0) {
+        products = validProducts;
+      }
+    }
+  } catch (error) {
+    // Log error but continue with sample data
+    console.error('Failed to fetch products from API:', error);
+  }
+}
+
+// Current drop info (placeholder - will be dynamic with drops system)
+const currentDrop = {
+  name: 'Spring 2026',
+  tagline: 'Now Available',
+  isActive: true,
+  // Optional: countdown for scheduled drops
+  // startsAt: new Date('2026-03-01T10:00:00Z'),
+};
 ---
 
 <BaseLayout title="Boutique Bags">
@@ -62,6 +131,26 @@ const sampleProducts = [
     </div>
   </section>
 
+  <!-- Current Drop Banner -->
+  {currentDrop.isActive && (
+    <section class="bg-accent py-4">
+      <div class="container mx-auto px-4 max-w-6xl">
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center">
+          <span class="text-sm font-semibold text-white uppercase tracking-wider">
+            {currentDrop.tagline}
+          </span>
+          <span class="hidden sm:inline text-white/60">•</span>
+          <a
+            href="/shop"
+            class="text-sm font-medium text-white underline underline-offset-2 hover:text-white/90 transition-colors"
+          >
+            Shop {currentDrop.name} →
+          </a>
+        </div>
+      </div>
+    </section>
+  )}
+
   <!-- Featured Products Section -->
   <section class="py-16 md:py-24">
     <div class="container mx-auto px-4 max-w-6xl">
@@ -79,11 +168,12 @@ const sampleProducts = [
       </div>
 
       <ProductGrid columns={4} gap="md">
-        {sampleProducts.map((product) => (
+        {products.map((product) => (
           <ProductCard
             id={product.id}
             title={product.title}
             price={product.price}
+            image={product.image}
             collection={product.collection}
             soldOut={product.soldOut}
           />

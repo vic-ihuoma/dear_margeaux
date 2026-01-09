@@ -143,3 +143,32 @@
 - Add ESLint configuration to packages/api for code consistency
 - Consider adding retry logic for transient network failures
 - Consider adding request/response logging for debugging
+
+## [2.5]: Build homepage
+**Status:** PASSED
+**Tests Written:** N/A (Astro page, visual testing recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 0 hints in 10 files)
+**Build:** PASSED (1 page built in 1.84s)
+**Findings:**
+- Homepage now integrates with Merchant API to fetch real products
+- Graceful fallback to sample data when API is not configured
+- All PRD-specified sections implemented:
+  - Hero section with brand message and CTAs (Shop Now, View Drops)
+  - Current drop banner with terracotta background and shop link
+  - Featured products grid (4 columns, responsive)
+  - About/story teaser section
+  - Newsletter signup form
+- Environment configuration:
+  - .env.example created with PUBLIC_MERCHANT_API_URL and PUBLIC_MERCHANT_API_KEY
+  - Lib helper (merchant.ts) provides createMerchantClient and getMerchantClient
+- API integration fetches product details to get variant price/image
+- DisplayProduct interface maps API types to ProductCard props
+
+**Recommendations:**
+- Next task: PRD 2.6 - Build product listing page
+- Consider adding loading states for better UX when API is slow
+- Add error boundary for API failures in production
+- Current drop banner is static placeholder - will be dynamic in Task 4.x
+- Newsletter form needs backend integration in Task 5.x
+- Consider adding Storybook for component documentation

@@ -280,3 +280,55 @@
 - Image upload uses FormData for multipart/form-data
 - API methods documented with JSDoc comments
 - Ready for Task 2.5 (Build homepage with API integration)
+
+## 2026-01-09: Task 2.5 - Build homepage
+
+### Completed
+- Integrated @dear-margeaux/api package as workspace dependency in storefront
+- Created environment variable configuration:
+  - apps/storefront/.env.example with PUBLIC_MERCHANT_API_URL and PUBLIC_MERCHANT_API_KEY
+  - Documentation for environment setup
+- Created lib/merchant.ts helper module:
+  - createMerchantClient() function for creating configured client instances
+  - getMerchantClient() singleton accessor for server-side usage
+- Updated homepage (index.astro) with API integration:
+  - Fetches products from Merchant API when environment variables are set
+  - Falls back to sample data when API is unavailable (development mode)
+  - Maps Product API type to DisplayProduct interface for ProductCard
+  - Fetches full product details to get variant price and image
+- Added Current Drop Banner section:
+  - Terracotta accent color background
+  - Drop name and status display
+  - Link to shop the current drop
+  - Responsive layout (stacks on mobile)
+- Sections implemented per PRD:
+  - Hero with brand message and CTA
+  - Current drop banner with tagline
+  - Featured products grid (4 columns)
+  - About/story teaser
+  - Newsletter signup
+
+### Files Created/Modified
+- apps/storefront/package.json (modified: added @dear-margeaux/api dependency)
+- apps/storefront/.env.example (new)
+- apps/storefront/src/lib/merchant.ts (new)
+- apps/storefront/src/pages/index.astro (modified: API integration, drop banner)
+
+### Acceptance Criteria Verified
+- [x] Homepage renders all sections (hero, drop banner, products, story, newsletter)
+- [x] Products fetched from Merchant API (when configured)
+- [x] Responsive on mobile/tablet/desktop
+
+### Test Results
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 0 hints in 10 files)
+- Type Check (packages/api): PASSED
+- Type Check (packages/ui): PASSED
+- Build: PASSED (1 page built in 1.84s)
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- API integration gracefully falls back to sample data when env vars not set
+- Current drop is a static placeholder until Task 4.x (Drops System)
+- Newsletter form needs backend integration (Task 5.x)
+- Product inventory/sold-out status will be dynamic after inventory integration
+- Drop countdown feature ready for scheduled drops (commented placeholder)
