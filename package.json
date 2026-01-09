@@ -1,0 +1,25 @@
+{
+  "name": "dear_margeaux",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Boutique e-commerce website for selling bags through limited drops",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test"
+  },
+  "keywords": [
+    "e-commerce",
+    "astro",
+    "cloudflare"
+  ],
+  "license": "ISC",
+  "packageManager": "pnpm@10.27.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "turbo": "^2.7.3"
+  }
+}

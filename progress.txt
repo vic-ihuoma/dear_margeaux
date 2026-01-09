@@ -1,0 +1,28 @@
+## 2026-01-09: Task 1.1 - Initialize monorepo with pnpm
+
+### Completed
+- Initialized pnpm project with `pnpm init`
+- Updated package.json with proper project metadata and scripts
+- Created pnpm-workspace.yaml with apps/*, packages/*, merchant
+- Created turbo.json with build/dev/lint/test pipelines
+- Added turbo as workspace dev dependency
+- Created .gitignore for Node.js/Cloudflare project
+- Created apps/ and packages/ directories
+
+### Files Created/Modified
+- package.json (modified: added scripts, metadata, turbo dependency)
+- pnpm-workspace.yaml (new)
+- turbo.json (new)
+- .gitignore (new)
+- apps/ directory (new)
+- packages/ directory (new)
+
+### Acceptance Criteria Verified
+- [x] pnpm workspace configured
+- [x] turbo.json exists with build/dev/lint pipelines
+- [x] pnpm install runs without errors
+
+### Notes
+- Using pnpm@10.27.0
+- Using turbo@2.7.3
+- Node.js >= 20 required
