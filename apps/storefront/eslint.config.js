@@ -14,6 +14,15 @@ export default tseslint.config(
     ignores: ['node_modules', 'dist', '.astro', 'public/sw.js'],
   },
   {
+    // Config files (Node.js environment)
+    files: ['*.config.mjs', '*.config.js', '*.config.ts'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
     files: ['**/*.ts', '**/*.tsx'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',

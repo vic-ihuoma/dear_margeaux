@@ -3,6 +3,7 @@ import tailwind from '@astrojs/tailwind';
 import react from '@astrojs/react';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import sentry from '@sentry/astro';
 
 // https://astro.build/config
 export default defineConfig({
@@ -47,6 +48,25 @@ export default defineConfig({
         return item;
       },
     }),
+    // Sentry error monitoring (only enabled when DSN is configured)
+    ...(process.env.PUBLIC_SENTRY_DSN
+      ? [
+          sentry({
+            dsn: process.env.PUBLIC_SENTRY_DSN,
+            environment: process.env.PUBLIC_SENTRY_ENVIRONMENT || 'development',
+            sourceMapsUploadOptions: {
+              project: 'dear-margeaux-storefront',
+              org: process.env.SENTRY_ORG,
+              authToken: process.env.SENTRY_AUTH_TOKEN,
+            },
+            // Performance monitoring
+            tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+            // Session Replay
+            replaysSessionSampleRate: 0.01,
+            replaysOnErrorSampleRate: 1.0,
+          }),
+        ]
+      : []),
   ],
   // Performance: Enable built-in image optimization
   image: {

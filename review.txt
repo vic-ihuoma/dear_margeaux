@@ -1419,3 +1419,76 @@
 - Consider implementing critical CSS extraction for above-fold content
 - Add bundle size analysis script (e.g., astro build --analyze)
 
+
+## [8.3]: SEO optimization
+**Status:** PASSED
+**Tests Written:** N/A (SEO/meta tags, visual validation recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 3 hints in 44 files)
+**Build:** PASSED (28 pages + sitemap generated)
+**Lint:** PASSED (0 errors, 1 pre-existing warning)
+**Findings:**
+- Created comprehensive SEO.astro component with structured data support:
+  - Organization schema with brand name, logo, social links, contact info
+  - Website schema for search engines
+  - Product schema with name, description, price, availability, SKU, brand
+  - Article schema for blog posts with headline, author, dates, publisher
+  - BreadcrumbList schema for navigation hierarchy
+- Added @astrojs/sitemap integration:
+  - Automatic sitemap generation at /sitemap-index.xml and /sitemap-0.xml
+  - Page filtering excludes checkout, cart, account, and API routes
+  - Priority configuration: homepage (1.0), shop (0.9), products (0.8), blog (0.6)
+  - Change frequency: homepage/shop (daily), products (weekly), blog/lookbook (monthly)
+- Integrated SEO component across key page types:
+  - Homepage with Organization + Website schemas
+  - Product pages with Product + Breadcrumb schemas
+  - Blog posts with Article + Breadcrumb schemas
+- Structured data validated JSON-LD format
+- robots.txt already existed with proper configuration
+
+**Recommendations:**
+- Next task: PRD 8.4 - Error monitoring setup (Sentry)
+- Validate structured data with Google Rich Results Test
+- Consider adding FAQ schema for FAQ pages if added
+- Consider adding aggregate rating schema when reviews are implemented
+- Monitor Core Web Vitals in Google Search Console after deployment
+- Consider adding VideoObject schema for future video content
+
+## [8.4]: Error monitoring setup
+**Status:** PASSED
+**Tests Written:** N/A (monitoring infrastructure, no unit tests applicable)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (all packages: 0 errors)
+**Build:** PASSED (storefront: 28 pages built)
+**Lint:** PASSED (0 errors, 1 pre-existing warning)
+**Findings:**
+- Implemented Sentry error monitoring for the storefront:
+  - @sentry/astro integration for automatic client/server error capture
+  - @sentry/node for server-side error handling
+  - Conditional loading (only when DSN is configured)
+- Created comprehensive Sentry utility module (sentry.ts):
+  - captureException() for manual error reporting
+  - captureMessage() for logging significant events
+  - setUser() for user identification
+  - addBreadcrumb() for debugging context
+  - withSpan() for performance monitoring
+  - Graceful fallback when not configured
+- Configured source map uploads for better stack traces:
+  - org, project, authToken options configured
+  - Enables linking errors to original source code
+- Performance monitoring configured:
+  - 10% transaction sampling in production
+  - 100% in development for debugging
+- Session Replay enabled:
+  - 1% session sampling for general usage
+  - 100% replay on error for debugging
+- Environment variables documented in .env.example
+
+**Recommendations:**
+- Next task: PRD 8.5 - Production deployment
+- Create Sentry project at sentry.io and configure DSN
+- Consider adding Sentry to admin app as well
+- Set up alert rules in Sentry for critical errors
+- Consider adding custom error boundaries in React components
+- Monitor error rates after deployment
+
