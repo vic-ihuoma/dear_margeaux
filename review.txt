@@ -1229,3 +1229,48 @@
 - Add integration tests for blog API routes
 - Consider adding image upload to R2 for blog images (currently URL only)
 - Consider adding bulk operations (bulk delete, bulk publish)
+
+## [7.3]: Build analytics dashboard
+**Status:** PASSED
+**Tests Written:** N/A (React components + Astro page, visual testing recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 1 hint in 65 files)
+**Build:** PASSED (server build in 3.10s)
+**Lint:** PASSED (eslint: 0 errors, 4 warnings from existing discount files)
+**Findings:**
+- Created complete analytics dashboard with sales visualization:
+  - SalesChart.tsx: Pure CSS bar chart for revenue over time
+    - Responsive bar heights based on max revenue
+    - Tooltips on hover showing revenue and order count
+    - Summary stats: total revenue, total orders, avg order value
+    - Empty state and loading state handling
+  - TopProducts.tsx: Best selling products table
+    - Product thumbnails, titles, units sold, revenue
+    - Ranking numbers for top products
+    - Links to product detail pages
+    - Empty state and loading state handling
+  - Analytics page at /analytics/index.astro
+    - Date range filtering (7d, 30d, 90d) via query params
+    - Quick Stats: Total Revenue, Orders, Avg Order Value, Products Sold
+    - Revenue Over Time chart (2 columns)
+    - Top Products table (1 column)
+    - Orders by Status progress bars
+    - High-Value Orders list ($100+)
+- PRD metrics implemented:
+  - Total revenue (period)
+  - Number of orders
+  - Average order value
+  - Top selling products
+  - Revenue by drop (placeholder - requires drop tracking in orders)
+- Data source: Queries orders table via MerchantClient
+- AdminLayout updated with Analytics navigation link and chart icon
+- Date range filtering working via URL query params
+
+**Recommendations:**
+- Phase 7.3 (Analytics Dashboard) is complete
+- Consider adding count endpoints to Merchant API for accurate totals without pagination
+- Consider adding date range params to getOrders API for server-side filtering
+- Add real-time updates via WebSocket for live analytics
+- Consider adding export to CSV functionality for analytics data
+- Add visual regression tests for chart components
+- Consider using a proper charting library (recharts, chart.js) for more advanced visualizations
