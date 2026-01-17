@@ -608,3 +608,54 @@
 - Add low stock threshold configuration in admin settings
 - Consider adding reorder point alerts and notifications
 - Add export to CSV functionality for inventory reports
+
+## [3.6]: Build orders management
+**Status:** PASSED
+**Tests Written:** N/A (React components + API routes, integration testing recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 1 hint in 35 files)
+**Build:** PASSED (server build in 2.34s)
+**Lint:** PASSED (eslint: 0 errors)
+**Findings:**
+- Created complete orders management interface:
+  - Orders list page with search and status filter dropdown
+  - Responsive data table with order number, customer, status, date, total columns
+  - Status badges with distinct colors for all 7 order states
+  - Date formatting with time display
+  - Links to order detail pages
+- Order detail page includes:
+  - Breadcrumb navigation
+  - Order header with number and status badge
+  - Order items section with product thumbnails, SKUs, quantities, prices
+  - Order summary with subtotal, discount, shipping, tax, total
+  - Customer info sidebar with email and customer ID
+  - Payment info sidebar with status and Stripe references
+  - Tracking info section when tracking number exists
+  - Fulfillment section for updating status
+  - Actions section with refund button
+- OrderStatusUpdater.tsx provides fulfillment management:
+  - Radio button selection for order status
+  - Status descriptions for clarity
+  - Forward-only status transitions (can't go back)
+  - Tracking number and URL inputs for shipped/delivered
+  - Form validation with error messages
+  - Success feedback with page refresh
+  - Accessible ARIA attributes for radiogroup
+- Order API routes:
+  - PATCH /api/orders/[id] - Update status and tracking info
+  - POST /api/orders/[id]/refund - Process full or partial refunds
+  - Input validation on all endpoints
+- PRD order management features implemented:
+  - Orders list with pagination (up to 100 orders)
+  - Can view complete order details
+  - Can update fulfillment status to processing, shipped, delivered
+  - Can process refunds via Stripe API
+
+**Recommendations:**
+- Phase 3 (Custom Admin CMS) is complete - proceed to Phase 4 (Drops System)
+- Consider adding order export to CSV functionality
+- Add email notifications when order status changes
+- Consider adding partial refund amount input in refund dialog
+- Add order notes/comments feature for internal tracking
+- Consider adding customer order history link from order detail
+- Add integration tests for order API routes

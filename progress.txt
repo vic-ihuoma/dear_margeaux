@@ -946,3 +946,69 @@
 - API route validates reason against enum to prevent invalid values
 - Inventory items are displayed with color-coded available counts for quick visual scanning
 - Ready for Task 3.6 (Build orders management)
+
+## 2026-01-17: Task 3.6 - Build orders management
+
+### Completed
+- Created orders list page at apps/admin/src/pages/orders/index.astro:
+  - Page header with title and description
+  - Search input for filtering by order number or customer email
+  - Status filter dropdown (All, Pending, Paid, Processing, Shipped, Delivered, Refunded, Canceled)
+  - Responsive data table with columns: Order, Customer, Status, Date, Total, Actions
+  - Status badges with color-coded styling for each order state
+  - Date formatting with month, day, year, and time
+  - Empty state with helpful messaging
+  - Error state for API failures
+  - Order count display
+- Created order detail page at apps/admin/src/pages/orders/[id].astro:
+  - Breadcrumb navigation (Orders / #Order Number)
+  - Page header with order number and status badge
+  - Order items list with product images, titles, SKUs, quantities, and line totals
+  - Order summary: subtotal, discount (if any), shipping, tax, total
+  - Customer info section with email and customer ID
+  - Payment info section with payment status and Stripe payment intent ID
+  - Tracking information section (displayed when tracking number exists)
+  - Fulfillment section with OrderStatusUpdater component
+  - Refund button with confirmation dialog
+- Created OrderStatusUpdater.tsx React component:
+  - Radio button status selection with descriptions
+  - Visual feedback for selected status option
+  - Status transition flow (only forward movement allowed)
+  - Tracking number and URL inputs (shown for shipped/delivered statuses)
+  - Form validation and error handling
+  - Success feedback with auto-page-refresh
+  - Accessible labels with proper ARIA attributes
+- Created API routes for order management:
+  - PATCH /api/orders/[id] - Update order status/tracking info
+  - POST /api/orders/[id]/refund - Process order refund
+- Updated eslint.config.js with jsx-a11y/label-has-associated-control configuration for nested inputs
+
+### Files Created/Modified
+- apps/admin/src/pages/orders/index.astro (new)
+- apps/admin/src/pages/orders/[id].astro (new)
+- apps/admin/src/components/OrderStatusUpdater.tsx (new)
+- apps/admin/src/pages/api/orders/[id].ts (new)
+- apps/admin/src/pages/api/orders/[id]/refund.ts (new)
+- apps/admin/eslint.config.js (modified: added jsx-a11y rule config)
+
+### Acceptance Criteria Verified
+- [x] Orders list with pagination (displaying up to 100 orders)
+- [x] Can view order details (complete order info displayed)
+- [x] Can update fulfillment status (via OrderStatusUpdater)
+- [x] Can process refunds via Stripe (via refund API route)
+
+### Test Results
+- Type Check (apps/admin): PASSED (0 errors, 0 warnings, 1 hint in 35 files)
+- Type Check (apps/storefront): PASSED (0 errors, 0 warnings, 1 hint)
+- Build (apps/admin): PASSED (server build in 2.34s)
+- Lint (apps/admin): PASSED (0 errors)
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- Orders list supports filtering by status and searching by order number or email
+- Order statuses have distinct color-coded badges (pending: yellow, paid: blue, processing: purple, shipped: indigo, delivered: green, refunded: orange, canceled: red)
+- Status transitions only allow forward movement (can't go back to previous status)
+- Tracking fields only appear when status is shipped or delivered
+- Refund button confirms action before processing
+- API routes validate all inputs before calling Merchant API
+- Phase 3 (Custom Admin CMS) is now complete

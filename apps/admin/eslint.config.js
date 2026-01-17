@@ -53,6 +53,13 @@ export default tseslint.config(
       ...jsxA11y.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off', // Not needed with React 17+
       'react/prop-types': 'off', // Using TypeScript
+      'jsx-a11y/label-has-associated-control': [
+        'error',
+        {
+          controlComponents: ['input'],
+          depth: 3,
+        },
+      ],
     },
   },
   {
