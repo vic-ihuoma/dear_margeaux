@@ -215,7 +215,7 @@ ordersRoutes.patch('/:orderId', async (c) => {
             tracking_number: tracking_number || updated.tracking_number,
             tracking_url: tracking_url || updated.tracking_url,
           }
-        ).catch((err) => console.error('Shipping update email failed:', err))
+        ).catch((err: unknown) => console.error('Shipping update email failed:', err))
       );
     }
   }

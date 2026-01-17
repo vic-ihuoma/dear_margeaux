@@ -370,7 +370,7 @@ webhooks.post('/stripe', async (c) => {
               image_url: null, // Cart items don't have images
               variant_title: null,
             }))
-          ).catch((err) => console.error('Order confirmation email failed:', err))
+          ).catch((err: unknown) => console.error('Order confirmation email failed:', err))
         );
       }
     }

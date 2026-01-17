@@ -382,7 +382,7 @@ dropsRoutes.patch('/:id', adminOnly, async (c) => {
           description: drop.description,
         },
         featuredImageUrl
-      ).catch((err) => console.error('Drop launch emails failed:', err))
+      ).catch((err: unknown) => console.error('Drop launch emails failed:', err))
     );
   }
 

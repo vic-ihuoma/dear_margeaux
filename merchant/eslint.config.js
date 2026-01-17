@@ -9,6 +9,13 @@ export default tseslint.config(
     ignores: ['node_modules', 'dist', '.wrangler', 'admin/dist', 'site'],
   },
   {
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
     files: ['**/*.ts', '**/*.tsx'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
