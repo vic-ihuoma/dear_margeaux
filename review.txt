@@ -1061,3 +1061,31 @@
 - Add integration tests with mocked SES client
 - Consider adding email rate limiting per store
 - Add monitoring/alerting for email send failures
+
+## [6.1]: Set up Astro Content Collections for blog
+**Status:** PASSED
+**Tests Written:** N/A (Content collections, no unit tests applicable)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 1 hint in 26 files)
+**Build:** PASSED (pages built successfully)
+**Lint:** PASSED (0 errors after fixing pre-existing issues)
+**Findings:**
+- Successfully configured Astro Content Collections for blog and lookbook content:
+  - Blog schema: title, description, date, author, tags[], image?, draft
+  - Lookbook schema: title, drop, date, images[], draft
+  - Both using Zod validation for type safety
+- MDX integration added via @astrojs/mdx package
+- Created sample content to verify collections work:
+  - welcome-to-dear-margeaux.mdx blog post with full frontmatter
+  - spring-2026.mdx lookbook with image array and drop reference
+- Content directories properly structured at src/content/blog/ and src/content/lookbook/
+- Type generation working (TypeScript types auto-generated from schemas)
+- Fixed 3 pre-existing lint errors in WaitlistForm.tsx (unescaped apostrophes)
+
+**Recommendations:**
+- Next task: PRD 6.2 - Build blog listing and detail pages
+- Consider adding image optimization for blog/lookbook images
+- Consider adding RSS feed generation for blog
+- Add image validation to lookbook schema (could use z.string().url())
+- Consider adding publish date vs updated date for blog posts
+- Add SEO component integration when building blog pages

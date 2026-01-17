@@ -1619,3 +1619,52 @@
 - Cron job activates drops whose start_date has passed
 - Email failures are logged but don't affect order/checkout flow
 - Ready for Phase 5.7 or other remaining tasks
+
+## 2026-01-17: Task 6.1 - Set up Astro Content Collections for blog
+
+### Completed
+- Added @astrojs/mdx integration to storefront for MDX content support
+- Created content configuration file at apps/storefront/src/content/config.ts:
+  - Blog collection schema with: title, description, date, author, tags, image (optional), draft
+  - Lookbook collection schema with: title, drop (reference), date, images array, draft
+  - Both schemas use Zod for validation
+- Created content directories:
+  - apps/storefront/src/content/blog/ for blog MDX files
+  - apps/storefront/src/content/lookbook/ for lookbook MDX files
+- Created sample blog post (welcome-to-dear-margeaux.mdx):
+  - Demonstrates all frontmatter fields
+  - MDX content with markdown formatting
+  - Sets date, author, tags
+- Created sample lookbook (spring-2026.mdx):
+  - References spring-2026 drop
+  - Includes image array
+  - Full MDX content with headers and paragraphs
+- Updated astro.config.mjs to include mdx() integration
+- Fixed pre-existing lint errors in WaitlistForm.tsx (unescaped apostrophes)
+
+### Files Created/Modified
+- apps/storefront/package.json (modified: added @astrojs/mdx dependency)
+- apps/storefront/astro.config.mjs (modified: added mdx integration)
+- apps/storefront/src/content/config.ts (new)
+- apps/storefront/src/content/blog/welcome-to-dear-margeaux.mdx (new)
+- apps/storefront/src/content/lookbook/spring-2026.mdx (new)
+- apps/storefront/src/components/WaitlistForm.tsx (modified: fixed lint errors)
+
+### Acceptance Criteria Verified
+- [x] Content collections configured (config.ts with blog and lookbook schemas)
+- [x] Sample posts render (MDX content compiles successfully)
+- [x] TypeScript types generated (astro check passes)
+
+### Test Results
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 1 hint in 26 files)
+- Build: PASSED (pages built successfully)
+- Lint: PASSED (0 errors)
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- Using Astro Content Collections with Zod schemas for type-safe content
+- MDX support enabled via @astrojs/mdx integration
+- Sample content demonstrates all schema fields
+- Content directories follow Astro conventions (src/content/[collection-name]/)
+- Lookbook references drops by slug string (not foreign key)
+- Ready for Task 6.2 (Build blog listing and detail pages)

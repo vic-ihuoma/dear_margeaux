@@ -94,10 +94,10 @@ export default function WaitlistForm({
           </svg>
         </div>
         <h3 className="text-xl font-semibold text-text mb-2">
-          You're on the list!
+          You&apos;re on the list!
         </h3>
         <p className="text-text-secondary">
-          We'll notify you when {dropName} launches.
+          We&apos;ll notify you when {dropName} launches.
         </p>
       </div>
     );
@@ -175,7 +175,7 @@ export default function WaitlistForm({
         )}
       </div>
       <p className="text-xs text-text-muted text-center sm:text-left">
-        We'll only email you when this drop launches. No spam, ever.
+        We&apos;ll only email you when this drop launches. No spam, ever.
       </p>
     </form>
   );
