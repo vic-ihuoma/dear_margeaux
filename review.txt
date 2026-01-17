@@ -812,3 +812,40 @@
 - Consider adding drop-specific meta tags for SEO
 - Add E2E tests for drop browsing flows with Playwright
 - Consider lazy loading products on shop pages for large catalogs
+
+## [5.1]: Create waitlist database schema
+**Status:** PASSED
+**Tests Written:** N/A (database migration, no unit tests applicable)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (tsc --noEmit)
+**Lint:** N/A (SQL migration files)
+**Findings:**
+- Created migration 008-add-waitlist.sql with waitlist_entries table:
+  - All columns from PRD implemented: id, email, drop_id, subscribed_at, notified_at, unsubscribed
+  - Added store_id for multi-tenant support (consistent with other tables)
+  - Added created_at, updated_at for audit trail
+  - Foreign key constraint on drop_id references drops(id)
+  - drop_id is NOT NULL (every waitlist entry must be for a specific drop)
+- Unique constraint UNIQUE(store_id, email, drop_id):
+  - Enforces email uniqueness per drop per store
+  - Same email can subscribe to multiple drops
+  - Prevents duplicate subscriptions
+- Indexes created for efficient queries:
+  - idx_waitlist_store_id: filter by store
+  - idx_waitlist_drop_id: filter by drop (for sending notifications to all subscribers)
+  - idx_waitlist_email: lookup by email (for subscription management)
+  - idx_waitlist_notified: find unnotified subscribers for batch sending
+  - idx_waitlist_unsubscribed: filter out unsubscribed entries
+- Migration executed successfully on local D1 (6 commands)
+- All constraints verified with test inserts
+
+**Recommendations:**
+- Next task: PRD 5.2 - Build waitlist API endpoints
+- Apply migration to remote D1 database before production deployment
+- Consider adding optional newsletter subscription (null drop_id) in future
+- Consider adding subscription source tracking (which page they signed up from)
+- Consider adding countdown timer for scheduled drops
+- Add "Subscribe for drop notifications" feature
+- Consider adding drop-specific meta tags for SEO
+- Add E2E tests for drop browsing flows with Playwright
+- Consider lazy loading products on shop pages for large catalogs

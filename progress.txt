@@ -1277,3 +1277,44 @@
 - Filter chips show "(Past)" suffix for ended drops with reduced opacity
 - Homepage dynamically links to active drop shop page
 - Phase 4 (Drops System) is now complete
+
+## 2026-01-17: Task 5.1 - Create waitlist database schema
+
+### Completed
+- Created D1 migration 008-add-waitlist.sql for waitlist_entries table:
+  - id (TEXT PRIMARY KEY)
+  - store_id (TEXT NOT NULL) - links waitlist entry to store
+  - email (TEXT NOT NULL) - subscriber's email address
+  - drop_id (TEXT NOT NULL REFERENCES drops(id)) - the drop they're subscribing to
+  - subscribed_at (TEXT NOT NULL) - when they subscribed
+  - notified_at (TEXT) - NULL until notification sent
+  - unsubscribed (INTEGER DEFAULT 0) - soft unsubscribe flag
+  - created_at, updated_at (TEXT NOT NULL) - timestamps
+  - UNIQUE(store_id, email, drop_id) - enforces email uniqueness per drop per store
+- Created indexes for efficient queries:
+  - idx_waitlist_store_id - filter by store
+  - idx_waitlist_drop_id - filter by drop (for sending notifications)
+  - idx_waitlist_email - filter by email (for managing subscriptions)
+  - idx_waitlist_notified - find unnotified subscribers
+  - idx_waitlist_unsubscribed - filter out unsubscribed entries
+- Applied migration to local D1 database successfully (6 commands)
+- Verified schema and constraints work correctly
+
+### Files Created
+- merchant/migrations/008-add-waitlist.sql (new)
+
+### Acceptance Criteria Verified
+- [x] Table created with all required columns
+- [x] Email uniqueness per drop enforced (UNIQUE constraint on store_id, email, drop_id)
+- [x] Can query by drop (idx_waitlist_drop_id index)
+
+### Test Results
+- Type Check (merchant): PASSED (tsc --noEmit)
+- Merchant Tests: 18 tests passed (2 test files)
+- Local D1 Migration: SUCCESS (waitlist_entries table created with all indexes)
+
+### Notes
+- drop_id is NOT NULL - every waitlist entry must be for a specific drop
+- Foreign key constraint on drop_id references drops(id)
+- Migration needs to be applied to remote D1 database before production use
+- Ready for Task 5.2 (Build waitlist API endpoints)
