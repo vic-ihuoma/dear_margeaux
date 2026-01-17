@@ -1112,3 +1112,103 @@
 - Delete is blocked if any products are linked to the drop
 - GET /v1/drops/:slug/products includes both drop info and paginated products
 - Ready for Task 4.3 (Build drops admin UI)
+
+## 2026-01-17: Task 4.3 - Build drops admin UI
+
+### Completed
+- Created drops list page at apps/admin/src/pages/drops/index.astro:
+  - Page header with "Schedule Drop" CTA button
+  - Search input for filtering by name or slug
+  - Status filter dropdown (Draft, Scheduled, Active, Ended)
+  - Responsive data table with columns: Drop, Status, Start Date, End Date, Actions
+  - Status badges with color-coded styling (draft: yellow, scheduled: blue, active: green, ended: gray)
+  - Date formatting with month, day, year
+  - Empty state with helpful messaging
+  - Error state for API failures
+  - Drop count display
+- Created new drop page at apps/admin/src/pages/drops/new.astro:
+  - Breadcrumb navigation (Drops / New Drop)
+  - Page header with description
+  - CreateDrop React component wrapper
+  - Redirects to drop edit page after creation
+- Created edit drop page at apps/admin/src/pages/drops/[id].astro:
+  - Breadcrumb navigation (Drops / Drop Name)
+  - Page header with drop name and status badge
+  - Back to Drops button
+  - DropEditor React component for full editing
+  - Error state for drop not found
+- Created DropForm.tsx React component:
+  - Name input with required validation (max 200 chars)
+  - Slug input with alphanumeric validation (auto-generated from name)
+  - Description textarea with character counter (max 2000)
+  - Status select dropdown (Draft/Scheduled/Active/Ended)
+  - Start date and end date inputs with date pickers
+  - Validation: end date must be after start date
+  - Form validation with field-level error messages
+  - Loading/submitting state handling
+- Created CreateDrop.tsx React component:
+  - Wrapper for DropForm for new drop creation
+  - Calls API to create drop
+  - Handles success/error states
+  - Redirects after successful creation
+- Created ProductAssigner.tsx React component:
+  - Displays products assigned to drop with remove button
+  - Search input for filtering available products
+  - Add button for assigning products to drop
+  - Product cards with image, title, price, variant count
+  - Loading state for product fetch
+  - Empty state for no products
+- Created DropEditor.tsx React component:
+  - Drop details editing with DropForm
+  - Products section with ProductAssigner
+  - Danger zone with drop deletion
+  - Delete confirmation flow
+- Created API routes for drops CRUD:
+  - GET /api/drops - List drops with filters
+  - POST /api/drops - Create new drop
+  - GET /api/drops/[id] - Get single drop
+  - PATCH /api/drops/[id] - Update drop
+  - DELETE /api/drops/[id] - Delete drop
+  - PUT /api/drops/[id]/products - Assign products to drop
+  - GET /api/products - Added GET endpoint for product list
+- Updated Merchant API drops routes:
+  - Added PUT /v1/drops/:id/products endpoint for assigning products
+  - Modified DELETE to auto-unassign products before deleting
+- Added assignDropProducts method to MerchantClient
+
+### Files Created/Modified
+- apps/admin/src/pages/drops/index.astro (new)
+- apps/admin/src/pages/drops/new.astro (new)
+- apps/admin/src/pages/drops/[id].astro (new)
+- apps/admin/src/components/DropForm.tsx (new)
+- apps/admin/src/components/CreateDrop.tsx (new)
+- apps/admin/src/components/ProductAssigner.tsx (new)
+- apps/admin/src/components/DropEditor.tsx (new)
+- apps/admin/src/pages/api/drops/index.ts (new)
+- apps/admin/src/pages/api/drops/[id].ts (new)
+- apps/admin/src/pages/api/drops/[id]/products.ts (new)
+- apps/admin/src/pages/api/products/index.ts (modified: added GET endpoint)
+- merchant/src/routes/drops.ts (modified: added PUT /products, modified DELETE)
+- packages/api/src/merchant-client.ts (modified: added assignDropProducts method)
+
+### Acceptance Criteria Verified
+- [x] Can create/edit/delete drops
+- [x] Can schedule drops with start/end dates
+- [x] Can assign products to drops
+- [x] Status updates correctly (draft/scheduled/active/ended)
+
+### Test Results
+- Type Check (apps/admin): PASSED (0 errors, 0 warnings, 1 hint)
+- Type Check (apps/storefront): PASSED (0 errors, 0 warnings, 1 hint)
+- Type Check (packages/api): PASSED
+- Type Check (merchant): PASSED
+- Build (apps/admin): PASSED (server build in 2.40s)
+- Lint (apps/admin): PASSED (0 errors)
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- DropForm auto-generates slug from name for new drops
+- ProductAssigner fetches all products and filters client-side
+- Drop deletion now auto-unassigns products (changed from blocking behavior)
+- Status transitions are manual - cron job for auto-updating scheduled/ended not implemented yet
+- Ready for Task 4.4 (Update storefront for drops)

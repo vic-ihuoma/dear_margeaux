@@ -360,6 +360,62 @@ dropsRoutes.patch('/:id', adminOnly, async (c) => {
   return c.json(formatDrop(drop));
 });
 
+// PUT /v1/drops/:id/products - Assign products to drop (admin only)
+dropsRoutes.put('/:id/products', adminOnly, async (c) => {
+  const id = c.req.param('id');
+  const body = await c.req.json();
+  const { productIds } = body;
+
+  if (!Array.isArray(productIds)) {
+    throw ApiError.invalidRequest('productIds must be an array');
+  }
+
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+
+  // Verify drop exists
+  const [drop] = await db.query<any>(`SELECT * FROM drops WHERE id = ? AND store_id = ?`, [
+    id,
+    store.id,
+  ]);
+
+  if (!drop) throw ApiError.notFound('Drop not found');
+
+  // First, unassign all products currently assigned to this drop
+  await db.run(`UPDATE products SET drop_id = NULL WHERE drop_id = ? AND store_id = ?`, [
+    id,
+    store.id,
+  ]);
+
+  // Now assign the new products to this drop
+  if (productIds.length > 0) {
+    // Verify all products exist and belong to this store
+    const placeholders = productIds.map(() => '?').join(',');
+    const products = await db.query<any>(
+      `SELECT id FROM products WHERE id IN (${placeholders}) AND store_id = ?`,
+      [...productIds, store.id]
+    );
+
+    const validProductIds = new Set(products.map((p) => p.id));
+    const invalidIds = productIds.filter((id) => !validProductIds.has(id));
+
+    if (invalidIds.length > 0) {
+      throw ApiError.invalidRequest(`Products not found: ${invalidIds.join(', ')}`);
+    }
+
+    // Update each product's drop_id
+    for (const productId of productIds) {
+      await db.run(`UPDATE products SET drop_id = ? WHERE id = ? AND store_id = ?`, [
+        id,
+        productId,
+        store.id,
+      ]);
+    }
+  }
+
+  return c.json({ success: true, assigned_count: productIds.length });
+});
+
 // DELETE /v1/drops/:id - Delete drop (admin only)
 dropsRoutes.delete('/:id', adminOnly, async (c) => {
   const id = c.req.param('id');
@@ -373,16 +429,11 @@ dropsRoutes.delete('/:id', adminOnly, async (c) => {
 
   if (!drop) throw ApiError.notFound('Drop not found');
 
-  // Check if any products are linked to this drop
-  const [linkedProduct] = await db.query<any>(`SELECT id FROM products WHERE drop_id = ? LIMIT 1`, [
+  // Unassign all products from this drop before deleting
+  await db.run(`UPDATE products SET drop_id = NULL WHERE drop_id = ? AND store_id = ?`, [
     id,
+    store.id,
   ]);
-
-  if (linkedProduct) {
-    throw ApiError.conflict(
-      'Cannot delete drop with linked products. Remove products from drop first.'
-    );
-  }
 
   await db.run(`DELETE FROM drops WHERE id = ? AND store_id = ?`, [id, store.id]);
 

@@ -727,4 +727,19 @@ export class MerchantClient {
   async deleteDrop(id: string): Promise<void> {
     return this.request<void>('DELETE', `/drops/${id}`);
   }
+
+  /**
+   * Assign products to a drop (admin only)
+   * This replaces all existing product assignments for the drop
+   */
+  async assignDropProducts(
+    dropId: string,
+    productIds: string[]
+  ): Promise<{ success: boolean; assigned_count: number }> {
+    return this.request<{ success: boolean; assigned_count: number }>(
+      'PUT',
+      `/drops/${dropId}/products`,
+      { body: { productIds } }
+    );
+  }
 }

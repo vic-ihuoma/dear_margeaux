@@ -27,29 +27,27 @@ export const GET: APIRoute = async ({ url }) => {
 
   try {
     const limit = parseInt(url.searchParams.get('limit') || '100', 10);
-    const status = url.searchParams.get('status') as 'active' | 'draft' | null;
+    const status = url.searchParams.get('status') as
+      | 'draft'
+      | 'scheduled'
+      | 'active'
+      | 'ended'
+      | null;
 
-    const response = await client.getProducts({
+    const response = await client.getDrops({
       limit,
       ...(status && { status }),
     });
 
-    // Fetch full product details for each product to get variants
-    const products = await Promise.all(
-      response.items.map(async (item) => {
-        return client.getProduct(item.id);
-      })
-    );
-
-    return new Response(JSON.stringify({ items: products }), {
+    return new Response(JSON.stringify(response), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Failed to fetch products:', error);
+    console.error('Failed to fetch drops:', error);
 
     const message =
-      error instanceof Error ? error.message : 'Failed to fetch products';
+      error instanceof Error ? error.message : 'Failed to fetch drops';
 
     return new Response(JSON.stringify({ error: message }), {
       status: 400,
@@ -71,21 +69,24 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const data = await request.json();
 
-    const product = await client.createProduct({
-      title: data.title,
+    const drop = await client.createDrop({
+      name: data.name,
+      slug: data.slug,
       description: data.description,
       status: data.status,
+      start_date: data.start_date,
+      end_date: data.end_date,
     });
 
-    return new Response(JSON.stringify(product), {
+    return new Response(JSON.stringify(drop), {
       status: 201,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Failed to create product:', error);
+    console.error('Failed to create drop:', error);
 
     const message =
-      error instanceof Error ? error.message : 'Failed to create product';
+      error instanceof Error ? error.message : 'Failed to create drop';
 
     return new Response(JSON.stringify({ error: message }), {
       status: 400,

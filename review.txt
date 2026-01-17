@@ -719,3 +719,50 @@
 - Consider adding unit tests for drops routes with mocked D1
 - Consider adding drop cover image field in future iteration
 - Cron job for auto-updating drop status (scheduled → active → ended) exists but needs to be updated for drops
+
+## [4.3]: Build drops admin UI
+**Status:** PASSED
+**Tests Written:** N/A (React components + API routes, integration testing recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 1 hint)
+**Build:** PASSED (server build in 2.40s)
+**Lint:** PASSED (eslint: 0 errors)
+**Findings:**
+- Created complete drops admin UI with list, create, and edit pages:
+  - /drops - List all drops with search, status filter, and data table
+  - /drops/new - Create new drop with DropForm
+  - /drops/[id] - Edit drop with DropEditor including product assignment
+- Drops list page features:
+  - Status badges (draft: yellow, scheduled: blue, active: green, ended: gray)
+  - Date formatting for start/end dates
+  - Search by name or slug
+  - Status filtering dropdown
+- DropForm.tsx component:
+  - Auto-generates slug from name (for new drops)
+  - Validates end date is after start date
+  - Status dropdown with all 4 states
+  - Character counters for text fields
+- ProductAssigner.tsx component:
+  - Dual-list interface for assigned and available products
+  - Product cards with image, title, price, variant count
+  - Add/remove buttons with loading states
+  - Search filter for available products
+- DropEditor.tsx combines form and product assignment:
+  - Drop details section with DropForm
+  - Products section with ProductAssigner
+  - Danger zone with delete button
+- API routes added:
+  - GET/POST /api/drops - List and create
+  - GET/PATCH/DELETE /api/drops/[id] - Single drop CRUD
+  - PUT /api/drops/[id]/products - Assign products to drop
+- Merchant API enhancements:
+  - Added PUT /v1/drops/:id/products endpoint for bulk product assignment
+  - Changed DELETE to auto-unassign products (no longer blocks)
+  - Added assignDropProducts method to MerchantClient
+
+**Recommendations:**
+- Next task: PRD 4.4 - Update storefront for drops
+- Consider adding drag-and-drop reordering for products in drop
+- Add drop cover image support in future iteration
+- Implement cron job for auto-updating drop status based on dates
+- Consider adding pagination to ProductAssigner for stores with many products
