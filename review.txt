@@ -659,3 +659,30 @@
 - Add order notes/comments feature for internal tracking
 - Consider adding customer order history link from order detail
 - Add integration tests for order API routes
+
+## [4.1]: Extend D1 schema for drops
+**Status:** PASSED
+**Tests Written:** N/A (database migration, no unit tests applicable)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (tsc --noEmit)
+**Lint:** N/A (SQL migration files)
+**Findings:**
+- Created migration 006-add-drops.sql with drops table matching PRD schema:
+  - id, store_id, name, description, slug, start_date, end_date, status, timestamps
+  - Status CHECK constraint for draft/scheduled/active/ended
+  - Unique constraint on (store_id, slug) for URL-friendly slugs
+  - Indexes on store_id, status, and start_date for query performance
+- Created migration 007-add-product-drop-link.sql:
+  - Adds drop_id column to products table as nullable foreign key
+  - Index on products.drop_id for efficient filtering by drop
+- Both migrations executed successfully on local D1 database:
+  - Migration 006: 4 commands executed
+  - Migration 007: 2 commands executed
+- Schema verified via PRAGMA table_info and sqlite_master queries
+
+**Recommendations:**
+- Next task: PRD 4.2 - Add drops API routes (CRUD endpoints)
+- Apply migrations to remote D1 database before production deployment
+- Consider adding cascade delete option for drop deletion (or soft delete)
+- Add computed column or trigger for auto-updating drop status based on dates (cron job)
+- Future consideration: add drop cover image support

@@ -1012,3 +1012,44 @@
 - Refund button confirms action before processing
 - API routes validate all inputs before calling Merchant API
 - Phase 3 (Custom Admin CMS) is now complete
+
+## 2026-01-17: Task 4.1 - Extend D1 schema for drops
+
+### Completed
+- Created D1 migration 006-add-drops.sql for the drops table:
+  - id (TEXT PRIMARY KEY)
+  - store_id (TEXT NOT NULL) - links drop to store
+  - name (TEXT NOT NULL) - display name for the drop
+  - description (TEXT) - optional description
+  - slug (TEXT NOT NULL) - URL-friendly identifier, unique per store
+  - start_date (TEXT) - ISO date for scheduled start
+  - end_date (TEXT) - ISO date for scheduled end
+  - status (TEXT) - draft, scheduled, active, ended (with CHECK constraint)
+  - created_at, updated_at (TEXT NOT NULL) - timestamps
+  - Indexes on store_id, status, start_date for efficient queries
+- Created D1 migration 007-add-product-drop-link.sql:
+  - Added drop_id column to products table (nullable foreign key)
+  - Index on products.drop_id for filtering products by drop
+- Applied migrations to local D1 database successfully
+- Verified schema structure matches PRD specification
+
+### Files Created
+- merchant/migrations/006-add-drops.sql (new)
+- merchant/migrations/007-add-product-drop-link.sql (new)
+
+### Acceptance Criteria Verified
+- [x] Migrations run successfully (4 + 2 commands executed)
+- [x] Drops table created with all required columns
+- [x] Products can be linked to drops (drop_id column added)
+
+### Test Results
+- Type Check (merchant): PASSED (tsc --noEmit)
+- Merchant Tests: 18 tests passed (2 test files)
+- Local D1 Migration: SUCCESS (drops table and product-drop link created)
+
+### Notes
+- Drops table uses UNIQUE(store_id, slug) for unique slugs per store
+- Status CHECK constraint ensures valid status values
+- drop_id is nullable - products without drop_id are evergreen products
+- Migrations need to be applied to remote D1 database before production use
+- Ready for Task 4.2 (Add drops API routes)
