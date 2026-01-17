@@ -783,3 +783,107 @@
 - Active Drop stat is placeholder until Phase 4 (Drops System) is implemented
 - Components use client:load for hydration
 - Ready for Task 3.4 (Build products management)
+
+## 2026-01-17: Task 3.4 - Build products management
+
+### Completed
+- Created products list page at apps/admin/src/pages/products/index.astro:
+  - Page header with "Add Product" CTA button
+  - Search input for filtering by name or SKU
+  - Status filter dropdown (All, Active, Draft)
+  - Responsive data table with columns: Product, Status, Price, Variants, Actions
+  - Product thumbnails with placeholder for products without images
+  - Status badges (Active: green, Draft: gray)
+  - Product count display
+  - Empty state with helpful messaging
+  - Error state for API failures
+- Created new product page at apps/admin/src/pages/products/new.astro:
+  - Breadcrumb navigation (Products / New Product)
+  - Page header with description
+  - CreateProduct React component wrapper
+  - Redirects to product detail after creation
+- Created edit product page at apps/admin/src/pages/products/[id].astro:
+  - Breadcrumb navigation (Products / Product Title)
+  - Page header with product title and status badge
+  - Back to Products button
+  - ProductEditor React component for full CRUD
+  - Error state for product not found
+- Created ProductForm.tsx React component:
+  - Title input with required validation (max 200 chars)
+  - Description textarea with character counter (max 5000)
+  - Status select dropdown (Draft/Active)
+  - Form validation with error messages
+  - Loading/submitting state handling
+  - Cancel and Submit buttons with proper disabled states
+- Created VariantForm.tsx React component:
+  - SKU input with alphanumeric validation (disabled when editing)
+  - Title input with required validation
+  - Price input with dollar prefix and cents conversion
+  - Image URL input with URL validation and preview
+  - Form validation with field-level error messages
+- Created ImageUploader.tsx React component:
+  - Drag-and-drop file upload zone
+  - Click to browse files
+  - Keyboard accessibility (Enter/Space to activate)
+  - File type validation (JPEG, PNG, GIF, WebP)
+  - File size validation (max 5MB)
+  - Upload progress indicator
+  - Image preview after upload
+  - Remove/replace uploaded image
+- Created CreateProduct.tsx React component:
+  - Wrapper for ProductForm for new product creation
+  - Calls API to create product
+  - Handles success/error states
+  - Redirects after successful creation
+- Created ProductEditor.tsx React component:
+  - Product details editing with ProductForm
+  - Variants list with add/edit/delete functionality
+  - Modal dialog for variant add/edit
+  - Image upload integration per variant
+  - Danger zone with product deletion
+  - Delete confirmation flow
+  - Functional state updates to avoid stale closures
+- Created API routes for product CRUD:
+  - POST /api/products - Create new product
+  - PATCH /api/products/[id] - Update product details
+  - DELETE /api/products/[id] - Delete product
+  - POST /api/products/[id]/variants - Add variant to product
+  - PATCH /api/products/[id]/variants/[variantId] - Update variant
+  - DELETE /api/products/[id]/variants/[variantId] - Delete variant
+  - POST /api/images/upload - Upload image to R2
+
+### Files Created/Modified
+- apps/admin/src/pages/products/index.astro (new)
+- apps/admin/src/pages/products/new.astro (new)
+- apps/admin/src/pages/products/[id].astro (new)
+- apps/admin/src/components/ProductForm.tsx (new)
+- apps/admin/src/components/VariantForm.tsx (new)
+- apps/admin/src/components/ImageUploader.tsx (new)
+- apps/admin/src/components/CreateProduct.tsx (new)
+- apps/admin/src/components/ProductEditor.tsx (new)
+- apps/admin/src/pages/api/products/index.ts (new)
+- apps/admin/src/pages/api/products/[id].ts (new)
+- apps/admin/src/pages/api/products/[id]/variants.ts (new)
+- apps/admin/src/pages/api/products/[id]/variants/[variantId].ts (new)
+- apps/admin/src/pages/api/images/upload.ts (new)
+
+### Acceptance Criteria Verified
+- [x] CRUD operations work for products (create, read, update, delete via API routes)
+- [x] Variant management functional (add/edit/delete with modal UI)
+- [x] Image upload to R2 works (ImageUploader component with drag-drop)
+
+### Test Results
+- Type Check (apps/admin): PASSED (0 errors, 0 warnings, 1 hint)
+- Type Check (apps/storefront): PASSED (0 errors, 0 warnings, 1 hint)
+- Build (apps/admin): PASSED (server build in 2.27s)
+- Lint (apps/admin): PASSED (0 errors)
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- ProductForm and VariantForm use custom submit data interfaces to avoid TypeScript union type issues
+- SKU field is disabled when editing existing variants (cannot be changed after creation)
+- ImageUploader validates file type and size before upload
+- ProductEditor uses functional state updates (setProduct(prev => ...)) to avoid stale closure issues
+- All API routes use getAdminMerchantClient() for authenticated requests
+- Forms include proper validation with field-level error messages
+- Ready for Task 3.5 (Build orders management)

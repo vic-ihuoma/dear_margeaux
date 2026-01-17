@@ -519,3 +519,52 @@
 - Consider adding caching for dashboard stats (30s-1min freshness)
 - Add visual regression tests for StatCard and ActivityFeed components
 - Consider adding WebSocket for real-time activity updates in future iteration
+
+## [3.4]: Build products management
+**Status:** PASSED
+**Tests Written:** N/A (React components + API routes, integration testing recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 1 hint)
+**Build:** PASSED (server build in 2.27s)
+**Lint:** PASSED (eslint: 0 errors)
+**Findings:**
+- Created complete products management CRUD interface:
+  - Products list page with search, status filter, and responsive data table
+  - New product page with ProductForm component
+  - Edit product page with full ProductEditor component
+- ProductForm.tsx handles product title, description, status:
+  - Field validation with error messages
+  - Character counters for text fields
+  - Custom ProductFormSubmitData interface avoids TypeScript union type issues
+- VariantForm.tsx handles variant SKU, title, price, image:
+  - SKU validation (alphanumeric only)
+  - Price conversion from dollars to cents
+  - Image URL validation with preview
+  - SKU field disabled when editing (cannot change after creation)
+- ImageUploader.tsx provides drag-and-drop file upload:
+  - File type validation (JPEG, PNG, GIF, WebP)
+  - File size validation (max 5MB)
+  - Upload progress indicator
+  - Keyboard accessibility (Enter/Space to activate)
+  - Uses Merchant API uploadImage endpoint
+- ProductEditor.tsx provides full product editing:
+  - ProductForm for product details
+  - Variants list with add/edit/delete
+  - Modal dialog for variant editing
+  - Danger zone for product deletion
+  - Functional state updates to avoid stale closures
+- API routes provide server-side CRUD:
+  - /api/products (POST)
+  - /api/products/[id] (PATCH, DELETE)
+  - /api/products/[id]/variants (POST)
+  - /api/products/[id]/variants/[variantId] (PATCH, DELETE)
+  - /api/images/upload (POST)
+
+**Recommendations:**
+- Next task: PRD 3.5 - Build orders management interface
+- Consider adding bulk operations (bulk delete, bulk status change)
+- Add pagination for products list when catalog grows large
+- Consider adding product duplication feature
+- Add integration tests for API routes with mock Merchant client
+- Consider adding undo functionality for delete operations
+- Add visual regression tests for product forms and editor
