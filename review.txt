@@ -479,3 +479,43 @@
 - Add rate limiting to login endpoint to prevent brute force
 - Consider adding 2FA option for enhanced security
 - Add E2E tests for authentication flows with Playwright
+
+## [3.3]: Build admin dashboard
+**Status:** PASSED
+**Tests Written:** N/A (React components, visual testing recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 1 hint in 14 files)
+**Build:** PASSED (server build in 2.18s)
+**Lint:** PASSED (eslint: 0 errors)
+**Findings:**
+- Created complete admin dashboard with real API data integration:
+  - StatCard.tsx: Reusable stat display component with icon types, loading states
+  - ActivityFeed.tsx: Recent activity list with order/product/inventory types
+  - merchant.ts: Admin API client helper with formatPrice utility
+- Dashboard displays four Quick Stats per PRD specification:
+  - Total Products: Fetched count from /v1/products endpoint
+  - Total Orders: Fetched count from /v1/orders endpoint
+  - Revenue (30d): Calculated sum of paid/processing/shipped/delivered orders
+  - Active Drop: Placeholder until Phase 4 Drops System implemented
+- Recent Activity section shows interleaved order and product updates:
+  - Last 5 orders with status badges, amounts, and relative timestamps
+  - Last 3 products with status (active/draft)
+  - Sorted by timestamp (most recent first)
+  - Clickable links to order/product detail pages
+  - Empty state when no activity
+- Quick Actions section preserved from Task 3.1:
+  - Add New Product link
+  - Schedule a Drop link
+  - View Orders link
+- API integration gracefully handles missing environment variables:
+  - Dashboard shows zeros when API not configured
+  - No errors thrown during build without env vars
+  - Console error logged on API failures
+
+**Recommendations:**
+- Next task: PRD 3.4 - Build products management CRUD interface
+- Consider adding loading skeletons for initial data fetch
+- Add count endpoints to Merchant API for accurate totals without pagination
+- Consider adding caching for dashboard stats (30s-1min freshness)
+- Add visual regression tests for StatCard and ActivityFeed components
+- Consider adding WebSocket for real-time activity updates in future iteration

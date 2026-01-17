@@ -721,3 +721,65 @@
 - In development without Cloudflare bindings, middleware allows access with null user
 - Migration needs to be applied to remote D1 database before production use
 - Ready for Task 3.3 (Build admin dashboard with real data)
+
+## 2026-01-17: Task 3.3 - Build admin dashboard
+
+### Completed
+- Created StatCard.tsx React component at apps/admin/src/components/StatCard.tsx:
+  - Accepts iconType prop (products, orders, revenue, calendar) to select built-in SVG icons
+  - Customizable icon colors and background via props
+  - Optional href prop makes the card clickable/linkable
+  - Loading state with skeleton animation
+  - Subtitle support for additional context
+  - Clean, minimal design matching PRD Iheanyi-style inspiration
+- Created ActivityFeed.tsx React component at apps/admin/src/components/ActivityFeed.tsx:
+  - Displays recent orders and product updates with timestamps
+  - Three activity types: order, product, inventory
+  - Relative time formatting (e.g., "5m ago", "2h ago", "3d ago")
+  - Order status badges with color-coded styling
+  - Order amount display
+  - Clickable activity items linking to detail pages
+  - Loading skeleton state
+  - Empty state with helpful messaging
+- Created merchant.ts helper module at apps/admin/src/lib/merchant.ts:
+  - createAdminMerchantClient() factory function
+  - getAdminMerchantClient() singleton accessor
+  - formatPrice() utility for currency formatting
+  - Graceful handling when env vars not configured
+- Updated dashboard index page (apps/admin/src/pages/index.astro):
+  - Integrated with Merchant API to fetch real data
+  - Quick Stats display:
+    - Total Products count (from API)
+    - Total Orders count (from API)
+    - Revenue (30d) calculated from paid/processing/shipped/delivered orders
+    - Active Drop (placeholder for Phase 4)
+  - Recent Activity feed showing last 10 orders and products
+  - Stats cards link to their respective management pages
+  - Graceful fallback to zeros when API is unavailable
+
+### Files Created/Modified
+- apps/admin/src/components/StatCard.tsx (new)
+- apps/admin/src/components/ActivityFeed.tsx (new)
+- apps/admin/src/lib/merchant.ts (new)
+- apps/admin/src/pages/index.astro (modified: API integration, components)
+
+### Acceptance Criteria Verified
+- [x] Dashboard loads with real stats from API (when configured)
+- [x] Clean, minimal design matching inspiration (Iheanyi-style)
+- [x] Responsive layout (1-4 column grid)
+
+### Test Results
+- Type Check (apps/admin): PASSED (0 errors, 0 warnings, 1 hint)
+- Type Check (apps/storefront): PASSED (0 errors, 0 warnings, 1 hint)
+- Build (apps/admin): PASSED (server build in 2.18s)
+- Lint (apps/admin): PASSED
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- StatCard uses iconType enum instead of ReactNode icon prop for better Astro compatibility
+- ActivityFeed calculates relative timestamps client-side
+- Dashboard fetches up to 100 products/orders for counts - production may need count endpoints
+- 30-day revenue calculated from orders with status: paid, processing, shipped, delivered
+- Active Drop stat is placeholder until Phase 4 (Drops System) is implemented
+- Components use client:load for hydration
+- Ready for Task 3.4 (Build products management)
