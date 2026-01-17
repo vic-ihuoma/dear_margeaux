@@ -38,6 +38,7 @@ echo "  - Type checking (mypy/pyright or tsc)"
 echo "  - Unit tests (pytest or jest/vitest)"
 echo "  - Linting (ruff/flake8 or eslint)"
 echo "  - Pre-commit validation"
+echo "  - Browser/UI testing (agent-browser skill)"
 echo "=========================================="
 echo ""
 
@@ -46,7 +47,7 @@ for ((i=1; i<=$1; i++)); do
   echo "Starting fresh Claude context..."
   echo ""
 
-  result=$(docker sandbox run claude -- --model opus --permission-mode bypassPermissions --dangerously-skip-permissions -p "@prd.json @progress.txt @review.txt
+  result=$(docker sandbox run claude --model opus --permission-mode bypassPermissions --dangerously-skip-permissions -p "@prd.json @progress.txt @review.txt
 
 ========================================
 QUALITY EXPECTATIONS
@@ -91,6 +92,7 @@ TASK WORKFLOW
    - Integration points between modules
    - Unknown unknowns and spike work
    - Standard features and implementation
+   - UI/UX features requiring browser testing
    - Polish, cleanup, and quick wins
    - Choose a task where 'passes' is false
 
@@ -117,6 +119,10 @@ TASK WORKFLOW
    - Tests: pnpm test (or npm test)
    - Lint: pnpm lint (or npm run lint)
 
+   FOR UI/BROWSER TESTING (when implementing frontend features):
+   - Start the dev server: pnpm dev
+   - Use the /agent-browser skill for browser automation and testing
+
    DO NOT COMMIT IF ANY FEEDBACK LOOP FAILS.
    Fix issues first, then re-run all checks.
 
@@ -134,9 +140,20 @@ TASK WORKFLOW
    Keep entries concise.
 
 8. COMMIT YOUR CHANGES:
-   - Use descriptive commit message
-   - Reference the PRD item ID
+   - Stage all changes: git add -A
+   - Use descriptive commit message referencing the PRD item ID
    - Only commit if ALL feedback loops pass
+   - IMPORTANT: Do NOT add Co-Authored-By tags to commits
+
+   IF GIT COMMIT FAILS DUE TO PRE-COMMIT HOOKS:
+   - Read the error output carefully
+   - The pre-commit hooks run: lint-staged, typecheck, prettier
+   - Fix ALL issues reported by the hooks
+   - Stage the fixes: git add -A
+   - Re-run git commit with the same message
+   - REPEAT until the commit succeeds
+   - Do NOT give up or skip - the commit MUST succeed before moving on
+   - Log any persistent issues to progress.txt for debugging
 
 9. APPEND REVIEW TO review.txt:
    ## [TASK-ID]: Task Description
@@ -145,6 +162,8 @@ TASK WORKFLOW
    **Test Results:** (pytest/jest output summary)
    **Type Check:** PASSED/FAILED
    **Lint:** PASSED/FAILED
+   **Browser Tests:** PASSED/SKIPPED/FAILED (for UI features)
+   **UI Verification:** (screenshots taken, flows tested)
    **Findings:** Your detailed notes
    **Recommendations:** Any suggestions for future iterations
 
@@ -164,6 +183,15 @@ If ALL tasks in prd.json have 'passes': true, output <promise>COMPLETE</promise>
   echo "$result"
   echo ""
 
+  # Push changes committed by Claude inside Docker
+  echo "--- Pushing changes from iteration $i ---"
+  if git push origin HEAD; then
+    echo "Successfully pushed changes"
+  else
+    echo "Warning: Push failed (will retry next iteration)"
+  fi
+  echo ""
+
   if [[ "$result" == *"<promise>COMPLETE</promise>"* ]]; then
     echo "=========================================="
     echo "All PRD tasks completed after $i iterations!"
@@ -176,6 +204,10 @@ If ALL tasks in prd.json have 'passes': true, output <promise>COMPLETE</promise>
   echo "--- Iteration $i complete, starting next fresh context ---"
   echo ""
 done
+
+# Final push for any remaining commits
+echo "--- Final push ---"
+git push origin HEAD || echo "Warning: Final push failed"
 
 echo "=========================================="
 echo "Reached maximum iterations ($1)."

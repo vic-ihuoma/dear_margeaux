@@ -382,3 +382,60 @@
 - Will transition to actual Drops API when Phase 4 (Drops System) is implemented
 - Empty state design ready for when no products match filter
 - Ready for Task 2.7 (Build product detail page)
+
+## 2026-01-17: Task 2.7 - Build product detail page
+
+### Completed
+- Created product detail page at apps/storefront/src/pages/product/[id].astro:
+  - Breadcrumb navigation (Home / Shop / Collection / Product)
+  - Product image gallery with placeholder when no images
+  - Sold out overlay badge when all variants unavailable
+  - Thumbnail gallery for variant images (when available)
+  - Product title, description, and collection badge
+  - Product details list with shipping info
+  - Related products section (placeholder for future)
+- Created VariantSelector.tsx React component:
+  - Button-style variant selection
+  - Visual feedback for selected state
+  - Disabled state for sold-out variants with strikethrough
+  - Accessible ARIA attributes
+- Created AddToCart.tsx React component:
+  - Price display with formatted currency
+  - Quantity selector with +/- buttons (1-10 range)
+  - Add to cart button with loading and success states
+  - Disabled state when sold out or no variant selected
+  - SKU display for selected variant
+- Created sample-products.ts data file:
+  - Centralized sample product data for development
+  - Includes 8 sample products with variants
+  - TypeScript interfaces for type safety
+- Static generation with getStaticPaths for all product pages
+
+### Files Created/Modified
+- apps/storefront/src/pages/product/[id].astro (new)
+- apps/storefront/src/components/VariantSelector.tsx (new)
+- apps/storefront/src/components/AddToCart.tsx (new)
+- apps/storefront/src/data/sample-products.ts (new)
+
+### Acceptance Criteria Verified
+- [x] Product details display correctly (title, description, price, images)
+- [x] Variant selection works (VariantSelector with multi-option support)
+- [x] Add to cart updates cart state (placeholder, ready for Task 2.8)
+- [x] Sold out variants disabled (visual strikethrough indicator)
+
+### Test Results
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 0 hints in 16 files)
+- Build: PASSED (13 pages built in 2.41s)
+  - 8 product pages (/product/1 through /product/8)
+  - 3 shop collection pages
+  - 1 shop index page
+  - 1 homepage
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- React components use client:load for hydration
+- VariantSelector and AddToCart are "islands" that hydrate independently
+- Cart functionality is placeholder - will be connected in Task 2.8
+- Variant/cart state sync via custom events ready for cart store integration
+- Product images are placeholders - API integration handles real images
+- Ready for Task 2.8 (Implement shopping cart)

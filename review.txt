@@ -206,3 +206,52 @@
 - Consider adding sorting options (price, newest, etc.)
 - Will need to update getStaticPaths when Drops API is implemented (Phase 4)
 - Consider extracting common DisplayProduct interface to shared location
+
+## [2.7]: Build product detail page
+**Status:** PASSED
+**Tests Written:** N/A (Astro page + React components, visual testing recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 0 hints in 16 files)
+**Build:** PASSED (13 pages built in 2.41s)
+**Lint:** N/A (no linter configured for storefront yet)
+**Findings:**
+- Created complete product detail page at /product/[id].astro:
+  - Breadcrumb navigation (Home / Shop / Collection / Product)
+  - Two-column layout with image gallery on left, product info on right
+  - Main product image with placeholder for products without images
+  - Sold out overlay when all variants are unavailable
+  - Thumbnail gallery for multi-variant products
+  - Collection badge linking to collection page
+  - Product title and description
+  - Product details list with Italian leather, brass hardware, etc.
+  - Shipping & returns info box
+  - Related products placeholder section
+- Created VariantSelector.tsx React component:
+  - Renders only when product has multiple variants
+  - Button-style selection with primary color for selected
+  - Disabled state with strikethrough for sold-out variants
+  - Accessible with ARIA pressed/disabled attributes
+  - Syncs with useEffect when selectedVariantId prop changes
+- Created AddToCart.tsx React component:
+  - Formatted price display with Intl.NumberFormat
+  - Quantity selector with +/- buttons (range 1-10)
+  - Loading spinner animation during add to cart
+  - Success checkmark feedback after adding
+  - Disabled state when sold out or no variant selected
+  - SKU display for selected variant
+- Created sample-products.ts data file:
+  - Centralized sample product data with 8 products
+  - TypeScript interfaces (SampleProduct, SampleVariant)
+  - Used by product page and getStaticPaths
+- Static generation:
+  - getStaticPaths generates pages for all sample products
+  - Can combine with API products when configured
+  - 8 product pages built successfully
+
+**Recommendations:**
+- Next task: PRD 2.8 - Implement shopping cart
+- Connect VariantSelector and AddToCart state via nanostores (Task 2.8)
+- Add product image gallery with lightbox for zoom
+- Consider adding "Share" button for social sharing
+- Add structured data (JSON-LD) for SEO
+- Consider lazy loading for related products section

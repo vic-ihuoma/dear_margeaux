@@ -1,0 +1,459 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import VariantSelector from '../../components/VariantSelector';
+import AddToCart from '../../components/AddToCart';
+import { sampleProducts } from '../../data/sample-products';
+import type { Variant } from '@dear-margeaux/api';
+
+interface DisplayVariant {
+  id: string;
+  sku: string;
+  title: string;
+  price_cents: number;
+  image_url: string | null;
+  available: boolean;
+}
+
+interface DisplayProduct {
+  id: string;
+  title: string;
+  description: string;
+  collection?: string;
+  variants: DisplayVariant[];
+}
+
+export async function getStaticPaths() {
+  // Get sample product IDs for static paths
+  const samplePaths = sampleProducts.map((product) => ({
+    params: { id: product.id },
+  }));
+
+  // Try to fetch product IDs from API
+  const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
+  const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY;
+
+  if (apiUrl && apiKey) {
+    try {
+      const { MerchantClient } = await import('@dear-margeaux/api');
+      const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
+      const response = await client.getProducts({
+        status: 'active',
+        limit: 100,
+      });
+
+      const apiPaths = response.items.map((product) => ({
+        params: { id: product.id },
+      }));
+
+      // Combine sample and API paths, deduplicate by id
+      const allIds = new Set<string>();
+      const combinedPaths: Array<{ params: { id: string } }> = [];
+
+      for (const path of [...apiPaths, ...samplePaths]) {
+        if (!allIds.has(path.params.id)) {
+          allIds.add(path.params.id);
+          combinedPaths.push(path);
+        }
+      }
+
+      return combinedPaths;
+    } catch (error) {
+      console.error('Failed to fetch products for static paths:', error);
+    }
+  }
+
+  return samplePaths;
+}
+
+const { id } = Astro.params;
+
+// Fetch product data
+let product: DisplayProduct | null = null;
+
+// Check sample products first
+const sampleProduct = sampleProducts.find((p) => p.id === id);
+if (sampleProduct) {
+  product = sampleProduct;
+}
+
+// Try to fetch from API (overrides sample data if found)
+const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
+const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY;
+
+if (apiUrl && apiKey && id) {
+  try {
+    const { MerchantClient } = await import('@dear-margeaux/api');
+    const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
+
+    const apiProduct = await client.getProduct(id);
+
+    // Transform API product to DisplayProduct
+    product = {
+      id: apiProduct.id,
+      title: apiProduct.title,
+      description: apiProduct.description || 'No description available.',
+      collection: undefined, // Will be populated when drops are implemented
+      variants: apiProduct.variants.map((v: Variant) => ({
+        id: v.id,
+        sku: v.sku,
+        title: v.title,
+        price_cents: v.price_cents,
+        image_url: v.image_url,
+        available: true, // Will be determined by inventory check in future
+      })),
+    };
+  } catch (error) {
+    console.error('Failed to fetch product from API:', error);
+    // Fall back to sample product if available
+  }
+}
+
+// If no product found, redirect to shop
+if (!product) {
+  return Astro.redirect('/shop');
+}
+
+// Get the first variant as default
+const defaultVariant = product.variants[0];
+const hasMultipleVariants = product.variants.length > 1;
+
+// Check if all variants are sold out
+const allSoldOut = product.variants.every((v) => !v.available);
+---
+
+<BaseLayout
+  title={product.title}
+  description={product.description?.slice(0, 160)}
+>
+  <!-- Breadcrumb -->
+  <nav class="bg-background-tertiary py-3 border-b border-border">
+    <div class="container mx-auto px-4 max-w-6xl">
+      <ol class="flex items-center gap-2 text-sm">
+        <li>
+          <a
+            href="/"
+            class="text-text-secondary hover:text-primary transition-colors duration-normal"
+          >
+            Home
+          </a>
+        </li>
+        <li class="text-text-muted">/</li>
+        <li>
+          <a
+            href="/shop"
+            class="text-text-secondary hover:text-primary transition-colors duration-normal"
+          >
+            Shop
+          </a>
+        </li>
+        {
+          product.collection && (
+            <>
+              <li class="text-text-muted">/</li>
+              <li>
+                <a
+                  href={`/shop/${product.collection.toLowerCase().replace(/\s+/g, '-')}`}
+                  class="text-text-secondary hover:text-primary transition-colors duration-normal"
+                >
+                  {product.collection}
+                </a>
+              </li>
+            </>
+          )
+        }
+        <li class="text-text-muted">/</li>
+        <li class="text-text font-medium truncate max-w-[200px]">
+          {product.title}
+        </li>
+      </ol>
+    </div>
+  </nav>
+
+  <!-- Product Section -->
+  <section class="py-8 md:py-12">
+    <div class="container mx-auto px-4 max-w-6xl">
+      <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
+        <!-- Product Images -->
+        <div class="space-y-4">
+          <!-- Main Image -->
+          <div
+            class="relative aspect-square overflow-hidden rounded-xl bg-secondary"
+          >
+            {
+              defaultVariant?.image_url ? (
+                <img
+                  id="main-product-image"
+                  src={defaultVariant.image_url}
+                  alt={product.title}
+                  class="h-full w-full object-cover object-center"
+                />
+              ) : (
+                <div class="flex h-full w-full items-center justify-center">
+                  <svg
+                    class="h-24 w-24 text-text-muted"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="1"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+                    />
+                  </svg>
+                </div>
+              )
+            }
+
+            {/* Sold Out Overlay */}
+            {
+              allSoldOut && (
+                <div class="absolute inset-0 flex items-center justify-center bg-background-inverse/60">
+                  <span class="px-6 py-3 bg-background text-text text-lg font-semibold rounded-full">
+                    Sold Out
+                  </span>
+                </div>
+              )
+            }
+          </div>
+
+          {/* Thumbnail Gallery (if variants have different images) */}
+          {
+            product.variants.length > 1 &&
+              product.variants.some((v) => v.image_url) && (
+                <div class="flex gap-2 overflow-x-auto pb-2">
+                  {product.variants.map((variant) => (
+                    <button
+                      type="button"
+                      class="shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 border-transparent hover:border-primary transition-colors duration-normal focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                      data-variant-id={variant.id}
+                      aria-label={`View ${variant.title} variant`}
+                    >
+                      {variant.image_url ? (
+                        <img
+                          src={variant.image_url}
+                          alt={`${product.title} - ${variant.title}`}
+                          class="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div class="h-full w-full bg-secondary flex items-center justify-center">
+                          <span class="text-xs text-text-muted">
+                            {variant.title}
+                          </span>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )
+          }
+        </div>
+
+        <!-- Product Info -->
+        <div class="space-y-6">
+          {/* Collection Badge */}
+          {
+            product.collection && (
+              <a
+                href={`/shop/${product.collection.toLowerCase().replace(/\s+/g, '-')}`}
+                class="inline-block text-xs font-medium uppercase tracking-wider text-accent hover:text-accent-600 transition-colors duration-normal"
+              >
+                {product.collection}
+              </a>
+            )
+          }
+
+          <h1 class="text-3xl md:text-4xl font-bold text-text">
+            {product.title}
+          </h1>
+
+          <div class="prose prose-sm text-text-secondary max-w-none">
+            <p>{product.description}</p>
+          </div>
+
+          <hr class="border-border" />
+
+          {/* Interactive Product Controls */}
+          <div id="product-controls" class="space-y-6">
+            {/* Variant Selector (React Island) */}
+            {
+              hasMultipleVariants && (
+                <VariantSelector
+                  client:load
+                  variants={product.variants}
+                  selectedVariantId={defaultVariant?.id ?? null}
+                  onVariantSelect={(variantId: string) => {
+                    // This will be handled client-side
+                    console.log('Selected variant:', variantId);
+                  }}
+                />
+              )
+            }
+
+            {/* Add to Cart (React Island) */}
+            <AddToCart
+              client:load
+              variantSku={defaultVariant?.sku ?? null}
+              price={defaultVariant?.price_cents ?? 0}
+              available={defaultVariant?.available ?? false}
+            />
+          </div>
+
+          <hr class="border-border" />
+
+          {/* Product Details */}
+          <div class="space-y-4">
+            <h2
+              class="text-sm font-semibold text-text uppercase tracking-wider"
+            >
+              Product Details
+            </h2>
+            <ul class="space-y-2 text-sm text-text-secondary">
+              <li class="flex items-start gap-2">
+                <svg
+                  class="w-5 h-5 text-primary shrink-0 mt-0.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span>Handcrafted from premium Italian leather</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <svg
+                  class="w-5 h-5 text-primary shrink-0 mt-0.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span>Brass hardware with antique finish</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <svg
+                  class="w-5 h-5 text-primary shrink-0 mt-0.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span>Cotton twill lining with interior pockets</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <svg
+                  class="w-5 h-5 text-primary shrink-0 mt-0.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span>Free shipping on orders over $200</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Shipping & Returns */}
+          <div class="bg-secondary rounded-lg p-4 space-y-2">
+            <div class="flex items-center gap-2 text-sm">
+              <svg
+                class="w-5 h-5 text-text-secondary"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"
+                ></path>
+              </svg>
+              <span class="text-text-secondary"
+                >Free shipping on orders over $200</span
+              >
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+              <svg
+                class="w-5 h-5 text-text-secondary"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                ></path>
+              </svg>
+              <span class="text-text-secondary">30-day return policy</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Related Products Section (placeholder) -->
+  <section class="py-12 bg-secondary">
+    <div class="container mx-auto px-4 max-w-6xl">
+      <h2 class="text-2xl font-bold text-text mb-8">You May Also Like</h2>
+      <p class="text-text-secondary">
+        Related products coming soon. <a
+          href="/shop"
+          class="text-primary hover:underline">Browse all products</a
+        >
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  // Client-side script to sync variant selection between components
+  // This will be enhanced when cart state is implemented in Task 2.8
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const thumbnails = document.querySelectorAll('[data-variant-id]');
+    const mainImage = document.getElementById(
+      'main-product-image'
+    ) as HTMLImageElement | null;
+
+    thumbnails.forEach((thumb) => {
+      thumb.addEventListener('click', () => {
+        const variantId = thumb.getAttribute('data-variant-id');
+        if (!variantId || !mainImage) return;
+
+        // Update main image if thumbnail has an image
+        const thumbImg = thumb.querySelector('img');
+        if (thumbImg) {
+          mainImage.src = thumbImg.src;
+        }
+
+        // Update active state
+        thumbnails.forEach((t) => t.classList.remove('border-primary'));
+        thumb.classList.add('border-primary');
+      });
+    });
+  });
+</script>
