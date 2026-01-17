@@ -9,6 +9,12 @@ interface Props {
 const { title, description = 'Dear Margeaux Admin Dashboard' } = Astro.props;
 const currentPath = Astro.url.pathname;
 
+// Get user from locals (set by middleware)
+const user = Astro.locals.user;
+const userName = user?.name || 'Admin';
+const userEmail = user?.email || 'admin@dearmargeaux.com';
+const userInitial = userName.charAt(0).toUpperCase();
+
 const navigation = [
   { name: 'Dashboard', href: '/', icon: 'home' },
   { name: 'Products', href: '/products', icon: 'package' },
@@ -164,16 +170,40 @@ function isActive(href: string): boolean {
               <div
                 class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center"
               >
-                <span class="text-sm font-medium text-primary-700">A</span>
+                <span class="text-sm font-medium text-primary-700"
+                  >{userInitial}</span
+                >
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-text-primary truncate">
-                  Admin
+                  {userName}
                 </p>
                 <p class="text-xs text-text-muted truncate">
-                  admin@dearmargeaux.com
+                  {userEmail}
                 </p>
               </div>
+              <form method="POST" action="/api/auth/logout">
+                <button
+                  type="submit"
+                  class="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-background-tertiary transition-colors duration-normal"
+                  title="Sign out"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="w-5 h-5"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15"
+                    ></path>
+                  </svg>
+                </button>
+              </form>
             </div>
           </div>
         </div>
