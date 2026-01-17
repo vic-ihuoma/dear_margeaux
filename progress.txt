@@ -1053,3 +1053,62 @@
 - drop_id is nullable - products without drop_id are evergreen products
 - Migrations need to be applied to remote D1 database before production use
 - Ready for Task 4.2 (Add drops API routes)
+
+## 2026-01-17: Task 4.2 - Add drops API routes
+
+### Completed
+- Created drops API routes file at merchant/src/routes/drops.ts:
+  - GET /v1/drops - List all drops with pagination and status filter
+  - GET /v1/drops/:id - Get single drop by ID
+  - GET /v1/drops/:slug/products - Get products in drop by slug with pagination
+  - POST /v1/drops - Create drop (admin only)
+  - PATCH /v1/drops/:id - Update drop (admin only)
+  - DELETE /v1/drops/:id - Delete drop (admin only)
+- Implemented route features:
+  - Cursor-based pagination for list endpoints
+  - Status filtering (draft, scheduled, active, ended)
+  - Slug normalization (lowercase, replace spaces with hyphens)
+  - Slug uniqueness validation per store
+  - Date validation for start_date and end_date
+  - Conflict detection for products linked to drop before deletion
+  - Batch variant fetching to avoid N+1 queries
+- Registered drops routes in merchant/src/index.ts
+- Added Drop types to packages/api/src/types.ts:
+  - DropStatus type
+  - Drop interface
+  - DropWithProducts interface
+  - CreateDropParams interface
+  - UpdateDropParams interface
+  - ListDropsParams interface
+  - DropProductsResponse interface
+- Added drops methods to MerchantClient:
+  - getDrops(params?)
+  - getDrop(id)
+  - getDropProducts(slug, params?)
+  - createDrop(data)
+  - updateDrop(id, data)
+  - deleteDrop(id)
+
+### Files Created/Modified
+- merchant/src/routes/drops.ts (new)
+- merchant/src/index.ts (modified: added drops route import and registration)
+- packages/api/src/types.ts (modified: added Drop types)
+- packages/api/src/merchant-client.ts (modified: added drops methods)
+
+### Acceptance Criteria Verified
+- [x] All endpoints implemented (GET, POST, PATCH, DELETE for drops)
+- [x] Admin endpoints require authentication (via adminOnly middleware)
+- [x] Products filter by drop works (GET /v1/drops/:slug/products)
+
+### Test Results
+- Type Check (merchant): PASSED (tsc --noEmit)
+- Type Check (packages/api): PASSED
+- Merchant Tests: 18 tests passed (2 test files)
+- Lint: PASSED (0 errors, 158 warnings - pre-existing from upstream code)
+
+### Notes
+- Drops routes follow same patterns as catalog, orders, inventory routes
+- Slug is auto-normalized: spaces to hyphens, lowercase, alphanumeric only
+- Delete is blocked if any products are linked to the drop
+- GET /v1/drops/:slug/products includes both drop info and paginated products
+- Ready for Task 4.3 (Build drops admin UI)

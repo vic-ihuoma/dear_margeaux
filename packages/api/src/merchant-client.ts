@@ -48,6 +48,12 @@ import type {
   WebhookWithDeliveries,
   CreateWebhookParams,
   UpdateWebhookParams,
+  // Drops
+  Drop,
+  CreateDropParams,
+  UpdateDropParams,
+  ListDropsParams,
+  DropProductsResponse,
 } from './types.js';
 
 // ============================================================================
@@ -109,7 +115,10 @@ export class ValidationError extends MerchantApiError {
 
 /** Error for network/connection issues */
 export class NetworkError extends Error {
-  constructor(message: string, public readonly cause?: Error) {
+  constructor(
+    message: string,
+    public readonly cause?: Error
+  ) {
     super(message);
     this.name = 'NetworkError';
   }
@@ -220,7 +229,13 @@ export class MerchantClient {
   }
 
   private async handleErrorResponse(response: Response): Promise<never> {
-    let errorData: { error?: { code?: string; message?: string; details?: Record<string, unknown> } };
+    let errorData: {
+      error?: {
+        code?: string;
+        message?: string;
+        details?: Record<string, unknown>;
+      };
+    };
 
     try {
       errorData = await response.json();
@@ -233,7 +248,9 @@ export class MerchantClient {
     }
 
     const code = errorData.error?.code ?? 'unknown_error';
-    const message = errorData.error?.message ?? `Request failed with status ${response.status}`;
+    const message =
+      errorData.error?.message ??
+      `Request failed with status ${response.status}`;
     const details = errorData.error?.details;
 
     switch (response.status) {
@@ -259,8 +276,14 @@ export class MerchantClient {
   /**
    * List all products with optional filtering
    */
-  async getProducts(params?: ListProductsParams): Promise<PaginatedResponse<ProductListItem>> {
-    return this.request<PaginatedResponse<ProductListItem>>('GET', '/products', { params: params ? { ...params } : undefined });
+  async getProducts(
+    params?: ListProductsParams
+  ): Promise<PaginatedResponse<ProductListItem>> {
+    return this.request<PaginatedResponse<ProductListItem>>(
+      'GET',
+      '/products',
+      { params: params ? { ...params } : undefined }
+    );
   }
 
   /**
@@ -294,22 +317,38 @@ export class MerchantClient {
   /**
    * Create a variant for a product (admin only)
    */
-  async createVariant(productId: string, data: CreateVariantParams): Promise<Variant> {
-    return this.request<Variant>('POST', `/products/${productId}/variants`, { body: data });
+  async createVariant(
+    productId: string,
+    data: CreateVariantParams
+  ): Promise<Variant> {
+    return this.request<Variant>('POST', `/products/${productId}/variants`, {
+      body: data,
+    });
   }
 
   /**
    * Update a variant (admin only)
    */
-  async updateVariant(productId: string, variantId: string, data: UpdateVariantParams): Promise<Variant> {
-    return this.request<Variant>('PATCH', `/products/${productId}/variants/${variantId}`, { body: data });
+  async updateVariant(
+    productId: string,
+    variantId: string,
+    data: UpdateVariantParams
+  ): Promise<Variant> {
+    return this.request<Variant>(
+      'PATCH',
+      `/products/${productId}/variants/${variantId}`,
+      { body: data }
+    );
   }
 
   /**
    * Delete a variant (admin only)
    */
   async deleteVariant(productId: string, variantId: string): Promise<void> {
-    return this.request<void>('DELETE', `/products/${productId}/variants/${variantId}`);
+    return this.request<void>(
+      'DELETE',
+      `/products/${productId}/variants/${variantId}`
+    );
   }
 
   // ==========================================================================
@@ -319,15 +358,24 @@ export class MerchantClient {
   /**
    * List inventory levels (admin only)
    */
-  async getInventory(params?: ListInventoryParams): Promise<PaginatedResponse<InventoryItem>> {
-    return this.request<PaginatedResponse<InventoryItem>>('GET', '/inventory', { params: params ? { ...params } : undefined });
+  async getInventory(
+    params?: ListInventoryParams
+  ): Promise<PaginatedResponse<InventoryItem>> {
+    return this.request<PaginatedResponse<InventoryItem>>('GET', '/inventory', {
+      params: params ? { ...params } : undefined,
+    });
   }
 
   /**
    * Adjust inventory for a SKU (admin only)
    */
-  async adjustInventory(sku: string, data: AdjustInventoryParams): Promise<InventoryItem> {
-    return this.request<InventoryItem>('POST', `/inventory/${sku}/adjust`, { body: data });
+  async adjustInventory(
+    sku: string,
+    data: AdjustInventoryParams
+  ): Promise<InventoryItem> {
+    return this.request<InventoryItem>('POST', `/inventory/${sku}/adjust`, {
+      body: data,
+    });
   }
 
   // ==========================================================================
@@ -359,7 +407,9 @@ export class MerchantClient {
    * Apply a discount code to a cart
    */
   async applyDiscount(cartId: string, code: string): Promise<Cart> {
-    return this.request<Cart>('POST', `/carts/${cartId}/apply-discount`, { body: { code } });
+    return this.request<Cart>('POST', `/carts/${cartId}/apply-discount`, {
+      body: { code },
+    });
   }
 
   /**
@@ -372,8 +422,13 @@ export class MerchantClient {
   /**
    * Initiate checkout and get Stripe session URL
    */
-  async checkout(cartId: string, params: CheckoutParams): Promise<CheckoutResult> {
-    return this.request<CheckoutResult>('POST', `/carts/${cartId}/checkout`, { body: params });
+  async checkout(
+    cartId: string,
+    params: CheckoutParams
+  ): Promise<CheckoutResult> {
+    return this.request<CheckoutResult>('POST', `/carts/${cartId}/checkout`, {
+      body: params,
+    });
   }
 
   // ==========================================================================
@@ -404,7 +459,10 @@ export class MerchantClient {
   /**
    * Update a discount (admin only)
    */
-  async updateDiscount(id: string, data: UpdateDiscountParams): Promise<Discount> {
+  async updateDiscount(
+    id: string,
+    data: UpdateDiscountParams
+  ): Promise<Discount> {
     return this.request<Discount>('PATCH', `/discounts/${id}`, { body: data });
   }
 
@@ -422,8 +480,12 @@ export class MerchantClient {
   /**
    * List orders with optional filtering (admin only)
    */
-  async getOrders(params?: ListOrdersParams): Promise<PaginatedResponse<OrderListItem>> {
-    return this.request<PaginatedResponse<OrderListItem>>('GET', '/orders', { params: params ? { ...params } : undefined });
+  async getOrders(
+    params?: ListOrdersParams
+  ): Promise<PaginatedResponse<OrderListItem>> {
+    return this.request<PaginatedResponse<OrderListItem>>('GET', '/orders', {
+      params: params ? { ...params } : undefined,
+    });
   }
 
   /**
@@ -444,7 +506,9 @@ export class MerchantClient {
    * Create a refund for an order (admin only)
    */
   async refundOrder(id: string, data?: RefundParams): Promise<Order> {
-    return this.request<Order>('POST', `/orders/${id}/refund`, { body: data ?? {} });
+    return this.request<Order>('POST', `/orders/${id}/refund`, {
+      body: data ?? {},
+    });
   }
 
   // ==========================================================================
@@ -454,8 +518,12 @@ export class MerchantClient {
   /**
    * List customers (admin only)
    */
-  async getCustomers(params?: ListCustomersParams): Promise<PaginatedResponse<Customer>> {
-    return this.request<PaginatedResponse<Customer>>('GET', '/customers', { params: params ? { ...params } : undefined });
+  async getCustomers(
+    params?: ListCustomersParams
+  ): Promise<PaginatedResponse<Customer>> {
+    return this.request<PaginatedResponse<Customer>>('GET', '/customers', {
+      params: params ? { ...params } : undefined,
+    });
   }
 
   /**
@@ -468,29 +536,52 @@ export class MerchantClient {
   /**
    * Get a customer's order history (admin only)
    */
-  async getCustomerOrders(id: string, params?: PaginationParams): Promise<PaginatedResponse<OrderListItem>> {
-    return this.request<PaginatedResponse<OrderListItem>>('GET', `/customers/${id}/orders`, { params: params ? { ...params } : undefined });
+  async getCustomerOrders(
+    id: string,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<OrderListItem>> {
+    return this.request<PaginatedResponse<OrderListItem>>(
+      'GET',
+      `/customers/${id}/orders`,
+      { params: params ? { ...params } : undefined }
+    );
   }
 
   /**
    * Update a customer (admin only)
    */
-  async updateCustomer(id: string, data: UpdateCustomerParams): Promise<Customer> {
+  async updateCustomer(
+    id: string,
+    data: UpdateCustomerParams
+  ): Promise<Customer> {
     return this.request<Customer>('PATCH', `/customers/${id}`, { body: data });
   }
 
   /**
    * Add an address to a customer (admin only)
    */
-  async createCustomerAddress(customerId: string, data: CreateAddressParams): Promise<CustomerAddress> {
-    return this.request<CustomerAddress>('POST', `/customers/${customerId}/addresses`, { body: data });
+  async createCustomerAddress(
+    customerId: string,
+    data: CreateAddressParams
+  ): Promise<CustomerAddress> {
+    return this.request<CustomerAddress>(
+      'POST',
+      `/customers/${customerId}/addresses`,
+      { body: data }
+    );
   }
 
   /**
    * Delete a customer address (admin only)
    */
-  async deleteCustomerAddress(customerId: string, addressId: string): Promise<void> {
-    return this.request<void>('DELETE', `/customers/${customerId}/addresses/${addressId}`);
+  async deleteCustomerAddress(
+    customerId: string,
+    addressId: string
+  ): Promise<void> {
+    return this.request<void>(
+      'DELETE',
+      `/customers/${customerId}/addresses/${addressId}`
+    );
   }
 
   // ==========================================================================
@@ -580,5 +671,60 @@ export class MerchantClient {
    */
   async deleteWebhook(id: string): Promise<void> {
     return this.request<void>('DELETE', `/webhooks/${id}`);
+  }
+
+  // ==========================================================================
+  // Drops
+  // ==========================================================================
+
+  /**
+   * List all drops with optional filtering
+   */
+  async getDrops(params?: ListDropsParams): Promise<PaginatedResponse<Drop>> {
+    return this.request<PaginatedResponse<Drop>>('GET', '/drops', {
+      params: params ? { ...params } : undefined,
+    });
+  }
+
+  /**
+   * Get a single drop by ID
+   */
+  async getDrop(id: string): Promise<Drop> {
+    return this.request<Drop>('GET', `/drops/${id}`);
+  }
+
+  /**
+   * Get products in a drop by slug
+   */
+  async getDropProducts(
+    slug: string,
+    params?: PaginationParams
+  ): Promise<DropProductsResponse> {
+    return this.request<DropProductsResponse>(
+      'GET',
+      `/drops/${slug}/products`,
+      { params: params ? { ...params } : undefined }
+    );
+  }
+
+  /**
+   * Create a new drop (admin only)
+   */
+  async createDrop(data: CreateDropParams): Promise<Drop> {
+    return this.request<Drop>('POST', '/drops', { body: data });
+  }
+
+  /**
+   * Update a drop (admin only)
+   */
+  async updateDrop(id: string, data: UpdateDropParams): Promise<Drop> {
+    return this.request<Drop>('PATCH', `/drops/${id}`, { body: data });
+  }
+
+  /**
+   * Delete a drop (admin only)
+   */
+  async deleteDrop(id: string): Promise<void> {
+    return this.request<void>('DELETE', `/drops/${id}`);
   }
 }

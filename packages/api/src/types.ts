@@ -107,7 +107,11 @@ export interface UpdateVariantParams {
 // ============================================================================
 
 /** Reasons for inventory adjustments */
-export type InventoryAdjustmentReason = 'restock' | 'correction' | 'damaged' | 'return';
+export type InventoryAdjustmentReason =
+  | 'restock'
+  | 'correction'
+  | 'damaged'
+  | 'return';
 
 /** Inventory record for a SKU */
 export interface InventoryItem {
@@ -441,4 +445,59 @@ export interface ListOrdersParams extends PaginationParams {
 /** Parameters for listing customers */
 export interface ListCustomersParams extends PaginationParams {
   search?: string;
+}
+
+// ============================================================================
+// Drop Types
+// ============================================================================
+
+/** Drop status */
+export type DropStatus = 'draft' | 'scheduled' | 'active' | 'ended';
+
+/** Drop (limited release collection) */
+export interface Drop {
+  id: string;
+  name: string;
+  description: string | null;
+  slug: string;
+  start_date: ISODateString | null;
+  end_date: ISODateString | null;
+  status: DropStatus;
+  created_at: ISODateString;
+  updated_at: ISODateString;
+}
+
+/** Drop with products */
+export interface DropWithProducts extends Drop {
+  products: Product[];
+}
+
+/** Parameters for creating a drop */
+export interface CreateDropParams {
+  name: string;
+  slug: string;
+  description?: string;
+  start_date?: ISODateString;
+  end_date?: ISODateString;
+  status?: DropStatus;
+}
+
+/** Parameters for updating a drop */
+export interface UpdateDropParams {
+  name?: string;
+  slug?: string;
+  description?: string | null;
+  start_date?: ISODateString | null;
+  end_date?: ISODateString | null;
+  status?: DropStatus;
+}
+
+/** Parameters for listing drops */
+export interface ListDropsParams extends PaginationParams {
+  status?: DropStatus;
+}
+
+/** Response for drop products endpoint */
+export interface DropProductsResponse extends PaginatedResponse<Product> {
+  drop: Drop;
 }

@@ -686,3 +686,36 @@
 - Consider adding cascade delete option for drop deletion (or soft delete)
 - Add computed column or trigger for auto-updating drop status based on dates (cron job)
 - Future consideration: add drop cover image support
+
+## [4.2]: Add drops API routes
+**Status:** PASSED
+**Tests Written:** N/A (CRUD routes, uses existing API patterns)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (tsc --noEmit for merchant and packages/api)
+**Lint:** PASSED (0 errors, 158 warnings from upstream code)
+**Findings:**
+- Created complete drops CRUD routes following existing patterns from catalog.ts:
+  - GET /v1/drops: List drops with pagination and status filter
+  - GET /v1/drops/:id: Get single drop by ID
+  - GET /v1/drops/:slug/products: Get products in drop by slug (with pagination and variants)
+  - POST /v1/drops: Create drop (admin only)
+  - PATCH /v1/drops/:id: Update drop (admin only)
+  - DELETE /v1/drops/:id: Delete drop (admin only)
+- Route features implemented:
+  - Cursor-based pagination (matches existing patterns)
+  - Status filtering with enum validation (draft, scheduled, active, ended)
+  - Slug normalization and uniqueness validation per store
+  - Date validation (ISO format, end_date must be after start_date)
+  - Conflict detection: cannot delete drop with linked products
+  - Batch variant fetching to avoid N+1 queries on products endpoint
+- Added Drop types to packages/api:
+  - Drop, DropWithProducts, DropStatus, CreateDropParams, UpdateDropParams
+  - ListDropsParams, DropProductsResponse
+- Added 6 drops methods to MerchantClient:
+  - getDrops, getDrop, getDropProducts, createDrop, updateDrop, deleteDrop
+
+**Recommendations:**
+- Next task: PRD 4.3 - Build drops admin UI
+- Consider adding unit tests for drops routes with mocked D1
+- Consider adding drop cover image field in future iteration
+- Cron job for auto-updating drop status (scheduled → active → ended) exists but needs to be updated for drops
