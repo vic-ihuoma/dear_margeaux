@@ -1212,3 +1212,68 @@
 - Drop deletion now auto-unassigns products (changed from blocking behavior)
 - Status transitions are manual - cron job for auto-updating scheduled/ended not implemented yet
 - Ready for Task 4.4 (Update storefront for drops)
+## 2026-01-17: Task 4.4 - Update storefront for drops
+
+### Completed
+- Updated storefront homepage (index.astro) to fetch and display active drop:
+  - Fetches active drop from Merchant API
+  - Shows featured products from active drop
+  - Links hero CTA to active drop's shop page
+  - Current drop banner links to drop shop page
+  - Falls back to sample data when API unavailable
+- Updated shop/[drop].astro for drop-specific pages:
+  - Added getStaticPaths for dynamic route generation
+  - Fetches drop info and products from API via getDropProducts
+  - Shows drop description on page header
+  - Displays "Past Collection" badge for ended drops
+  - Displays "Coming Soon" badge for scheduled drops
+  - Shows warning message for past drop products
+  - Filters navigation shows all drops (active, scheduled, ended) with "(Past)" suffix
+  - Inventory check for sold-out status per product
+- Updated shop/index.astro for all products page:
+  - Fetches all drops for filter navigation
+  - Shows products from all drops with collection labels
+  - Past drop products marked as sold out
+  - Evergreen products (no drop) also included
+- Updated ProductCard.astro component:
+  - Added disablePurchase prop for past drop products
+  - isUnavailable computed from soldOut OR disablePurchase
+  - Different badge text: "No Longer Available" vs "Sold Out"
+  - Price strikethrough when unavailable
+- Updated product detail page (product/[id].astro):
+  - Fetches product's drop to determine status
+  - Shows "Past Collection" badge in header
+  - Shows warning banner for past drop products
+  - Disables purchase for past drop products
+- Updated ProductControls.tsx:
+  - Added disablePurchase prop
+  - Sets available=false when disablePurchase is true
+
+### Files Created/Modified
+- apps/storefront/src/pages/index.astro (modified: active drop integration)
+- apps/storefront/src/pages/shop/index.astro (modified: drops filtering)
+- apps/storefront/src/pages/shop/[drop].astro (modified: drops API integration)
+- apps/storefront/src/components/ProductCard.astro (modified: disablePurchase prop)
+- apps/storefront/src/pages/product/[id].astro (modified: past drop handling)
+- apps/storefront/src/components/ProductControls.tsx (modified: disablePurchase prop)
+
+### Acceptance Criteria Verified
+- [x] Products display by drop on shop pages
+- [x] Sold-out products show appropriate badge (based on inventory or past drop)
+- [x] Current drop shows on homepage with featured products
+- [x] Past drops are viewable but not purchasable
+
+### Test Results
+- Type Check (storefront): PASSED (0 errors, 0 warnings)
+- Type Check (apps/admin): PASSED (0 errors, 0 warnings, 1 hint)
+- Build (storefront): PASSED (19 pages built)
+- Build (admin): PASSED
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- Drop pages use getStaticPaths for static generation with API data
+- Inventory is checked for each product to determine sold-out status
+- Past drop products cannot be added to cart (disablePurchase=true)
+- Filter chips show "(Past)" suffix for ended drops with reduced opacity
+- Homepage dynamically links to active drop shop page
+- Phase 4 (Drops System) is now complete

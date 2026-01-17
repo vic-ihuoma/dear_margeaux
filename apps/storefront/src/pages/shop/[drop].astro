@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import ProductGrid from '../../components/ProductGrid.astro';
-import type { ProductListItem } from '@dear-margeaux/api';
+import type { Drop, Product, InventoryItem } from '@dear-margeaux/api';
 import type { GetStaticPaths } from 'astro';
 
 interface DisplayProduct {
@@ -13,6 +13,50 @@ interface DisplayProduct {
   collection?: string;
   soldOut: boolean;
 }
+
+// Generate static paths for all drops
+export const getStaticPaths: GetStaticPaths = async () => {
+  // Define sample slugs for static generation
+  const sampleSlugs = ['spring-2026', 'winter-2025', 'fall-2025'];
+
+  // Try to fetch drop slugs from API
+  const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
+  const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY;
+
+  if (apiUrl && apiKey) {
+    try {
+      const { MerchantClient } = await import('@dear-margeaux/api');
+      const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
+      const response = await client.getDrops({ limit: 100 });
+
+      const apiPaths = response.items.map((drop) => ({
+        params: { drop: drop.slug },
+      }));
+
+      // Combine sample and API paths, deduplicate by slug
+      const allSlugs = new Set<string>();
+      const combinedPaths: Array<{ params: { drop: string } }> = [];
+
+      for (const path of [
+        ...apiPaths,
+        ...sampleSlugs.map((s) => ({ params: { drop: s } })),
+      ]) {
+        if (!allSlugs.has(path.params.drop)) {
+          allSlugs.add(path.params.drop);
+          combinedPaths.push(path);
+        }
+      }
+
+      return combinedPaths;
+    } catch (error) {
+      console.error('Failed to fetch drops for static paths:', error);
+    }
+  }
+
+  return sampleSlugs.map((slug) => ({
+    params: { drop: slug },
+  }));
+};
 
 // Sample products for development/fallback when API is unavailable
 const getSampleProducts = (): DisplayProduct[] => [
@@ -74,99 +118,145 @@ const getSampleProducts = (): DisplayProduct[] => [
   },
 ];
 
-// Generate static paths for all available collections/drops
-export const getStaticPaths: GetStaticPaths = async () => {
-  // Define collection slugs for static generation
-  // These correspond to the sample product collections
-  // In production with real API data, this would fetch from the API to get actual drops
-  const collectionSlugs = ['spring-2026', 'winter-2025', 'fall-2025'];
-
-  return collectionSlugs.map((slug) => ({
-    params: { drop: slug },
-  }));
-};
-
 // Get the drop slug from the URL parameter
 const { drop: dropSlug } = Astro.params;
 
-// Helper to convert slug to collection name
-function slugToCollectionName(slug: string): string {
-  return slug
-    .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
-
-// Fetch products from the Merchant API or use sample data
-let allProducts: DisplayProduct[] = getSampleProducts();
-
-// Only try to fetch from API if environment variables are set
+// API configuration
 const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
 const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY;
 
-if (apiUrl && apiKey) {
+// State variables
+let drop: Drop | null = null;
+let products: DisplayProduct[] = [];
+let allDrops: Drop[] = [];
+let dropExists = false;
+let isPastDrop = false;
+
+// Try to fetch from API if environment variables are set
+if (apiUrl && apiKey && dropSlug) {
   try {
     const { MerchantClient } = await import('@dear-margeaux/api');
     const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
 
-    const response = await client.getProducts({ status: 'active', limit: 50 });
-
-    if (response.items.length > 0) {
-      // For each product, fetch full details to get variants (for price and image)
-      const productDetails = await Promise.all(
-        response.items.map(async (item: ProductListItem) => {
-          try {
-            const product = await client.getProduct(item.id);
-            const firstVariant = product.variants[0];
-
-            return {
-              id: product.id,
-              title: product.title,
-              price: firstVariant?.price_cents ?? 0,
-              image: firstVariant?.image_url ?? undefined,
-              collection: undefined, // Will be populated when drops are implemented (Phase 4)
-              soldOut: false, // Will be determined by inventory in future
-            };
-          } catch {
-            return null;
-          }
-        })
-      );
-
-      const validProducts = productDetails.filter(
-        (p): p is NonNullable<typeof p> => p !== null
-      );
-      if (validProducts.length > 0) {
-        allProducts = validProducts;
+    // Fetch the drop and its products
+    const dropProductsResponse = await client.getDropProducts(
+      String(dropSlug),
+      {
+        limit: 100,
       }
+    );
+
+    drop = dropProductsResponse.drop;
+    dropExists = true;
+
+    // Determine if this is a past (ended) drop
+    isPastDrop = drop.status === 'ended';
+
+    // Fetch all drops for the filter navigation
+    const dropsResponse = await client.getDrops({ limit: 100 });
+    allDrops = dropsResponse.items.filter(
+      (d) =>
+        d.status === 'active' ||
+        d.status === 'ended' ||
+        d.status === 'scheduled'
+    );
+
+    // Fetch inventory for all product SKUs to determine sold-out status
+    let inventoryMap = new Map<string, InventoryItem>();
+    try {
+      const inventoryResponse = await client.getInventory({ limit: 500 });
+      for (const item of inventoryResponse.items) {
+        inventoryMap.set(item.sku, item);
+      }
+    } catch {
+      // Inventory fetch might fail if not available, continue without it
     }
-  } catch (error) {
-    // Log error but continue with sample data
-    console.error('Failed to fetch products from API:', error);
+
+    // Map products to display format
+    products = dropProductsResponse.items.map((product: Product) => {
+      const firstVariant = product.variants[0];
+
+      // Check if all variants are sold out
+      const allVariantsSoldOut = product.variants.every((variant) => {
+        const inv = inventoryMap.get(variant.sku);
+        return inv ? inv.available <= 0 : false;
+      });
+
+      return {
+        id: product.id,
+        title: product.title,
+        price: firstVariant?.price_cents ?? 0,
+        image: firstVariant?.image_url ?? undefined,
+        collection: drop?.name,
+        soldOut: allVariantsSoldOut || isPastDrop,
+      };
+    });
+  } catch (e) {
+    console.error('Failed to fetch drop products from API:', e);
+    // Fall back to sample data
+    const sampleProducts = getSampleProducts();
+    const collectionName = dropSlug
+      ? String(dropSlug)
+          .split('-')
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ')
+      : null;
+
+    products = sampleProducts.filter(
+      (p) => p.collection?.toLowerCase() === collectionName?.toLowerCase()
+    );
+    dropExists = products.length > 0;
+    isPastDrop = dropExists && products.every((p) => p.soldOut);
+
+    // Create a mock drop for display
+    if (dropExists) {
+      drop = {
+        id: 'sample',
+        name: collectionName ?? 'Collection',
+        slug: String(dropSlug),
+        status: isPastDrop ? 'ended' : 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as Drop;
+    }
   }
+} else {
+  // Fall back to sample data if no API configuration
+  const sampleProducts = getSampleProducts();
+  const collectionName = dropSlug
+    ? String(dropSlug)
+        .split('-')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
+    : null;
+
+  products = sampleProducts.filter(
+    (p) => p.collection?.toLowerCase() === collectionName?.toLowerCase()
+  );
+  dropExists = products.length > 0;
+  isPastDrop = dropExists && products.every((p) => p.soldOut);
+
+  // Create a mock drop for display
+  if (dropExists) {
+    drop = {
+      id: 'sample',
+      name: collectionName ?? 'Collection',
+      slug: String(dropSlug),
+      status: isPastDrop ? 'ended' : 'active',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as Drop;
+  }
+
+  // Create sample drops for filter navigation
+  allDrops = [
+    { id: '1', name: 'Spring 2026', slug: 'spring-2026', status: 'active' },
+    { id: '2', name: 'Winter 2025', slug: 'winter-2025', status: 'ended' },
+    { id: '3', name: 'Fall 2025', slug: 'fall-2025', status: 'ended' },
+  ] as Drop[];
 }
 
-// Get unique collections for filtering
-const collections = [
-  ...new Set(allProducts.map((p) => p.collection).filter(Boolean)),
-];
-
-// Find the matching collection name
-const collectionName = dropSlug ? slugToCollectionName(String(dropSlug)) : null;
-
-// Filter products by the selected drop/collection
-const filteredProducts = collectionName
-  ? allProducts.filter(
-      (p) => p.collection?.toLowerCase() === collectionName.toLowerCase()
-    )
-  : allProducts;
-
-// Check if this drop exists (has products)
-const dropExists = filteredProducts.length > 0 || !collectionName;
-
-// Determine if this is a past drop (sold out products indicate past drops)
-const isPastDrop =
-  filteredProducts.length > 0 && filteredProducts.every((p) => p.soldOut);
+const collectionName = drop?.name ?? null;
 ---
 
 <BaseLayout
@@ -198,10 +288,18 @@ const isPastDrop =
                 </span>
               </div>
             )}
+            {drop?.status === 'scheduled' && (
+              <div class="mt-4 flex justify-center">
+                <span class="px-4 py-1 text-sm font-medium text-status-info bg-status-info/10 rounded-full">
+                  Coming Soon
+                </span>
+              </div>
+            )}
             <p class="text-text-secondary text-center mt-3 max-w-xl mx-auto">
               {isPastDrop
                 ? 'This collection has ended. Browse our current collections for available items.'
-                : `Explore the ${collectionName} collection of handcrafted leather bags`}
+                : drop?.description ||
+                  `Explore the ${collectionName} collection of handcrafted leather bags`}
             </p>
           </>
         ) : (
@@ -221,7 +319,7 @@ const isPastDrop =
 
   <!-- Filters Section -->
   {
-    collections.length > 0 && dropExists && (
+    allDrops.length > 0 && dropExists && (
       <section class="border-b border-border bg-background">
         <div class="container mx-auto px-4 max-w-6xl">
           <div class="flex items-center gap-4 py-4 overflow-x-auto">
@@ -235,20 +333,22 @@ const isPastDrop =
               >
                 All
               </a>
-              {collections.map((collection) => {
-                const slug = collection?.toLowerCase().replace(/\s+/g, '-');
-                const isActive = slug === dropSlug;
+              {allDrops.map((d) => {
+                const isActive = d.slug === dropSlug;
+                const isEnded = d.status === 'ended';
                 return (
                   <a
-                    href={`/shop/${slug}`}
+                    href={`/shop/${d.slug}`}
                     class:list={[
                       'px-4 py-2 text-sm font-medium rounded-full transition-colors duration-normal',
                       isActive
                         ? 'bg-primary text-text-inverse'
                         : 'border border-border text-text hover:bg-background-secondary',
+                      isEnded && !isActive && 'opacity-70',
                     ]}
                   >
-                    {collection}
+                    {d.name}
+                    {isEnded && <span class="ml-1 text-xs">(Past)</span>}
                   </a>
                 );
               })}
@@ -263,17 +363,23 @@ const isPastDrop =
   <section class="py-12 md:py-16">
     <div class="container mx-auto px-4 max-w-6xl">
       {
-        dropExists && filteredProducts.length > 0 ? (
+        dropExists && products.length > 0 ? (
           <>
             <div class="flex items-center justify-between mb-8">
               <p class="text-sm text-text-secondary">
-                Showing {filteredProducts.length}{' '}
-                {filteredProducts.length === 1 ? 'product' : 'products'}
+                Showing {products.length}{' '}
+                {products.length === 1 ? 'product' : 'products'}
               </p>
+              {isPastDrop && (
+                <span class="text-sm text-status-warning">
+                  Products from past collections are no longer available for
+                  purchase
+                </span>
+              )}
             </div>
 
             <ProductGrid columns={4} gap="md">
-              {filteredProducts.map((product) => (
+              {products.map((product) => (
                 <ProductCard
                   id={product.id}
                   title={product.title}
@@ -281,6 +387,7 @@ const isPastDrop =
                   image={product.image}
                   collection={product.collection}
                   soldOut={product.soldOut}
+                  disablePurchase={isPastDrop}
                 />
               ))}
             </ProductGrid>

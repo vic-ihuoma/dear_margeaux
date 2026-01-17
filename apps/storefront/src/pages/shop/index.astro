@@ -2,7 +2,12 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import ProductGrid from '../../components/ProductGrid.astro';
-import type { ProductListItem } from '@dear-margeaux/api';
+import type {
+  ProductListItem,
+  Drop,
+  Product,
+  InventoryItem,
+} from '@dear-margeaux/api';
 
 // Sample products for development/fallback when API is unavailable
 const sampleProducts = [
@@ -75,6 +80,7 @@ interface DisplayProduct {
 
 // Fetch products from the Merchant API
 let products: DisplayProduct[] = sampleProducts;
+let allDrops: Drop[] = [];
 
 // Only try to fetch from API if environment variables are set
 const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
@@ -85,23 +91,91 @@ if (apiUrl && apiKey) {
     const { MerchantClient } = await import('@dear-margeaux/api');
     const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
 
-    const response = await client.getProducts({ status: 'active', limit: 50 });
+    // Fetch all drops for filtering
+    const dropsResponse = await client.getDrops({ limit: 100 });
+    allDrops = dropsResponse.items.filter(
+      (d) =>
+        d.status === 'active' ||
+        d.status === 'ended' ||
+        d.status === 'scheduled'
+    );
 
-    if (response.items.length > 0) {
-      // For each product, fetch full details to get variants (for price and image)
-      const productDetails = await Promise.all(
-        response.items.map(async (item: ProductListItem) => {
-          try {
-            const product = await client.getProduct(item.id);
+    // Fetch inventory for sold-out status
+    let inventoryMap = new Map<string, InventoryItem>();
+    try {
+      const inventoryResponse = await client.getInventory({ limit: 500 });
+      for (const item of inventoryResponse.items) {
+        inventoryMap.set(item.sku, item);
+      }
+    } catch {
+      // Inventory fetch might fail, continue without it
+    }
+
+    // Fetch all products from all drops
+    let allProducts: DisplayProduct[] = [];
+
+    for (const drop of allDrops) {
+      try {
+        const dropProductsResponse = await client.getDropProducts(drop.slug, {
+          limit: 50,
+        });
+
+        const isPastDrop = drop.status === 'ended';
+
+        const dropProducts = dropProductsResponse.items.map(
+          (product: Product) => {
             const firstVariant = product.variants[0];
+
+            // Check if all variants are sold out
+            const allVariantsSoldOut = product.variants.every((variant) => {
+              const inv = inventoryMap.get(variant.sku);
+              return inv ? inv.available <= 0 : false;
+            });
 
             return {
               id: product.id,
               title: product.title,
               price: firstVariant?.price_cents ?? 0,
               image: firstVariant?.image_url ?? undefined,
-              collection: undefined, // Will be populated when drops are implemented
-              soldOut: false, // Will be determined by inventory in future
+              collection: drop.name,
+              soldOut: allVariantsSoldOut || isPastDrop,
+            };
+          }
+        );
+
+        allProducts = [...allProducts, ...dropProducts];
+      } catch {
+        // Skip drops that fail to load
+      }
+    }
+
+    // Also fetch products without a drop (evergreen products)
+    const response = await client.getProducts({ status: 'active', limit: 50 });
+    if (response.items.length > 0) {
+      const productDetails = await Promise.all(
+        response.items.map(async (item: ProductListItem) => {
+          try {
+            const product = await client.getProduct(item.id);
+            // Skip products that are already in a drop
+            if (allProducts.some((p) => p.id === product.id)) {
+              return null;
+            }
+
+            const firstVariant = product.variants[0];
+
+            // Check if all variants are sold out
+            const allVariantsSoldOut = product.variants.every((variant) => {
+              const inv = inventoryMap.get(variant.sku);
+              return inv ? inv.available <= 0 : false;
+            });
+
+            return {
+              id: product.id,
+              title: product.title,
+              price: firstVariant?.price_cents ?? 0,
+              image: firstVariant?.image_url ?? undefined,
+              collection: undefined,
+              soldOut: allVariantsSoldOut,
             };
           } catch {
             return null;
@@ -112,20 +186,24 @@ if (apiUrl && apiKey) {
       const validProducts = productDetails.filter(
         (p): p is NonNullable<typeof p> => p !== null
       );
-      if (validProducts.length > 0) {
-        products = validProducts;
-      }
+      allProducts = [...allProducts, ...validProducts];
+    }
+
+    if (allProducts.length > 0) {
+      products = allProducts;
     }
   } catch (error) {
     // Log error but continue with sample data
     console.error('Failed to fetch products from API:', error);
   }
+} else {
+  // Create sample drops for filter navigation
+  allDrops = [
+    { id: '1', name: 'Spring 2026', slug: 'spring-2026', status: 'active' },
+    { id: '2', name: 'Winter 2025', slug: 'winter-2025', status: 'ended' },
+    { id: '3', name: 'Fall 2025', slug: 'fall-2025', status: 'ended' },
+  ] as Drop[];
 }
-
-// Get unique collections for filtering (will be replaced with drops in Phase 4)
-const collections = [
-  ...new Set(products.map((p) => p.collection).filter(Boolean)),
-];
 ---
 
 <BaseLayout
@@ -147,7 +225,7 @@ const collections = [
 
   <!-- Filters Section -->
   {
-    collections.length > 0 && (
+    allDrops.length > 0 && (
       <section class="border-b border-border bg-background">
         <div class="container mx-auto px-4 max-w-6xl">
           <div class="flex items-center gap-4 py-4 overflow-x-auto">
@@ -161,14 +239,21 @@ const collections = [
               >
                 All
               </a>
-              {collections.map((collection) => (
-                <a
-                  href={`/shop/${collection?.toLowerCase().replace(/\s+/g, '-')}`}
-                  class="px-4 py-2 text-sm font-medium rounded-full border border-border text-text hover:bg-background-secondary transition-colors duration-normal"
-                >
-                  {collection}
-                </a>
-              ))}
+              {allDrops.map((drop) => {
+                const isEnded = drop.status === 'ended';
+                return (
+                  <a
+                    href={`/shop/${drop.slug}`}
+                    class:list={[
+                      'px-4 py-2 text-sm font-medium rounded-full border border-border text-text hover:bg-background-secondary transition-colors duration-normal',
+                      isEnded && 'opacity-70',
+                    ]}
+                  >
+                    {drop.name}
+                    {isEnded && <span class="ml-1 text-xs">(Past)</span>}
+                  </a>
+                );
+              })}
             </div>
           </div>
         </div>

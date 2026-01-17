@@ -2,7 +2,12 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductCard from '../components/ProductCard.astro';
 import ProductGrid from '../components/ProductGrid.astro';
-import type { ProductListItem } from '@dear-margeaux/api';
+import type {
+  ProductListItem,
+  Drop,
+  Product,
+  InventoryItem,
+} from '@dear-margeaux/api';
 
 // Sample products for development/fallback when API is unavailable
 const sampleProducts = [
@@ -45,8 +50,9 @@ interface DisplayProduct {
   soldOut: boolean;
 }
 
-// Fetch products from the Merchant API
+// Fetch products and active drop from the Merchant API
 let products: DisplayProduct[] = sampleProducts;
+let activeDrop: Drop | null = null;
 
 // Only try to fetch from API if environment variables are set
 const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
@@ -57,36 +63,72 @@ if (apiUrl && apiKey) {
     const { MerchantClient } = await import('@dear-margeaux/api');
     const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
 
-    const response = await client.getProducts({ status: 'active', limit: 8 });
+    // Fetch the active drop
+    const dropsResponse = await client.getDrops({ status: 'active', limit: 1 });
+    if (dropsResponse.items.length > 0) {
+      activeDrop = dropsResponse.items[0];
+    }
 
-    if (response.items.length > 0) {
-      // For each product, fetch full details to get variants (for price and image)
-      const productDetails = await Promise.all(
-        response.items.slice(0, 4).map(async (item: ProductListItem) => {
-          try {
-            const product = await client.getProduct(item.id);
-            const firstVariant = product.variants[0];
+    // If there's an active drop, fetch its products
+    // Otherwise, fetch all active products
+    let productsToShow: Product[] = [];
+    let inventoryMap = new Map<string, InventoryItem>();
 
-            return {
-              id: product.id,
-              title: product.title,
-              price: firstVariant?.price_cents ?? 0,
-              image: firstVariant?.image_url ?? undefined,
-              collection: undefined, // Will be populated when drops are implemented
-              soldOut: false, // Will be determined by inventory in future
-            };
-          } catch {
-            return null;
-          }
-        })
-      );
-
-      const validProducts = productDetails.filter(
-        (p): p is NonNullable<typeof p> => p !== null
-      );
-      if (validProducts.length > 0) {
-        products = validProducts;
+    // Fetch inventory for sold-out status
+    try {
+      const inventoryResponse = await client.getInventory({ limit: 500 });
+      for (const item of inventoryResponse.items) {
+        inventoryMap.set(item.sku, item);
       }
+    } catch {
+      // Inventory fetch might fail, continue without it
+    }
+
+    if (activeDrop) {
+      // Fetch products from the active drop
+      const dropProductsResponse = await client.getDropProducts(
+        activeDrop.slug,
+        {
+          limit: 4,
+        }
+      );
+      productsToShow = dropProductsResponse.items;
+    } else {
+      // Fetch general active products
+      const response = await client.getProducts({ status: 'active', limit: 8 });
+      if (response.items.length > 0) {
+        const productDetails = await Promise.all(
+          response.items.slice(0, 4).map(async (item: ProductListItem) => {
+            try {
+              return await client.getProduct(item.id);
+            } catch {
+              return null;
+            }
+          })
+        );
+        productsToShow = productDetails.filter((p): p is Product => p !== null);
+      }
+    }
+
+    if (productsToShow.length > 0) {
+      products = productsToShow.map((product) => {
+        const firstVariant = product.variants[0];
+
+        // Check if all variants are sold out
+        const allVariantsSoldOut = product.variants.every((variant) => {
+          const inv = inventoryMap.get(variant.sku);
+          return inv ? inv.available <= 0 : false;
+        });
+
+        return {
+          id: product.id,
+          title: product.title,
+          price: firstVariant?.price_cents ?? 0,
+          image: firstVariant?.image_url ?? undefined,
+          collection: activeDrop?.name,
+          soldOut: allVariantsSoldOut,
+        };
+      });
     }
   } catch (error) {
     // Log error but continue with sample data
@@ -94,73 +136,93 @@ if (apiUrl && apiKey) {
   }
 }
 
-// Current drop info (placeholder - will be dynamic with drops system)
-const currentDrop = {
-  name: 'Spring 2026',
-  tagline: 'Now Available',
-  isActive: true,
-  // Optional: countdown for scheduled drops
-  // startsAt: new Date('2026-03-01T10:00:00Z'),
-};
+// Current drop info for the banner
+const currentDrop = activeDrop
+  ? {
+      name: activeDrop.name,
+      slug: activeDrop.slug,
+      tagline: 'Now Available',
+      isActive: true,
+      description: activeDrop.description,
+    }
+  : {
+      name: 'Spring 2026',
+      slug: 'spring-2026',
+      tagline: 'Now Available',
+      isActive: true,
+    };
 ---
 
 <BaseLayout title="Boutique Bags">
   <!-- Hero Section -->
   <section class="relative bg-secondary py-20 md:py-32">
     <div class="container mx-auto px-4 max-w-6xl text-center">
-      <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-text tracking-tight mb-6">
+      <h1
+        class="text-4xl md:text-5xl lg:text-6xl font-bold text-text tracking-tight mb-6"
+      >
         Timeless Bags,<br />Limited Releases
       </h1>
       <p class="text-lg md:text-xl text-text-secondary max-w-2xl mx-auto mb-8">
-        Handcrafted leather bags designed for the modern woman. Each collection is released in limited quantities.
+        Handcrafted leather bags designed for the modern woman. Each collection
+        is released in limited quantities.
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <a
-          href="/shop"
+          href={`/shop/${currentDrop.slug}`}
           class="px-8 py-4 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
         >
-          Shop Now
+          Shop {currentDrop.name}
         </a>
         <a
-          href="/drops"
+          href="/shop"
           class="px-8 py-4 bg-background text-text font-medium rounded-lg border border-border hover:bg-background-tertiary transition-colors duration-normal"
         >
-          View Drops
+          View All Collections
         </a>
       </div>
     </div>
   </section>
 
   <!-- Current Drop Banner -->
-  {currentDrop.isActive && (
-    <section class="bg-accent py-4">
-      <div class="container mx-auto px-4 max-w-6xl">
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center">
-          <span class="text-sm font-semibold text-white uppercase tracking-wider">
-            {currentDrop.tagline}
-          </span>
-          <span class="hidden sm:inline text-white/60">•</span>
-          <a
-            href="/shop"
-            class="text-sm font-medium text-white underline underline-offset-2 hover:text-white/90 transition-colors"
-          >
-            Shop {currentDrop.name} →
-          </a>
+  {
+    currentDrop.isActive && (
+      <section class="bg-accent py-4">
+        <div class="container mx-auto px-4 max-w-6xl">
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center">
+            <span class="text-sm font-semibold text-white uppercase tracking-wider">
+              {currentDrop.tagline}
+            </span>
+            <span class="hidden sm:inline text-white/60">•</span>
+            <a
+              href={`/shop/${currentDrop.slug}`}
+              class="text-sm font-medium text-white underline underline-offset-2 hover:text-white/90 transition-colors"
+            >
+              Shop {currentDrop.name} →
+            </a>
+          </div>
         </div>
-      </div>
-    </section>
-  )}
+      </section>
+    )
+  }
 
   <!-- Featured Products Section -->
   <section class="py-16 md:py-24">
     <div class="container mx-auto px-4 max-w-6xl">
       <div class="flex justify-between items-end mb-8">
         <div>
-          <h2 class="text-2xl md:text-3xl font-bold text-text">Featured Products</h2>
-          <p class="text-text-secondary mt-2">From our latest collection</p>
+          <h2 class="text-2xl md:text-3xl font-bold text-text">
+            Featured Products
+          </h2>
+          <p class="text-text-secondary mt-2">
+            {
+              activeDrop
+                ? `From the ${activeDrop.name} collection`
+                : 'From our latest collection'
+            }
+          </p>
         </div>
         <a
-          href="/shop"
+          href={activeDrop ? `/shop/${activeDrop.slug}` : '/shop'}
           class="hidden md:inline-flex text-sm font-medium text-primary hover:text-primary-600 transition-colors duration-normal"
         >
           View All &rarr;
@@ -168,21 +230,23 @@ const currentDrop = {
       </div>
 
       <ProductGrid columns={4} gap="md">
-        {products.map((product) => (
-          <ProductCard
-            id={product.id}
-            title={product.title}
-            price={product.price}
-            image={product.image}
-            collection={product.collection}
-            soldOut={product.soldOut}
-          />
-        ))}
+        {
+          products.map((product) => (
+            <ProductCard
+              id={product.id}
+              title={product.title}
+              price={product.price}
+              image={product.image}
+              collection={product.collection}
+              soldOut={product.soldOut}
+            />
+          ))
+        }
       </ProductGrid>
 
       <div class="mt-8 text-center md:hidden">
         <a
-          href="/shop"
+          href={activeDrop ? `/shop/${activeDrop.slug}` : '/shop'}
           class="inline-flex text-sm font-medium text-primary hover:text-primary-600 transition-colors duration-normal"
         >
           View All Products &rarr;
@@ -195,13 +259,20 @@ const currentDrop = {
   <section class="py-16 md:py-24 bg-background-secondary">
     <div class="container mx-auto px-4 max-w-6xl">
       <div class="grid md:grid-cols-2 gap-12 items-center">
-        <div class="aspect-[4/3] rounded-lg bg-secondary flex items-center justify-center">
+        <div
+          class="aspect-[4/3] rounded-lg bg-secondary flex items-center justify-center"
+        >
           <span class="text-text-muted">Image</span>
         </div>
         <div>
-          <h2 class="text-2xl md:text-3xl font-bold text-text mb-4">Our Story</h2>
+          <h2 class="text-2xl md:text-3xl font-bold text-text mb-4">
+            Our Story
+          </h2>
           <p class="text-text-secondary mb-6">
-            Dear Margeaux began with a simple belief: that beautiful, well-crafted bags shouldn't be reserved for the few. Each piece is designed with intention and made with care, released in limited quantities to ensure quality never compromises.
+            Dear Margeaux began with a simple belief: that beautiful,
+            well-crafted bags shouldn't be reserved for the few. Each piece is
+            designed with intention and made with care, released in limited
+            quantities to ensure quality never compromises.
           </p>
           <a
             href="/about"
@@ -215,11 +286,14 @@ const currentDrop = {
   </section>
 
   <!-- Newsletter Section -->
-  <section class="py-16 md:py-24">
+  <section id="newsletter" class="py-16 md:py-24">
     <div class="container mx-auto px-4 max-w-6xl text-center">
-      <h2 class="text-2xl md:text-3xl font-bold text-text mb-4">Stay in the Know</h2>
+      <h2 class="text-2xl md:text-3xl font-bold text-text mb-4">
+        Stay in the Know
+      </h2>
       <p class="text-text-secondary max-w-xl mx-auto mb-8">
-        Subscribe to be the first to know about new drops, exclusive offers, and behind-the-scenes content.
+        Subscribe to be the first to know about new drops, exclusive offers, and
+        behind-the-scenes content.
       </p>
       <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
         <input

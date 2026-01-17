@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProductControls from '../../components/ProductControls';
 import { sampleProducts } from '../../data/sample-products';
-import type { Variant } from '@dear-margeaux/api';
+import type { Variant, Drop, InventoryItem } from '@dear-margeaux/api';
 
 interface DisplayVariant {
   id: string;
@@ -18,6 +18,7 @@ interface DisplayProduct {
   title: string;
   description: string;
   collection?: string;
+  collectionSlug?: string;
   variants: DisplayVariant[];
 }
 
@@ -68,6 +69,8 @@ const { id } = Astro.params;
 
 // Fetch product data
 let product: DisplayProduct | null = null;
+let isPastDrop = false;
+let dropStatus: Drop['status'] | null = null;
 
 // Check sample products first
 const sampleProduct = sampleProducts.find((p) => p.id === id);
@@ -86,20 +89,59 @@ if (apiUrl && apiKey && id) {
 
     const apiProduct = await client.getProduct(id);
 
+    // Fetch inventory for availability
+    let inventoryMap = new Map<string, InventoryItem>();
+    try {
+      const inventoryResponse = await client.getInventory({ limit: 500 });
+      for (const item of inventoryResponse.items) {
+        inventoryMap.set(item.sku, item);
+      }
+    } catch {
+      // Inventory fetch might fail, continue without it
+    }
+
+    // Try to find which drop this product belongs to
+    let productDrop: Drop | null = null;
+    try {
+      const dropsResponse = await client.getDrops({ limit: 100 });
+      for (const drop of dropsResponse.items) {
+        try {
+          const dropProducts = await client.getDropProducts(drop.slug, {
+            limit: 100,
+          });
+          if (dropProducts.items.some((p) => p.id === apiProduct.id)) {
+            productDrop = drop;
+            break;
+          }
+        } catch {
+          // Skip drops that fail to load
+        }
+      }
+    } catch {
+      // Drops fetch might fail, continue without it
+    }
+
+    isPastDrop = productDrop?.status === 'ended';
+    dropStatus = productDrop?.status ?? null;
+
     // Transform API product to DisplayProduct
     product = {
       id: apiProduct.id,
       title: apiProduct.title,
       description: apiProduct.description || 'No description available.',
-      collection: undefined, // Will be populated when drops are implemented
-      variants: apiProduct.variants.map((v: Variant) => ({
-        id: v.id,
-        sku: v.sku,
-        title: v.title,
-        price_cents: v.price_cents,
-        image_url: v.image_url,
-        available: true, // Will be determined by inventory check in future
-      })),
+      collection: productDrop?.name,
+      collectionSlug: productDrop?.slug,
+      variants: apiProduct.variants.map((v: Variant) => {
+        const inv = inventoryMap.get(v.sku);
+        return {
+          id: v.id,
+          sku: v.sku,
+          title: v.title,
+          price_cents: v.price_cents,
+          image_url: v.image_url,
+          available: inv ? inv.available > 0 : true,
+        };
+      }),
     };
   } catch (error) {
     console.error('Failed to fetch product from API:', error);
@@ -117,6 +159,9 @@ const defaultVariant = product.variants[0];
 
 // Check if all variants are sold out
 const allSoldOut = product.variants.every((v) => !v.available);
+
+// Product is unavailable if all sold out OR from a past drop
+const isUnavailable = allSoldOut || isPastDrop;
 ---
 
 <BaseLayout
@@ -145,12 +190,12 @@ const allSoldOut = product.variants.every((v) => !v.available);
           </a>
         </li>
         {
-          product.collection && (
+          product.collection && product.collectionSlug && (
             <>
               <li class="text-text-muted">/</li>
               <li>
                 <a
-                  href={`/shop/${product.collection.toLowerCase().replace(/\s+/g, '-')}`}
+                  href={`/shop/${product.collectionSlug}`}
                   class="text-text-secondary hover:text-primary transition-colors duration-normal"
                 >
                   {product.collection}
@@ -204,12 +249,14 @@ const allSoldOut = product.variants.every((v) => !v.available);
               )
             }
 
-            {/* Sold Out Overlay */}
+            {/* Unavailable Overlay */}
             {
-              allSoldOut && (
+              isUnavailable && (
                 <div class="absolute inset-0 flex items-center justify-center bg-background-inverse/60">
                   <span class="px-6 py-3 bg-background text-text text-lg font-semibold rounded-full">
-                    Sold Out
+                    {isPastDrop && !allSoldOut
+                      ? 'No Longer Available'
+                      : 'Sold Out'}
                   </span>
                 </div>
               )
@@ -252,13 +299,25 @@ const allSoldOut = product.variants.every((v) => !v.available);
         <div class="space-y-6">
           {/* Collection Badge */}
           {
-            product.collection && (
-              <a
-                href={`/shop/${product.collection.toLowerCase().replace(/\s+/g, '-')}`}
-                class="inline-block text-xs font-medium uppercase tracking-wider text-accent hover:text-accent-600 transition-colors duration-normal"
-              >
-                {product.collection}
-              </a>
+            product.collection && product.collectionSlug && (
+              <div class="flex items-center gap-2">
+                <a
+                  href={`/shop/${product.collectionSlug}`}
+                  class="inline-block text-xs font-medium uppercase tracking-wider text-accent hover:text-accent-600 transition-colors duration-normal"
+                >
+                  {product.collection}
+                </a>
+                {isPastDrop && (
+                  <span class="px-2 py-0.5 text-xs font-medium bg-background-tertiary text-text-muted rounded">
+                    Past Collection
+                  </span>
+                )}
+                {dropStatus === 'scheduled' && (
+                  <span class="px-2 py-0.5 text-xs font-medium bg-status-info/10 text-status-info rounded">
+                    Coming Soon
+                  </span>
+                )}
+              </div>
             )
           }
 
@@ -270,6 +329,21 @@ const allSoldOut = product.variants.every((v) => !v.available);
             <p>{product.description}</p>
           </div>
 
+          {/* Past drop warning */}
+          {
+            isPastDrop && (
+              <div class="p-4 bg-status-warning/10 border border-status-warning/30 rounded-lg">
+                <p class="text-sm text-status-warning">
+                  This product is from a past collection and is no longer
+                  available for purchase.
+                  <a href="/shop" class="underline hover:no-underline ml-1">
+                    Browse current collections
+                  </a>
+                </p>
+              </div>
+            )
+          }
+
           <hr class="border-border" />
 
           {/* Interactive Product Controls (React Island) */}
@@ -278,6 +352,7 @@ const allSoldOut = product.variants.every((v) => !v.available);
             productTitle={product.title}
             variants={product.variants}
             defaultVariantId={defaultVariant?.id ?? null}
+            disablePurchase={isPastDrop}
           />
 
           <hr class="border-border" />

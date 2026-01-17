@@ -766,3 +766,49 @@
 - Add drop cover image support in future iteration
 - Implement cron job for auto-updating drop status based on dates
 - Consider adding pagination to ProductAssigner for stores with many products
+## [4.4]: Update storefront for drops
+**Status:** PASSED
+**Tests Written:** N/A (Astro pages + React components, integration testing recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings in storefront)
+**Build:** PASSED (19 pages built)
+**Lint:** N/A (no linter configured for storefront yet)
+**Findings:**
+- Updated storefront to fully integrate with drops system:
+  - Homepage fetches and displays active drop with featured products
+  - Shop pages filter products by drop using MerchantClient.getDropProducts
+  - Drop-specific pages show drop info, description, and status badges
+- Product listing by drop:
+  - /shop/[drop].astro fetches products via getDropProducts(slug)
+  - Shows drop description in header section
+  - Filter chips show all drops (active, scheduled, ended)
+  - "(Past)" suffix on ended drops with reduced opacity
+- Sold-out handling:
+  - Products check inventory via MerchantClient.getInventory
+  - All variants must be unavailable for product to show "Sold Out"
+  - Past drop products automatically marked as unavailable
+- Past drop viewing:
+  - "Past Collection" badge displayed on header
+  - Warning message explains products no longer available
+  - ProductCard shows "No Longer Available" instead of "Sold Out"
+  - Product detail page shows warning banner
+  - Add to cart disabled via disablePurchase prop
+- ProductCard.astro updates:
+  - Added disablePurchase prop for past drop products
+  - isUnavailable computed from soldOut OR disablePurchase
+  - Different badge text based on reason (sold out vs past drop)
+- ProductControls.tsx updates:
+  - Added disablePurchase prop
+  - Passes available=false to AddToCart when disablePurchase
+- Homepage integration:
+  - Fetches active drop via getDrops({ status: 'active', limit: 1 })
+  - Hero CTA links to active drop shop page
+  - Drop banner shows active drop name and link
+
+**Recommendations:**
+- Phase 4 (Drops System) is complete - proceed to Phase 5 or other remaining tasks
+- Consider adding countdown timer for scheduled drops
+- Add "Subscribe for drop notifications" feature
+- Consider adding drop-specific meta tags for SEO
+- Add E2E tests for drop browsing flows with Playwright
+- Consider lazy loading products on shop pages for large catalogs

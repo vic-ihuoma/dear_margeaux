@@ -7,12 +7,15 @@ interface ProductControlsProps {
   productTitle: string;
   variants: VariantOption[];
   defaultVariantId: string | null;
+  /** When true, product is from a past drop and not purchasable */
+  disablePurchase?: boolean;
 }
 
 export default function ProductControls({
   productTitle,
   variants,
   defaultVariantId,
+  disablePurchase = false,
 }: ProductControlsProps) {
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     defaultVariantId
@@ -48,7 +51,9 @@ export default function ProductControls({
         variantTitle={selectedVariant?.title ?? ''}
         productTitle={productTitle}
         price={selectedVariant?.price_cents ?? 0}
-        available={selectedVariant?.available ?? false}
+        available={
+          disablePurchase ? false : (selectedVariant?.available ?? false)
+        }
         imageUrl={selectedVariant?.image_url ?? null}
       />
     </div>
