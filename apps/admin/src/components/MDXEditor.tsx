@@ -12,6 +12,34 @@ export interface MDXEditorProps {
 }
 
 /**
+ * Validates a URL to prevent XSS via javascript: or data: protocols
+ * Only allows http, https, mailto, and relative URLs
+ */
+function isValidUrl(url: string): boolean {
+  const trimmedUrl = url.trim().toLowerCase();
+  // Block dangerous protocols
+  if (
+    trimmedUrl.startsWith('javascript:') ||
+    trimmedUrl.startsWith('data:') ||
+    trimmedUrl.startsWith('vbscript:')
+  ) {
+    return false;
+  }
+  // Allow safe protocols and relative URLs
+  if (
+    trimmedUrl.startsWith('http://') ||
+    trimmedUrl.startsWith('https://') ||
+    trimmedUrl.startsWith('mailto:') ||
+    trimmedUrl.startsWith('/') ||
+    trimmedUrl.startsWith('#') ||
+    !trimmedUrl.includes(':')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Simple markdown to HTML converter for preview
  * Handles basic markdown syntax
  */
@@ -36,11 +64,14 @@ function markdownToHtml(markdown: string): string {
   html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
   html = html.replace(/_(.*?)_/g, '<em>$1</em>');
 
-  // Links
-  html = html.replace(
-    /\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2" class="text-primary hover:underline">$1</a>'
-  );
+  // Links (with URL protocol validation to prevent XSS)
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, text, url) => {
+    if (isValidUrl(url)) {
+      return `<a href="${url}" class="text-primary hover:underline">${text}</a>`;
+    }
+    // Invalid URL - render as plain text
+    return `${text} (invalid link)`;
+  });
 
   // Inline code
   html = html.replace(

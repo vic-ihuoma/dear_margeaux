@@ -1315,3 +1315,43 @@
 - Add E2E tests for authentication flows with Playwright
 - Consider adding social login options (Google, Apple) in future iteration
 - Consider adding saved addresses feature to customer account
+
+## [8.1]: Security audit
+**Status:** PASSED
+**Tests Written:** N/A (security audit, manual verification)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (all packages: 0 errors)
+**Build:** PASSED (all applications build successfully)
+**Lint:** PASSED (0 errors, pre-existing warnings only)
+**Findings:**
+- Comprehensive security audit completed for all components:
+  - Merchant API (Hono/Cloudflare Workers)
+  - Admin dashboard (Astro + React)
+  - Storefront (Astro + React)
+- Security headers implemented:
+  - CSP (Content-Security-Policy) for XSS protection
+  - X-Frame-Options: DENY to prevent clickjacking
+  - X-Content-Type-Options: nosniff to prevent MIME sniffing
+  - X-XSS-Protection: 1; mode=block for legacy browser support
+  - Referrer-Policy: strict-origin-when-cross-origin
+  - Permissions-Policy for feature control
+- XSS vulnerability fixed in MDXEditor.tsx:
+  - Added isValidUrl() function to validate link protocols
+  - Blocks javascript:, data:, vbscript: protocols
+  - Only allows http, https, mailto, and relative URLs
+- Verified security controls:
+  - Admin authentication via Lucia with PBKDF2 password hashing
+  - API authorization with pk_/sk_ key differentiation
+  - All SQL queries use parameterized statements (no injection risk)
+  - Stripe webhook signature verification with replay protection
+  - Rate limiting on all API endpoints with role-based limits
+  - Secrets properly managed via environment variables
+- Security checklist from PRD fully verified
+
+**Recommendations:**
+- Next task: PRD 8.2 - Performance optimization
+- Consider implementing brute force protection for login (rate limit + lockout)
+- Consider stricter CORS origins for production deployment
+- Add HSTS preload header once domain is confirmed
+- Consider adding email verification for customer accounts
+- Review and test CSP rules in production environment

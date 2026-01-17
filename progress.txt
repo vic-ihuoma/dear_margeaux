@@ -2166,3 +2166,57 @@ USD, EUR, GBP, CAD, AUD, JPY, CHF, SEK, NOK, DKK, NZD, SGD, HKD, MXN, BRL, PLN, 
 - Registration can upgrade existing guest customers (link by email)
 - Order history fetches via session token (X-Customer-Session header)
 - No email verification implemented yet (future enhancement)
+
+## 2026-01-17: Task 8.1 - Security audit
+
+### Completed
+- Conducted comprehensive security audit across all components
+- Added security headers to all applications:
+  - apps/storefront/public/_headers: CSP, X-Frame-Options, X-Content-Type-Options, etc.
+  - apps/admin/public/_headers: CSP, X-Frame-Options, X-Content-Type-Options, etc.
+  - merchant/src/middleware/security-headers.ts: API security headers middleware
+- Fixed XSS vulnerability in MDXEditor.tsx:
+  - Added URL protocol validation to prevent javascript:, data:, vbscript: protocols
+  - Only allows http, https, mailto, and relative URLs in markdown links
+
+### Security Checklist Results
+- [x] All admin routes require authentication (via middleware)
+- [x] API keys properly scoped (pk_ vs sk_) - verified
+- [x] HTTPS enforced via Cloudflare (deployment config)
+- [x] CSP headers configured (via _headers files)
+- [x] Input validation on all forms - verified with Zod-like patterns
+- [x] SQL injection prevention verified - parameterized queries throughout
+- [x] XSS prevention verified - framework escaping + fixed MDXEditor
+- [x] Stripe webhook signatures validated - verified with constructEventAsync
+- [x] Rate limiting enabled - implemented with role-based limits
+- [x] Secrets not in code/git - verified, .env properly gitignored
+
+### Files Created/Modified
+- apps/storefront/public/_headers (new)
+- apps/admin/public/_headers (new)
+- merchant/src/middleware/security-headers.ts (new)
+- merchant/src/index.ts (modified: added security headers middleware)
+- apps/admin/src/components/MDXEditor.tsx (modified: XSS fix for link URLs)
+
+### Audit Findings Summary
+- Admin authentication: Protected via Astro middleware
+- API authorization: Proper pk_/sk_ key separation with adminOnly middleware
+- SQL injection: All queries use parameterized statements
+- XSS: Framework escaping used throughout, fixed MDXEditor link validation
+- Stripe webhooks: Signature verification + replay attack prevention
+- Rate limiting: Applied to all /v1/* routes with role-based limits
+- Secrets: Properly managed via environment variables and .gitignore
+
+### Recommendations for Production
+- Consider Cloudflare Rate Limiting for distributed rate limiting
+- Add brute force protection for login endpoints (account lockout)
+- Review CORS origins configuration for production (currently permissive)
+- Enable HSTS preload once domain is confirmed
+
+### Test Results
+- Type Check (merchant): PASSED
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 1 hint)
+- Type Check (admin): PASSED (0 errors, 0 warnings, 1 hint)
+- Merchant Tests: 18 passed (2 test files)
+- Lint (admin): PASSED (0 errors, 4 pre-existing warnings)
+- Lint (storefront): PASSED (0 errors, 1 pre-existing warning)

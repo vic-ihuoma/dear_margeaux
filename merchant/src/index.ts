@@ -15,6 +15,7 @@ import { waitlist } from './routes/waitlist';
 import { customerAuth } from './routes/customer-auth';
 import { handleCron } from './cron';
 import { rateLimitMiddleware } from './middleware/rate-limit';
+import { securityHeaders } from './middleware/security-headers';
 import { ApiError, type Env } from './types';
 
 // ============================================================
@@ -22,6 +23,9 @@ import { ApiError, type Env } from './types';
 // ============================================================
 
 const app = new Hono<{ Bindings: Env }>();
+
+// Security headers (applied to all routes)
+app.use('*', securityHeaders());
 
 app.use('*', cors());
 
