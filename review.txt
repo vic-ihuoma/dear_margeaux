@@ -935,3 +935,43 @@
 - Consider adding E2E test for waitlist signup flow with Playwright
 - Future: Add countdown timer showing time until drop launch
 - Future: Add social share buttons on waitlist confirmation
+
+## [5.4]: Configure AWS SES
+**Status:** PASSED
+**Tests Written:** N/A (SES client library, requires AWS credentials for integration tests)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (all packages: 0 errors)
+**Build:** PASSED (packages/email builds successfully)
+**Lint:** N/A (no linter configured for packages/email yet)
+**Findings:**
+- Created packages/email package with full AWS SES client configuration:
+  - @aws-sdk/client-ses v3 integration (latest AWS SDK)
+  - Factory function createSESClient() with explicit or environment-based config
+  - Singleton pattern getSESClient() for default client instance
+  - sendEmail() function with comprehensive options:
+    - Support for to, cc, bcc, replyTo addresses
+    - Both HTML and plain text body support
+    - Proper UTF-8 charset configuration
+  - sendBatchEmails() for sending to multiple recipients
+  - validateSESConfig() for health checks and startup validation
+- Package structure follows existing @dear-margeaux/* patterns:
+  - ESM modules with TypeScript
+  - Declaration maps and source maps
+  - Clean exports via index.ts barrel file
+- Environment variables:
+  - AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY for credentials
+  - AWS_REGION for region configuration
+  - SES_FROM_EMAIL for default sender address
+- Error handling returns structured result objects instead of throwing
+- Manual AWS Console steps documented for domain verification and IAM setup
+
+**Recommendations:**
+- Next task: PRD 5.5 - Create email templates with React Email
+- Complete manual AWS Console steps:
+  - Create SES identity for sending domain
+  - Verify domain with DNS records
+  - Create IAM user with SES send permissions
+  - Move out of sandbox for production (Phase 8)
+- Consider adding unit tests with mocked SES client
+- Consider adding retry logic for transient failures
+- Add rate limiting awareness for SES quotas

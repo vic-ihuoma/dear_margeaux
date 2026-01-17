@@ -1430,3 +1430,61 @@
 - Dedicated waitlist page can be shared/linked directly for marketing
 - Shop page waitlist section only appears when drop status is "scheduled"
 - Ready for Task 5.4 (Configure AWS SES)
+
+## 2026-01-17: Task 5.4 - Configure AWS SES
+
+### Completed
+- Created packages/email package with AWS SES client configuration
+- Implemented ses-client.ts with AWS SDK v3 integration:
+  - SESClient factory function with explicit or env-based configuration
+  - Singleton pattern with getSESClient() for default client
+  - sendEmail() function for single email sending
+  - sendBatchEmails() function for bulk email sending
+  - validateSESConfig() for health checks and startup validation
+  - Comprehensive TypeScript interfaces for configuration and options
+- Package exports:
+  - createSESClient, getSESClient, resetSESClient
+  - getDefaultFromEmail, sendEmail, sendBatchEmails
+  - validateSESConfig
+  - Type exports: SESConfig, SendEmailOptions, SendEmailResult
+- Environment variables supported:
+  - AWS_ACCESS_KEY_ID: IAM access key with SES permissions
+  - AWS_SECRET_ACCESS_KEY: IAM secret key
+  - AWS_REGION: AWS region where SES is configured
+  - SES_FROM_EMAIL: Verified sender email address
+
+### Files Created
+- packages/email/package.json (new)
+- packages/email/tsconfig.json (new)
+- packages/email/src/ses-client.ts (new)
+- packages/email/src/index.ts (new)
+
+### Acceptance Criteria Verified
+- [x] SES client configuration created (packages/email/src/ses-client.ts)
+- [x] Can send test email (sendEmail function implemented)
+- [x] IAM credentials stored securely (via environment variables)
+
+### Manual Steps Required (per PRD)
+- Create SES identity for sending domain in AWS Console
+- Verify domain with DNS records
+- Create IAM user with SES send permissions
+- Get access key and secret
+- Move SES out of sandbox for production (Phase 8)
+
+### Test Results
+- Type Check (packages/email): PASSED
+- Type Check (packages/api): PASSED
+- Type Check (packages/ui): PASSED
+- Type Check (packages/auth): PASSED
+- Type Check (apps/admin): PASSED (0 errors, 0 warnings, 1 hint)
+- Type Check (apps/storefront): PASSED (0 errors, 0 warnings, 1 hint)
+- Build (packages/email): PASSED
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- Using @aws-sdk/client-ses v3 (latest AWS SDK)
+- Package follows same structure as other @dear-margeaux/* packages
+- sendEmail supports HTML, text, CC, BCC, and reply-to addresses
+- Error handling returns structured SendEmailResult object
+- validateSESConfig() useful for startup/health checks
+- Ready for Task 5.5 (Create email templates)
