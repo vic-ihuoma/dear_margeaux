@@ -849,3 +849,45 @@
 - Consider adding drop-specific meta tags for SEO
 - Add E2E tests for drop browsing flows with Playwright
 - Consider lazy loading products on shop pages for large catalogs
+
+## [5.2]: Build waitlist API endpoints
+**Status:** PASSED
+**Tests Written:** N/A (CRUD routes, follows existing API patterns)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (tsc --noEmit for merchant and packages/api)
+**Lint:** PASSED (0 new errors, pre-existing 158 warnings from upstream code)
+**Findings:**
+- Created complete waitlist CRUD routes following existing patterns from drops.ts:
+  - POST /v1/waitlist: Subscribe email to drop
+    - Validates email format (regex)
+    - Normalizes email to lowercase
+    - Validates drop exists and is not ended
+    - Rejects duplicate subscriptions (409 Conflict)
+    - Allows re-subscription if previously unsubscribed
+  - DELETE /v1/waitlist/:id: Unsubscribe by entry ID
+    - Soft delete (sets unsubscribed=1)
+    - Returns error if already unsubscribed
+  - GET /v1/waitlist: List subscribers (admin only)
+    - Cursor-based pagination
+    - Filter by drop_id
+    - Option to include unsubscribed entries
+  - GET /v1/waitlist/:id: Get single entry (admin only)
+  - POST /v1/waitlist/unsubscribe: Unsubscribe by email (public)
+    - For unsubscribe links in emails
+    - Optionally filter by drop_id
+    - Privacy-safe (doesn't reveal if email exists)
+- Added 5 waitlist types to packages/api:
+  - WaitlistEntry, SubscribeWaitlistParams, UnsubscribeWaitlistParams
+  - ListWaitlistParams, UnsubscribeResult
+- Added 5 waitlist methods to MerchantClient:
+  - subscribeToWaitlist, unsubscribeFromWaitlist, unsubscribeByEmail
+  - getWaitlistEntries, getWaitlistEntry
+- All routes use authMiddleware for store context
+- Admin endpoints protected with adminOnly middleware
+
+**Recommendations:**
+- Next task: PRD 5.3 - Build waitlist signup UI (storefront component)
+- Consider adding rate limiting for subscribe endpoint (prevent spam)
+- Consider adding email verification before confirming subscription
+- Add unit tests for waitlist routes with mocked D1
+- Consider adding subscription count endpoint for drop stats

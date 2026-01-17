@@ -1318,3 +1318,63 @@
 - Foreign key constraint on drop_id references drops(id)
 - Migration needs to be applied to remote D1 database before production use
 - Ready for Task 5.2 (Build waitlist API endpoints)
+
+## 2026-01-17: Task 5.2 - Build waitlist API endpoints
+
+### Completed
+- Created waitlist API routes file at merchant/src/routes/waitlist.ts:
+  - POST /v1/waitlist - Subscribe email to drop (validates email, drop, prevents duplicates)
+  - DELETE /v1/waitlist/:id - Unsubscribe by entry ID (soft delete)
+  - GET /v1/waitlist - List subscribers (admin only, with pagination and filters)
+  - GET /v1/waitlist/:id - Get single entry (admin only)
+  - POST /v1/waitlist/unsubscribe - Unsubscribe by email (for public unsubscribe links)
+- Registered waitlist routes in merchant/src/index.ts
+- Added waitlist types to packages/api/src/types.ts:
+  - WaitlistEntry interface
+  - SubscribeWaitlistParams interface
+  - UnsubscribeWaitlistParams interface
+  - ListWaitlistParams interface
+  - UnsubscribeResult interface
+- Added 5 waitlist methods to MerchantClient:
+  - subscribeToWaitlist(data)
+  - unsubscribeFromWaitlist(id)
+  - unsubscribeByEmail(data)
+  - getWaitlistEntries(params?)
+  - getWaitlistEntry(id)
+- Route features implemented:
+  - Email validation and normalization (lowercase, trimmed)
+  - Drop existence validation
+  - Prevention of subscribing to ended drops
+  - Duplicate email rejection (409 Conflict)
+  - Re-subscription support (if previously unsubscribed)
+  - Soft unsubscribe (sets flag, doesn't delete record)
+  - Cursor-based pagination for list endpoint
+  - Filter by drop_id and include_unsubscribed options
+
+### Files Created/Modified
+- merchant/src/routes/waitlist.ts (new)
+- merchant/src/index.ts (modified: added waitlist route)
+- packages/api/src/types.ts (modified: added waitlist types)
+- packages/api/src/merchant-client.ts (modified: added waitlist methods)
+
+### Acceptance Criteria Verified
+- [x] Can subscribe to waitlist (POST /v1/waitlist)
+- [x] Duplicate emails rejected (409 Conflict error)
+- [x] Can unsubscribe (DELETE /v1/waitlist/:id, POST /v1/waitlist/unsubscribe)
+
+### Test Results
+- Type Check (merchant): PASSED (tsc --noEmit)
+- Type Check (packages/api): PASSED (tsc --noEmit)
+- Type Check (apps/storefront): PASSED (0 errors, 0 warnings, 1 hint)
+- Type Check (apps/admin): PASSED (0 errors, 0 warnings, 1 hint)
+- Merchant Tests: 18 tests passed (2 test files)
+- Lint: PASSED (0 new errors, pre-existing warnings from upstream code)
+
+### Notes
+- Email is normalized to lowercase and trimmed before storage
+- Cannot subscribe to drops with status "ended"
+- Soft unsubscribe preserves record for audit trail (unsubscribed=1)
+- Re-subscribing updates existing entry instead of creating duplicate
+- Public unsubscribe endpoint (/unsubscribe) doesn't reveal if email exists
+- Admin list endpoint supports filtering by drop_id and including unsubscribed entries
+- Ready for Task 5.3 (Build waitlist signup UI)

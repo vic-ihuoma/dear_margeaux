@@ -11,6 +11,7 @@ import { webhooksRoutes } from './routes/webhooks-outbound';
 import { images } from './routes/images';
 import { discounts } from './routes/discounts';
 import { drops } from './routes/drops';
+import { waitlist } from './routes/waitlist';
 import { handleCron } from './cron';
 import { rateLimitMiddleware } from './middleware/rate-limit';
 import { ApiError, type Env } from './types';
@@ -61,6 +62,7 @@ app.route('/v1/webhooks', webhooksRoutes); // Outbound webhook management
 app.route('/v1/images', images);
 app.route('/v1/discounts', discounts);
 app.route('/v1/drops', drops);
+app.route('/v1/waitlist', waitlist);
 
 export default {
   fetch: app.fetch,

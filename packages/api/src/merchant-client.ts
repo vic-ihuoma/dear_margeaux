@@ -54,6 +54,12 @@ import type {
   UpdateDropParams,
   ListDropsParams,
   DropProductsResponse,
+  // Waitlist
+  WaitlistEntry,
+  SubscribeWaitlistParams,
+  UnsubscribeWaitlistParams,
+  ListWaitlistParams,
+  UnsubscribeResult,
 } from './types.js';
 
 // ============================================================================
@@ -741,5 +747,56 @@ export class MerchantClient {
       `/drops/${dropId}/products`,
       { body: { productIds } }
     );
+  }
+
+  // ==========================================================================
+  // Waitlist
+  // ==========================================================================
+
+  /**
+   * Subscribe an email to a drop's waitlist
+   */
+  async subscribeToWaitlist(
+    data: SubscribeWaitlistParams
+  ): Promise<WaitlistEntry> {
+    return this.request<WaitlistEntry>('POST', '/waitlist', { body: data });
+  }
+
+  /**
+   * Unsubscribe from waitlist by entry ID
+   */
+  async unsubscribeFromWaitlist(
+    id: string
+  ): Promise<{ unsubscribed: boolean }> {
+    return this.request<{ unsubscribed: boolean }>('DELETE', `/waitlist/${id}`);
+  }
+
+  /**
+   * Unsubscribe from waitlist by email (for public unsubscribe links)
+   */
+  async unsubscribeByEmail(
+    data: UnsubscribeWaitlistParams
+  ): Promise<UnsubscribeResult> {
+    return this.request<UnsubscribeResult>('POST', '/waitlist/unsubscribe', {
+      body: data,
+    });
+  }
+
+  /**
+   * List waitlist entries (admin only)
+   */
+  async getWaitlistEntries(
+    params?: ListWaitlistParams
+  ): Promise<PaginatedResponse<WaitlistEntry>> {
+    return this.request<PaginatedResponse<WaitlistEntry>>('GET', '/waitlist', {
+      params: params ? { ...params } : undefined,
+    });
+  }
+
+  /**
+   * Get a waitlist entry by ID (admin only)
+   */
+  async getWaitlistEntry(id: string): Promise<WaitlistEntry> {
+    return this.request<WaitlistEntry>('GET', `/waitlist/${id}`);
   }
 }

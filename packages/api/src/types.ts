@@ -501,3 +501,41 @@ export interface ListDropsParams extends PaginationParams {
 export interface DropProductsResponse extends PaginatedResponse<Product> {
   drop: Drop;
 }
+
+// ============================================================================
+// Waitlist Types
+// ============================================================================
+
+/** Waitlist entry for drop notifications */
+export interface WaitlistEntry {
+  id: string;
+  email: string;
+  drop_id: string;
+  subscribed_at: ISODateString;
+  notified_at: ISODateString | null;
+  unsubscribed: boolean;
+}
+
+/** Parameters for subscribing to waitlist */
+export interface SubscribeWaitlistParams {
+  email: string;
+  drop_id: string;
+}
+
+/** Parameters for unsubscribing by email */
+export interface UnsubscribeWaitlistParams {
+  email: string;
+  drop_id?: string;
+}
+
+/** Parameters for listing waitlist entries */
+export interface ListWaitlistParams extends PaginationParams {
+  drop_id?: string;
+  include_unsubscribed?: boolean;
+}
+
+/** Response for unsubscribe by email */
+export interface UnsubscribeResult {
+  unsubscribed: boolean;
+  count?: number;
+}
