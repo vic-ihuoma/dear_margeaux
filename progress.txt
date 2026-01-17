@@ -1668,3 +1668,69 @@
 - Content directories follow Astro conventions (src/content/[collection-name]/)
 - Lookbook references drops by slug string (not foreign key)
 - Ready for Task 6.2 (Build blog listing and detail pages)
+
+## 2026-01-17: Task 6.2 - Build blog listing and detail pages
+
+### Completed
+- Created blog listing page at apps/storefront/src/pages/blog/index.astro:
+  - Page header with "The Journal" title and description
+  - Fetches all published blog posts from content collection
+  - Sorts posts by date (newest first)
+  - Displays post cards with:
+    - Featured image (if available)
+    - Date and first tag
+    - Title with hover effect
+    - Description excerpt
+    - "Read more" link with animated arrow
+  - Empty state with helpful messaging
+  - Newsletter CTA section
+  - Filters out draft posts in production
+- Created blog post detail page at apps/storefront/src/pages/blog/[...slug].astro:
+  - Uses getStaticPaths for static generation
+  - Passes post data to BlogPost layout
+  - Renders MDX content via Astro's render() function
+- Created BlogPost layout at apps/storefront/src/layouts/BlogPost.astro:
+  - Breadcrumb navigation (Home / Blog / Post Title)
+  - Article header with:
+    - Tag badges
+    - Post title (responsive sizing)
+    - Author, date, and reading time meta
+  - Featured image display (if available)
+  - Prose-styled article content with:
+    - Custom typography for headings, paragraphs, lists
+    - Link styling matching primary color
+    - Code block styling
+    - Blockquote styling with accent border
+  - Article footer with:
+    - Social sharing links (Twitter, Facebook, LinkedIn)
+    - "Back to all posts" link
+  - Newsletter CTA section
+- Comprehensive SEO meta tags in BlogPost layout:
+  - Standard meta: title, description, author, keywords
+  - Open Graph: og:type, og:title, og:description, og:image, article:published_time, article:author, article:tag
+  - Twitter Card: card type, title, description, image
+
+### Files Created
+- apps/storefront/src/pages/blog/index.astro (new)
+- apps/storefront/src/pages/blog/[...slug].astro (new)
+- apps/storefront/src/layouts/BlogPost.astro (new)
+
+### Acceptance Criteria Verified
+- [x] Blog index shows all published posts (sorted by date)
+- [x] Individual posts render MDX correctly
+- [x] Draft posts hidden from listing (in production mode)
+- [x] SEO meta tags present (OG, Twitter, standard)
+
+### Test Results
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 1 hint in 29 files)
+- Build: PASSED (2 blog pages built: /blog/, /blog/welcome-to-dear-margeaux/)
+- Lint: PASSED (0 errors)
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- Blog uses Astro Content Collections with Zod schemas (from Task 6.1)
+- BlogPost layout includes Header/Footer/CartDrawer for consistent site navigation
+- Social sharing uses URL-encoded values for cross-platform compatibility
+- Reading time is an approximate calculation (could be enhanced with actual word count)
+- Prose styling uses Tailwind Typography plugin conventions
+- Ready for Task 6.3 (Build lookbook pages)

@@ -1089,3 +1089,47 @@
 - Add image validation to lookbook schema (could use z.string().url())
 - Consider adding publish date vs updated date for blog posts
 - Add SEO component integration when building blog pages
+
+## [6.2]: Build blog listing and detail pages
+**Status:** PASSED
+**Tests Written:** N/A (Astro pages + MDX content, visual testing recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 1 hint in 29 files)
+**Build:** PASSED (2 blog pages built: /blog/, /blog/welcome-to-dear-margeaux/)
+**Lint:** PASSED (0 errors)
+**Findings:**
+- Created complete blog functionality with listing and detail pages:
+  - /blog/index.astro: Blog listing with post cards
+  - /blog/[...slug].astro: Individual blog post pages
+  - BlogPost.astro: Dedicated layout for blog posts
+- Blog listing page features:
+  - "The Journal" header with description
+  - Post cards with featured image, date, tags, title, description
+  - "Read more" links with hover animation
+  - Empty state for no posts
+  - Newsletter CTA section
+  - Sorted by date (newest first)
+  - Filters draft posts in production mode
+- Blog post layout features:
+  - Breadcrumb navigation (Home / Blog / Title)
+  - Article header with tags, title, author, date, reading time
+  - Featured image display
+  - Prose-styled content with Tailwind Typography conventions
+  - Social sharing buttons (Twitter, Facebook, LinkedIn)
+  - Back to blog link
+  - Newsletter CTA
+- Comprehensive SEO implementation:
+  - Standard meta: title, description, author, keywords
+  - Open Graph: type=article, title, description, image, published_time, author, tags
+  - Twitter Card: summary_large_image (with image) or summary
+- Static generation using getStaticPaths for all blog posts
+- MDX content rendered via Astro's render() function
+
+**Recommendations:**
+- Next task: PRD 6.3 - Build lookbook pages
+- Consider adding RSS feed generation (/blog/rss.xml)
+- Consider adding blog post pagination for large catalogs
+- Add related posts section at bottom of blog posts
+- Consider adding tag-based filtering (/blog/tag/[tag])
+- Add visual regression tests for blog layouts
+- Consider implementing actual reading time calculation based on word count
