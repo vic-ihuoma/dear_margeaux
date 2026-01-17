@@ -1020,3 +1020,44 @@
 - Consider adding dark mode styles for email clients that support it
 - Add unsubscribe link generation utility function
 - Consider adding template rendering function that converts React to HTML string
+
+## [5.6]: Implement notification triggers
+**Status:** PASSED
+**Tests Written:** N/A (notification triggers, requires AWS credentials for E2E testing)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (all packages: 0 errors)
+**Build:** PASSED (storefront and admin build successfully)
+**Lint:** N/A (no linter configured for merchant lib/ yet)
+**Findings:**
+- Created complete notification trigger system for all three email types:
+  - Drop launch: Sends to all waitlist subscribers when drop status becomes 'active'
+  - Order confirmation: Sends to customer after successful Stripe checkout
+  - Shipping update: Sends to customer when order status changes to 'shipped'
+- Implementation approach:
+  - All email sending is non-blocking via ctx.waitUntil()
+  - Errors are logged but don't block the main response flow
+  - React.createElement used for Worker-compatible template instantiation
+  - Batch processing with rate limiting (10 emails at a time for drop notifications)
+- Notification service module (notifications.ts):
+  - Clean separation of concerns with typed interfaces
+  - Helper functions for common operations (address formatting, safe sending)
+  - Reusable across webhook, routes, and cron contexts
+  - Updates waitlist_entries.notified_at on successful send
+- Cron integration for scheduled drops:
+  - processDropNotifications() handles both activation and ending of drops
+  - Automatically activates drops whose start_date has passed
+  - Sends notifications asynchronously via ctx.waitUntil()
+- Fixed TypeScript error:
+  - trackingNumber prop required string, tracking.tracking_number was optional
+  - Resolved with `|| ''` default value
+- Added @react-email/render dependency to packages/email
+- Added @dear-margeaux/email and @types/react to merchant
+
+**Recommendations:**
+- Phase 5 (Email Notifications) is complete
+- Consider adding email delivery tracking/analytics
+- Add retry mechanism for failed email sends
+- Consider adding admin UI for viewing sent notifications
+- Add integration tests with mocked SES client
+- Consider adding email rate limiting per store
+- Add monitoring/alerting for email send failures

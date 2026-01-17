@@ -5,6 +5,7 @@ import { authMiddleware, adminOnly } from '../middleware/auth';
 import { ApiError, uuid, now, generateOrderNumber, type Env, type AuthContext } from '../types';
 import { validateDiscount, calculateDiscount, type Discount } from './discounts';
 import { dispatchWebhooks, type WebhookEventType } from '../lib/webhooks';
+import { sendShippingUpdateEmail } from '../lib/notifications';
 
 // ============================================================
 // ORDER ROUTES
@@ -183,6 +184,40 @@ ordersRoutes.patch('/:orderId', async (c) => {
       order: formattedOrder,
       previous_status: order.status,
     });
+
+    // Send shipping update email when status changes to shipped (non-blocking)
+    if (status === 'shipped') {
+      c.executionCtx.waitUntil(
+        sendShippingUpdateEmail(
+          c.env,
+          store.id,
+          {
+            id: updated.id,
+            number: updated.number,
+            customer_email: updated.customer_email,
+            shipping_name: updated.shipping_name,
+            ship_to: updated.ship_to,
+            subtotal_cents: updated.subtotal_cents,
+            tax_cents: updated.tax_cents,
+            shipping_cents: updated.shipping_cents,
+            discount_amount_cents: updated.discount_amount_cents,
+            total_cents: updated.total_cents,
+          },
+          orderItems.map((i: any) => ({
+            sku: i.sku,
+            title: i.title,
+            qty: i.qty,
+            unit_price_cents: i.unit_price_cents,
+            image_url: null,
+            variant_title: null,
+          })),
+          {
+            tracking_number: tracking_number || updated.tracking_number,
+            tracking_url: tracking_url || updated.tracking_url,
+          }
+        ).catch((err) => console.error('Shipping update email failed:', err))
+      );
+    }
   }
 
   return c.json(formattedOrder);

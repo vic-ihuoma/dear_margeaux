@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { getDb } from '../db';
 import { authMiddleware, adminOnly } from '../middleware/auth';
 import { ApiError, uuid, now, type Env, type AuthContext } from '../types';
+import { sendDropLaunchEmails } from '../lib/notifications';
 
 // ============================================================
 // DROPS ROUTES
@@ -356,6 +357,34 @@ dropsRoutes.patch('/:id', adminOnly, async (c) => {
     id,
     store.id,
   ]);
+
+  // Send drop launch emails when status changes to 'active' (non-blocking)
+  if (status === 'active' && existing.status !== 'active') {
+    // Get featured image from first product in drop
+    const [firstProduct] = await db.query<any>(
+      `SELECT v.image_url
+       FROM products p
+       JOIN variants v ON v.product_id = p.id
+       WHERE p.drop_id = ? AND v.image_url IS NOT NULL
+       LIMIT 1`,
+      [id]
+    );
+    const featuredImageUrl = firstProduct?.image_url || undefined;
+
+    c.executionCtx.waitUntil(
+      sendDropLaunchEmails(
+        c.env,
+        store.id,
+        {
+          id: drop.id,
+          name: drop.name,
+          slug: drop.slug,
+          description: drop.description,
+        },
+        featuredImageUrl
+      ).catch((err) => console.error('Drop launch emails failed:', err))
+    );
+  }
 
   return c.json(formatDrop(drop));
 });

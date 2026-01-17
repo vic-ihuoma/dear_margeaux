@@ -1554,3 +1554,68 @@
 - formatPrice utility included in order-confirmation for cents-to-currency conversion
 - React Email preview server can be started with: cd packages/email && pnpm email
 - Ready for Task 5.6 (Implement notification triggers)
+
+## 2026-01-17: Task 5.6 - Implement notification triggers
+
+### Completed
+- Created render-template.ts in packages/email for converting React Email to HTML:
+  - renderEmailTemplate() returns both HTML and plain text versions
+  - renderToHtml() and renderToText() for individual renders
+  - Uses @react-email/render package
+- Created merchant/src/lib/notifications.ts service module:
+  - sendDropLaunchEmails() - Batch send to all waitlist subscribers for a drop
+  - sendOrderConfirmationEmail() - Send to customer after successful checkout
+  - sendShippingUpdateEmail() - Send to customer when order ships
+  - processDropNotifications() - Cron job handler for scheduled drop activation
+  - Helper functions: formatShippingAddress(), safeSendEmail()
+  - Type interfaces: OrderData, OrderItemData, DropData, TrackingInfo
+- Integrated email sending in Stripe webhook handler (webhooks.ts):
+  - Sends order confirmation email after order creation
+  - Uses ctx.waitUntil() for non-blocking async execution
+  - Error handling with console.error logging
+- Integrated email sending in orders route (orders.ts):
+  - Sends shipping update email when status changes to 'shipped'
+  - Includes tracking_number and tracking_url from request or existing order
+  - Non-blocking via ctx.waitUntil()
+- Integrated email sending in drops route (drops.ts):
+  - Sends drop launch emails when status changes to 'active'
+  - Fetches first product's image as featured image
+  - Non-blocking via ctx.waitUntil()
+- Updated cron.ts to call processDropNotifications():
+  - Activates scheduled drops when start_date passes
+  - Ends active drops when end_date passes
+  - Sends notifications asynchronously
+
+### Files Created/Modified
+- packages/email/package.json (modified: added @react-email/render dependency)
+- packages/email/src/render-template.ts (new)
+- packages/email/src/index.ts (modified: added render exports)
+- merchant/package.json (modified: added @dear-margeaux/email, @types/react)
+- merchant/src/lib/notifications.ts (new)
+- merchant/src/routes/webhooks.ts (modified: added order confirmation email)
+- merchant/src/routes/orders.ts (modified: added shipping update email)
+- merchant/src/routes/drops.ts (modified: added drop launch emails)
+- merchant/src/cron.ts (modified: added processDropNotifications call)
+
+### Acceptance Criteria Verified
+- [x] Drop launch emails send to waitlist (sendDropLaunchEmails function)
+- [x] Order confirmation emails send (sendOrderConfirmationEmail in webhook)
+- [x] Shipping update emails send (sendShippingUpdateEmail in orders route)
+
+### Test Results
+- Type Check (packages/email): PASSED
+- Type Check (merchant): PASSED
+- Type Check (apps/storefront): PASSED (0 errors, 0 warnings)
+- Type Check (apps/admin): PASSED (0 errors, 0 warnings)
+- Merchant Tests: 18 tests passed (2 test files)
+- Build (storefront): PASSED
+- Build (admin): PASSED
+
+### Notes
+- All email sending is non-blocking using ctx.waitUntil()
+- Emails use React.createElement to create template instances (Worker-compatible)
+- Notification functions log errors but don't throw to avoid blocking main flow
+- Drop notifications are processed both on manual status change AND via cron job
+- Cron job activates drops whose start_date has passed
+- Email failures are logged but don't affect order/checkout flow
+- Ready for Phase 5.7 or other remaining tasks

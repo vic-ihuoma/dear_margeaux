@@ -1,6 +1,7 @@
 import { getDb } from './db';
 import { uuid, now, type Env } from './types';
 import { retryFailedDeliveries } from './lib/webhooks';
+import { processDropNotifications } from './lib/notifications';
 
 // ============================================================
 // CRON - Scheduled tasks
@@ -77,4 +78,7 @@ export async function handleCron(env: Env, ctx: ExecutionContext) {
   // Retry failed webhook deliveries
   const retriedCount = await retryFailedDeliveries(env, ctx);
   console.log(`Retried ${retriedCount} failed webhook deliveries`);
+
+  // Process drop notifications (activate scheduled drops and send emails)
+  await processDropNotifications(env, ctx);
 }

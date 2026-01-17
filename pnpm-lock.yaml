@@ -171,6 +171,9 @@ importers:
 
   merchant:
     dependencies:
+      '@dear-margeaux/email':
+        specifier: workspace:*
+        version: link:../packages/email
       hono:
         specifier: ^4.6.0
         version: 4.11.3
@@ -184,6 +187,9 @@ importers:
       '@eslint/js':
         specifier: ^9.17.0
         version: 9.39.2
+      '@types/react':
+        specifier: ^19.2.8
+        version: 19.2.8
       eslint:
         specifier: ^9.17.0
         version: 9.39.2(jiti@2.6.1)
@@ -239,6 +245,9 @@ importers:
       '@react-email/components':
         specifier: ^1.0.4
         version: 1.0.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@react-email/render':
+        specifier: ^2.0.2
+        version: 2.0.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react:
         specifier: ^19.2.3
         version: 19.2.3

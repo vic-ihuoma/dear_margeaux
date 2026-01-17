@@ -17,6 +17,14 @@ export {
   type SendEmailResult,
 } from './ses-client.js';
 
+// Template Rendering
+export {
+  renderEmailTemplate,
+  renderToHtml,
+  renderToText,
+  type RenderResult,
+} from './render-template.js';
+
 // Email Templates
 export {
   DropLaunchEmail,

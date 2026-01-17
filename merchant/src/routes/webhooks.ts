@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { getDb } from '../db';
 import { ApiError, uuid, now, generateOrderNumber, type Env } from '../types';
 import { dispatchWebhooks } from '../lib/webhooks';
+import { sendOrderConfirmationEmail } from '../lib/notifications';
 
 // ============================================================
 // WEBHOOK ROUTES
@@ -339,6 +340,34 @@ webhooks.post('/stripe', async (c) => {
             },
           },
         });
+
+        // Send order confirmation email (non-blocking)
+        c.executionCtx.waitUntil(
+          sendOrderConfirmationEmail(
+            c.env,
+            store.id,
+            {
+              id: orderId,
+              number: orderNumber,
+              customer_email: customerEmail,
+              shipping_name: shippingName,
+              ship_to: shippingAddress ? JSON.stringify(shippingAddress) : null,
+              subtotal_cents: subtotalCents,
+              tax_cents: session.total_details?.amount_tax ?? 0,
+              shipping_cents: session.total_details?.amount_shipping ?? 0,
+              discount_amount_cents: discountAmountCents,
+              total_cents: session.amount_total ?? 0,
+            },
+            orderItems.map((i: any) => ({
+              sku: i.sku,
+              title: i.title,
+              qty: i.qty,
+              unit_price_cents: i.unit_price_cents,
+              image_url: null, // Cart items don't have images
+              variant_title: null,
+            }))
+          ).catch((err) => console.error('Order confirmation email failed:', err))
+        );
       }
     }
   }
