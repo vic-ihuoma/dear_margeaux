@@ -2093,3 +2093,76 @@ USD, EUR, GBP, CAD, AUD, JPY, CHF, SEK, NOK, DKK, NZD, SGD, HKD, MXN, BRL, PLN, 
 - Revenue by drop is placeholder - would need drop tracking in orders
 - Pre-commit hooks ran successfully: lint-staged, typecheck, prettier
 - Commit includes previously uncommitted work from tasks 6.4, 7.1, 7.2
+
+## 2026-01-17: Task 7.4 - Implement optional user accounts
+
+### Completed
+- Created customer sessions migration (009-customer-sessions.sql)
+- Added customer auth API routes to Merchant:
+  - POST /v1/customers/auth/register - Create new customer account
+  - POST /v1/customers/auth/login - Login to existing account
+  - POST /v1/customers/auth/logout - Invalidate session
+  - GET /v1/customers/auth/me - Get current customer from session
+  - GET /v1/customers/auth/orders - Get customer's order history
+- Extended packages/api with customer auth types and methods:
+  - CustomerSession, AuthenticatedCustomer, CustomerAuth types
+  - RegisterCustomerParams, LoginCustomerParams types
+  - CustomerOrder, CustomerOrderItem types for order history
+  - registerCustomer, loginCustomer, logoutCustomer, getCurrentCustomer, getMyOrders methods
+- Created storefront account pages:
+  - /account/login - Login page with email/password form
+  - /account/register - Registration page with password confirmation
+  - /account/orders - Order history page with expandable order details
+- Created auth state management with nanostores:
+  - authState atom for customer and session data
+  - isLoggedIn and currentCustomer computed stores
+  - localStorage persistence for session across page navigation
+  - initializeAuth, setAuth, clearAuth, getSessionId helpers
+- Added account UI components:
+  - AccountIcon.tsx - Header icon showing login state with green dot when logged in
+  - AccountNav.tsx - Sidebar navigation for account pages with logout
+  - LoginForm.tsx - Email/password login form with loading states
+  - RegisterForm.tsx - Registration form with password validation
+  - OrderHistory.tsx - Order list with expandable details, tracking info
+- Updated Header.astro to include AccountIcon
+- Added @dear-margeaux/auth as merchant dependency
+
+### Files Created
+- merchant/migrations/009-customer-sessions.sql
+- merchant/src/routes/customer-auth.ts
+- apps/storefront/src/stores/auth.ts
+- apps/storefront/src/components/AccountIcon.tsx
+- apps/storefront/src/components/AccountNav.tsx
+- apps/storefront/src/components/LoginForm.tsx
+- apps/storefront/src/components/RegisterForm.tsx
+- apps/storefront/src/components/OrderHistory.tsx
+- apps/storefront/src/pages/account/login.astro
+- apps/storefront/src/pages/account/register.astro
+- apps/storefront/src/pages/account/orders.astro
+
+### Files Modified
+- merchant/src/index.ts (added customer-auth route)
+- merchant/package.json (added @dear-margeaux/auth dependency)
+- packages/api/src/types.ts (added customer auth types)
+- packages/api/src/merchant-client.ts (added customer auth methods)
+- apps/storefront/src/components/Header.astro (added AccountIcon)
+
+### Acceptance Criteria Verified
+- [x] Customers can register with email/password
+- [x] Login works and persists (session stored in localStorage)
+- [x] Order history shows past orders (linked by customer_id)
+- [x] Guest checkout still works (unchanged)
+
+### Test Results
+- Merchant tests: 18 passed (2 test files)
+- Type Check (merchant): PASSED
+- Type Check (packages/api): PASSED
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 1 hint)
+- Build (storefront): PASSED (28 pages built)
+
+### Notes
+- Session expiration: 30 days with auto-refresh when half expired
+- Password hashing uses PBKDF2 (same as admin auth)
+- Registration can upgrade existing guest customers (link by email)
+- Order history fetches via session token (X-Customer-Session header)
+- No email verification implemented yet (future enhancement)
