@@ -354,3 +354,51 @@
 - Consider adding discount code input to cart drawer (Phase 7)
 - Add cart item quantity validation against inventory
 - Consider optimistic UI updates for cart operations
+
+## [2.9]: Implement Stripe checkout flow
+**Status:** PASSED
+**Tests Written:** N/A (integration flow, uses existing Merchant tests)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 1 hint in 23 files)
+**Build:** PASSED (19 pages built in 9.73s)
+**Lint:** N/A (no linter configured for storefront yet)
+**Findings:**
+- Complete Stripe checkout flow implemented and verified:
+  - CartDrawer.tsx handles checkout initiation:
+    - Creates API cart with customer email
+    - Adds all cart items to API cart
+    - Calls checkout endpoint to get Stripe session
+    - Redirects to Stripe Checkout hosted page
+  - Success page (/checkout/success.astro):
+    - Displays thank you message with green checkmark
+    - Shows truncated order reference (session ID)
+    - Explains "What happens next" (3-step process)
+    - CTAs for continue shopping / back to home
+    - Automatically clears cart via imported clearCart()
+  - Cancel page (/checkout/cancel.astro):
+    - Reassures user no charge was made
+    - Explains cart is preserved
+    - CTAs to return to shop or view cart
+    - Opens cart drawer for easy retry
+  - Merchant webhook handler (webhooks.ts):
+    - Validates Stripe signature
+    - Prevents duplicate processing via event deduplication
+    - Creates order with customer, items, shipping details
+    - Updates inventory (releases reserved, deducts on_hand)
+    - Records discount usage if applicable
+    - Dispatches order.created webhook for integrations
+- Full flow verified against PRD specification:
+  1. User clicks checkout
+  2. Frontend calls Merchant API /v1/carts/:id/checkout
+  3. API creates Stripe Checkout session
+  4. User redirects to Stripe hosted page
+  5. On success, redirect to /checkout/success
+  6. Webhook updates order status
+  7. Cart clears after successful checkout
+
+**Recommendations:**
+- Phase 2 (Storefront Foundation) is complete
+- Next: Phase 3 (Custom Admin CMS) starting with task 3.1
+- Consider adding a public endpoint to fetch order by session_id for enhanced success page
+- Add integration tests for the full checkout flow
+- Consider adding email confirmation on checkout success (Phase 5)

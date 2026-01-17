@@ -523,3 +523,57 @@
 - Success page clears cart automatically
 - Cancel page preserves cart for retry
 - Ready for Task 2.9 (Implement Stripe checkout flow) - partially complete via checkout button
+
+## 2026-01-17: Task 2.9 - Implement Stripe checkout flow
+
+### Completed
+- Verified existing implementation meets all acceptance criteria
+- Checkout flow fully implemented in CartDrawer.tsx:
+  - Creates cart via Merchant API when checkout button clicked
+  - Adds all cart items to API cart
+  - Initiates checkout to get Stripe Checkout session URL
+  - Redirects user to Stripe hosted checkout page
+  - Handles success/cancel redirects back to storefront
+- Success page at /checkout/success.astro:
+  - Shows thank you message with success icon
+  - Displays truncated order reference (session ID)
+  - Explains "What happens next" (email, preparation, shipping)
+  - Provides CTAs to continue shopping or go home
+  - Clears cart automatically via script
+- Cancel page at /checkout/cancel.astro:
+  - Informs user no charge was made
+  - Preserves cart for retry
+  - Provides CTAs to return to shop or view cart
+- Webhook handling in merchant/src/routes/webhooks.ts:
+  - Verifies Stripe signature
+  - Creates order from cart on checkout.session.completed
+  - Updates inventory (reserved → sold)
+  - Creates/updates customer record
+  - Saves shipping address
+  - Dispatches order.created webhook
+
+### Files Reviewed/Verified
+- apps/storefront/src/components/CartDrawer.tsx (checkout flow)
+- apps/storefront/src/pages/checkout/success.astro
+- apps/storefront/src/pages/checkout/cancel.astro
+- apps/storefront/src/stores/cart.ts (clearCart function)
+- merchant/src/routes/checkout.ts (cart/checkout API)
+- merchant/src/routes/webhooks.ts (Stripe webhook handler)
+
+### Acceptance Criteria Verified
+- [x] Checkout creates Stripe session (via CartDrawer handleCheckout)
+- [x] User can complete payment in Stripe (redirects to Stripe Checkout)
+- [x] Success page shows order details (session reference, next steps)
+- [x] Cart clears after successful checkout (clearCart() in success page script)
+
+### Test Results
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 1 hint in 23 files)
+- Build: PASSED (19 pages built in 9.73s)
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- All PRD-specified flow steps implemented
+- Stripe webhook creates order and updates inventory atomically
+- Success page is static but functional - could be enhanced with order details API in future
+- Cancel page preserves cart state for easy retry
+- Phase 2 (Storefront Foundation) is now complete
