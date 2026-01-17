@@ -1,0 +1,316 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import WaitlistForm from '../../../components/WaitlistForm';
+import type { Drop } from '@dear-margeaux/api';
+import type { GetStaticPaths } from 'astro';
+
+// Generate static paths for scheduled drops
+export const getStaticPaths: GetStaticPaths = async () => {
+  // Default sample slugs for scheduled drops
+  const sampleSlugs = ['summer-2026', 'fall-2026'];
+
+  const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
+  const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY;
+
+  if (apiUrl && apiKey) {
+    try {
+      const { MerchantClient } = await import('@dear-margeaux/api');
+      const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
+
+      // Fetch scheduled and draft drops that would have waitlist pages
+      const response = await client.getDrops({ limit: 100 });
+      const waitlistDrops = response.items.filter(
+        (drop) => drop.status === 'scheduled' || drop.status === 'draft'
+      );
+
+      if (waitlistDrops.length > 0) {
+        return waitlistDrops.map((drop) => ({
+          params: { slug: drop.slug },
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch drops for waitlist static paths:', error);
+    }
+  }
+
+  // Return sample slugs if API not available
+  return sampleSlugs.map((slug) => ({
+    params: { slug },
+  }));
+};
+
+// Get the drop slug from params
+const { slug } = Astro.params;
+
+// API configuration
+const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
+const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY;
+
+// State
+let drop: Drop | null = null;
+let dropExists = false;
+let canJoinWaitlist = false;
+
+// Try to fetch drop from API
+if (apiUrl && apiKey && slug) {
+  try {
+    const { MerchantClient } = await import('@dear-margeaux/api');
+    const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
+
+    // First get all drops and find by slug
+    const dropsResponse = await client.getDrops({ limit: 100 });
+    drop = dropsResponse.items.find((d) => d.slug === slug) || null;
+
+    if (drop) {
+      dropExists = true;
+      // Can only join waitlist for scheduled drops (not ended or active)
+      canJoinWaitlist = drop.status === 'scheduled' || drop.status === 'draft';
+    }
+  } catch (error) {
+    console.error('Failed to fetch drop:', error);
+  }
+} else if (slug) {
+  // Create mock drop for development
+  const slugStr = String(slug);
+  const name = slugStr
+    .split('-')
+    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+  drop = {
+    id: 'sample-drop',
+    name,
+    slug: slugStr,
+    status: 'scheduled',
+    description: `The upcoming ${name} collection features handcrafted leather bags with refined details.`,
+    start_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  } as Drop;
+  dropExists = true;
+  canJoinWaitlist = true;
+}
+
+// Format the launch date if available
+const formatLaunchDate = (
+  dateStr: string | undefined | null
+): string | null => {
+  if (!dateStr) return null;
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  } catch {
+    return null;
+  }
+};
+
+const launchDate = drop?.start_date ? formatLaunchDate(drop.start_date) : null;
+---
+
+<BaseLayout
+  title={drop ? `Join Waitlist - ${drop.name}` : 'Join Waitlist'}
+  description={drop
+    ? `Be the first to shop the ${drop.name} collection when it launches`
+    : 'Join our waitlist to be notified about upcoming drops'}
+>
+  <section class="min-h-[70vh] flex items-center py-16 md:py-24">
+    <div class="container mx-auto px-4 max-w-xl">
+      {
+        dropExists && canJoinWaitlist ? (
+          <>
+            {/* Badge */}
+            <div class="flex justify-center mb-6">
+              <span class="px-4 py-1.5 text-sm font-medium text-status-info bg-status-info/10 rounded-full">
+                Coming Soon
+              </span>
+            </div>
+
+            {/* Heading */}
+            <h1 class="text-3xl md:text-4xl font-bold text-text text-center mb-4">
+              {drop?.name}
+            </h1>
+
+            {/* Description */}
+            <p class="text-text-secondary text-center mb-2">
+              {drop?.description ||
+                `The ${drop?.name} collection is launching soon. Be the first to know.`}
+            </p>
+
+            {/* Launch Date */}
+            {launchDate && (
+              <p class="text-center text-sm text-text-muted mb-8">
+                Launching {launchDate}
+              </p>
+            )}
+
+            {/* Waitlist Form */}
+            <div class="bg-background-secondary rounded-2xl p-6 md:p-8 border border-border">
+              <h2 class="text-lg font-semibold text-text text-center mb-6">
+                Get Notified When It Drops
+              </h2>
+              <WaitlistForm
+                client:load
+                dropId={drop?.id || ''}
+                dropName={drop?.name || ''}
+                apiUrl={apiUrl || ''}
+                apiKey={apiKey || ''}
+              />
+            </div>
+
+            {/* Back Link */}
+            <div class="text-center mt-8">
+              <a
+                href="/shop"
+                class="text-sm text-text-secondary hover:text-primary transition-colors"
+              >
+                &larr; Browse current collections
+              </a>
+            </div>
+          </>
+        ) : dropExists && !canJoinWaitlist ? (
+          <div class="text-center">
+            <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-secondary flex items-center justify-center">
+              <svg
+                class="w-10 h-10 text-text-muted"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h1 class="text-2xl md:text-3xl font-bold text-text mb-4">
+              {drop?.name} is Now Available!
+            </h1>
+            <p class="text-text-secondary mb-8">
+              This collection has already launched. Visit the shop to browse
+              available items.
+            </p>
+            <a
+              href={`/shop/${drop?.slug}`}
+              class="inline-flex px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+            >
+              Shop {drop?.name}
+            </a>
+          </div>
+        ) : (
+          <div class="text-center">
+            <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-secondary flex items-center justify-center">
+              <svg
+                class="w-10 h-10 text-text-muted"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+                />
+              </svg>
+            </div>
+            <h1 class="text-2xl md:text-3xl font-bold text-text mb-4">
+              Collection Not Found
+            </h1>
+            <p class="text-text-secondary mb-8">
+              The collection you're looking for doesn't exist or has been
+              removed.
+            </p>
+            <a
+              href="/shop"
+              class="inline-flex px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+            >
+              Browse Collections
+            </a>
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  {/* Features Section */}
+  {
+    dropExists && canJoinWaitlist && (
+      <section class="py-12 bg-secondary border-t border-border">
+        <div class="container mx-auto px-4 max-w-4xl">
+          <div class="grid md:grid-cols-3 gap-8 text-center">
+            <div>
+              <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                <svg
+                  class="w-6 h-6 text-primary"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
+                  />
+                </svg>
+              </div>
+              <h3 class="font-semibold text-text mb-2">Early Access</h3>
+              <p class="text-sm text-text-secondary">
+                Be the first to know when this collection goes live
+              </p>
+            </div>
+            <div>
+              <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                <svg
+                  class="w-6 h-6 text-primary"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"
+                  />
+                </svg>
+              </div>
+              <h3 class="font-semibold text-text mb-2">Limited Edition</h3>
+              <p class="text-sm text-text-secondary">
+                Our drops are small batch and sell out quickly
+              </p>
+            </div>
+            <div>
+              <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                <svg
+                  class="w-6 h-6 text-primary"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+                  />
+                </svg>
+              </div>
+              <h3 class="font-semibold text-text mb-2">No Spam</h3>
+              <p class="text-sm text-text-secondary">
+                We'll only email you when this drop launches
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+</BaseLayout>

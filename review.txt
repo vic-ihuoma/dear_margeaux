@@ -891,3 +891,47 @@
 - Consider adding email verification before confirming subscription
 - Add unit tests for waitlist routes with mocked D1
 - Consider adding subscription count endpoint for drop stats
+
+## [5.3]: Build waitlist signup UI
+**Status:** PASSED
+**Tests Written:** N/A (React component + Astro pages, visual testing recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 1 hint in 25 files)
+**Build:** PASSED (21 pages built)
+**Lint:** N/A (no linter configured for storefront yet)
+**Findings:**
+- Created complete waitlist signup UI with two entry points:
+  - Dedicated waitlist page at /drops/[slug]/waitlist for shareable links
+  - Inline waitlist section on scheduled drop shop pages
+- WaitlistForm.tsx React component:
+  - Email input with regex validation before submit
+  - Loading state with spinner animation during API call
+  - Success state with green checkmark and confirmation message
+  - Error state with user-friendly error messages
+  - Handles 409 (duplicate) as success for better UX
+  - Privacy notice: "We'll only email you when this drop launches"
+  - Responsive layout: stacks vertically on mobile
+- Dedicated waitlist page (/drops/[slug]/waitlist.astro):
+  - "Coming Soon" badge for scheduled drops
+  - Drop name, description, and launch date display
+  - WaitlistForm integration with client:load hydration
+  - Features section with 3 benefits (Early Access, Limited Edition, No Spam)
+  - Graceful handling for active/ended drops (link to shop)
+  - Graceful handling for non-existent drops (404 state)
+  - getStaticPaths generates pages for scheduled drops
+- Updated shop/[drop].astro:
+  - Added isScheduledDrop boolean from drop.status
+  - Conditional waitlist section after page header
+  - Blue info-colored background (bg-status-info/5)
+  - Newsletter CTA hidden for scheduled drops (inline form instead)
+- PRD acceptance criteria met:
+  - Waitlist form on scheduled drop pages
+  - Success/error messages displayed
+  - Form validates email format
+
+**Recommendations:**
+- Next task: PRD 5.4 - Configure AWS SES for email sending
+- Consider adding visual regression tests for waitlist form states
+- Consider adding E2E test for waitlist signup flow with Playwright
+- Future: Add countdown timer showing time until drop launch
+- Future: Add social share buttons on waitlist confirmation

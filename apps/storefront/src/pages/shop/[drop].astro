@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import ProductGrid from '../../components/ProductGrid.astro';
+import WaitlistForm from '../../components/WaitlistForm';
 import type { Drop, Product, InventoryItem } from '@dear-margeaux/api';
 import type { GetStaticPaths } from 'astro';
 
@@ -131,6 +132,7 @@ let products: DisplayProduct[] = [];
 let allDrops: Drop[] = [];
 let dropExists = false;
 let isPastDrop = false;
+let isScheduledDrop = false;
 
 // Try to fetch from API if environment variables are set
 if (apiUrl && apiKey && dropSlug) {
@@ -149,8 +151,9 @@ if (apiUrl && apiKey && dropSlug) {
     drop = dropProductsResponse.drop;
     dropExists = true;
 
-    // Determine if this is a past (ended) drop
+    // Determine drop status for UI
     isPastDrop = drop.status === 'ended';
+    isScheduledDrop = drop.status === 'scheduled';
 
     // Fetch all drops for the filter navigation
     const dropsResponse = await client.getDrops({ limit: 100 });
@@ -317,6 +320,31 @@ const collectionName = drop?.name ?? null;
     </div>
   </section>
 
+  <!-- Waitlist Section for Scheduled Drops -->
+  {
+    isScheduledDrop && drop && apiUrl && apiKey && (
+      <section class="py-8 bg-status-info/5 border-b border-status-info/20">
+        <div class="container mx-auto px-4 max-w-xl">
+          <div class="text-center mb-6">
+            <h2 class="text-xl font-semibold text-text mb-2">
+              Get Notified When It Drops
+            </h2>
+            <p class="text-sm text-text-secondary">
+              Be the first to shop when {drop.name} launches
+            </p>
+          </div>
+          <WaitlistForm
+            client:load
+            dropId={drop.id}
+            dropName={drop.name}
+            apiUrl={apiUrl}
+            apiKey={apiKey}
+          />
+        </div>
+      </section>
+    )
+  }
+
   <!-- Filters Section -->
   {
     allDrops.length > 0 && dropExists && (
@@ -432,18 +460,22 @@ const collectionName = drop?.name ?? null;
   </section>
 
   <!-- Newsletter CTA -->
-  <section class="py-12 md:py-16 bg-secondary">
-    <div class="container mx-auto px-4 max-w-6xl text-center">
-      <h2 class="text-2xl font-bold text-text mb-3">Don't Miss a Drop</h2>
-      <p class="text-text-secondary max-w-md mx-auto mb-6">
-        Be the first to know when new collections are released
-      </p>
-      <a
-        href="/#newsletter"
-        class="inline-flex px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
-      >
-        Join the Waitlist
-      </a>
-    </div>
-  </section>
+  {
+    !isScheduledDrop && (
+      <section class="py-12 md:py-16 bg-secondary">
+        <div class="container mx-auto px-4 max-w-6xl text-center">
+          <h2 class="text-2xl font-bold text-text mb-3">Don't Miss a Drop</h2>
+          <p class="text-text-secondary max-w-md mx-auto mb-6">
+            Be the first to know when new collections are released
+          </p>
+          <a
+            href="/#newsletter"
+            class="inline-flex px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+          >
+            Join the Waitlist
+          </a>
+        </div>
+      </section>
+    )
+  }
 </BaseLayout>

@@ -1378,3 +1378,55 @@
 - Public unsubscribe endpoint (/unsubscribe) doesn't reveal if email exists
 - Admin list endpoint supports filtering by drop_id and including unsubscribed entries
 - Ready for Task 5.3 (Build waitlist signup UI)
+
+## 2026-01-17: Task 5.3 - Build waitlist signup UI
+
+### Completed
+- Created WaitlistForm.tsx React component at apps/storefront/src/components/WaitlistForm.tsx:
+  - Email input with validation (format and required)
+  - Submit button with loading state (spinner animation)
+  - Success state with confirmation message and checkmark
+  - Error state with user-friendly messages
+  - Handles duplicate subscription gracefully (treats as success)
+  - Privacy notice about email usage
+  - Responsive layout (stacks on mobile)
+- Created dedicated waitlist page at apps/storefront/src/pages/drops/[slug]/waitlist.astro:
+  - "Coming Soon" badge for scheduled drops
+  - Drop name and description display
+  - Launch date display when available
+  - WaitlistForm component integration
+  - Features section explaining benefits (Early Access, Limited Edition, No Spam)
+  - Graceful handling for already-launched drops (redirects to shop)
+  - Graceful handling for non-existent drops (404 message)
+  - Back link to browse collections
+- Updated shop/[drop].astro to include waitlist signup for scheduled drops:
+  - Added isScheduledDrop state variable
+  - Added waitlist section with WaitlistForm after page header
+  - Removed newsletter CTA for scheduled drops (replaced with inline form)
+  - Blue info-colored background for waitlist section
+
+### Files Created/Modified
+- apps/storefront/src/components/WaitlistForm.tsx (new)
+- apps/storefront/src/pages/drops/[slug]/waitlist.astro (new)
+- apps/storefront/src/pages/shop/[drop].astro (modified: added waitlist section)
+
+### Acceptance Criteria Verified
+- [x] Waitlist form on scheduled drop pages (inline section in shop/[drop].astro)
+- [x] Success/error messages displayed (WaitlistForm handles all states)
+- [x] Form validates email format (regex validation before submit)
+
+### Test Results
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 1 hint in 25 files)
+- Build: PASSED (21 pages built)
+  - 2 new waitlist pages (/drops/summer-2026/waitlist, /drops/fall-2026/waitlist)
+- Type Check (packages/api): PASSED
+- Type Check (packages/ui): PASSED
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- WaitlistForm uses native fetch to call Merchant API directly (not MerchantClient)
+- Duplicate subscriptions return 409 but are treated as success for UX
+- Form uses client:load directive for React hydration
+- Dedicated waitlist page can be shared/linked directly for marketing
+- Shop page waitlist section only appears when drop status is "scheduled"
+- Ready for Task 5.4 (Configure AWS SES)
