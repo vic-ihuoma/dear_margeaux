@@ -2413,3 +2413,54 @@ USD, EUR, GBP, CAD, AUD, JPY, CHF, SEK, NOK, DKK, NZD, SGD, HKD, MXN, BRL, PLN, 
 - Manual steps required: Create Sentry project, get DSN, configure environment variables
 - Performance monitoring uses different sample rates for production (10%) vs development (100%)
 - Session Replay enabled for debugging user interactions on errors
+
+## 2026-01-17: Task 8.5 - Production deployment preparation
+
+### Completed
+- Created comprehensive deployment guide at docs/DEPLOYMENT.md:
+  - Full step-by-step deployment instructions for Cloudflare, Stripe, and AWS SES
+  - Environment variable reference for all services
+  - DNS configuration guide with custom domain setup
+  - Post-deployment verification checklists
+  - Rollback procedures for API, Storefront, and Database
+  - Troubleshooting section for common issues
+  - Security verification steps
+- Updated apps/storefront/.env.example:
+  - Added detailed sections with clear comments
+  - Included production and development value examples
+  - Added SITE_URL and PUBLIC_STRIPE_PUBLISHABLE_KEY variables
+  - Added SENTRY_PROJECT variable
+- Updated apps/admin/.env.example:
+  - Added comprehensive documentation
+  - Included sk_ prefix convention for admin keys
+  - Added optional Sentry configuration section
+
+### Files Created/Modified
+- docs/DEPLOYMENT.md (new: comprehensive production deployment guide)
+- apps/storefront/.env.example (modified: expanded with production config)
+- apps/admin/.env.example (modified: expanded with production config)
+
+### Acceptance Criteria Verified
+- [x] Environment variables documented for all services
+- [x] Stripe live mode configuration documented
+- [x] AWS SES production access steps documented
+- [x] Custom domain configuration documented
+- [x] Cloudflare proxying steps documented
+- [x] Test purchase flow steps documented
+- [x] Error monitoring setup integrated with deployment
+
+### Test Results
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 3 hints)
+- Type Check (admin): PASSED (0 errors, 0 warnings, 1 hint)
+- Build (storefront): PASSED (28 pages + sitemap generated)
+- Build (admin): PASSED (server build in 3.25s)
+- Merchant Tests: 18 passed (2 test files)
+- Lint (storefront): PASSED (0 errors, 1 pre-existing warning)
+- Lint (admin): PASSED (0 errors, 4 pre-existing warnings)
+
+### Notes
+- Deployment requires manual steps in Cloudflare, Stripe, and AWS dashboards
+- First admin user must be created manually via D1 SQL
+- SES requires production access approval (24-48 hours)
+- Consider CI/CD automation in future iteration (GitHub Actions)
+
