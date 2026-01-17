@@ -8,6 +8,82 @@ import { dispatchWebhooks, type WebhookEventType } from '../lib/webhooks';
 import { sendShippingUpdateEmail } from '../lib/notifications';
 
 // ============================================================
+// DATABASE ROW TYPES
+// ============================================================
+
+interface OrderRow {
+  id: string;
+  store_id: string;
+  customer_id: string | null;
+  number: string;
+  status: string;
+  customer_email: string;
+  shipping_name: string | null;
+  shipping_phone: string | null;
+  ship_to: string | null;
+  subtotal_cents: number;
+  tax_cents: number;
+  shipping_cents: number;
+  discount_code: string | null;
+  discount_id: string | null;
+  discount_amount_cents: number | null;
+  total_cents: number;
+  currency: string;
+  tracking_number: string | null;
+  tracking_url: string | null;
+  shipped_at: string | null;
+  stripe_checkout_session_id: string | null;
+  stripe_payment_intent_id: string | null;
+  created_at: string;
+}
+
+interface OrderItemRow {
+  id: string;
+  order_id: string;
+  sku: string;
+  title: string;
+  qty: number;
+  unit_price_cents: number;
+}
+
+interface VariantRow {
+  id: string;
+  store_id: string;
+  product_id: string;
+  sku: string;
+  title: string;
+  price_cents: number;
+  compare_at_cents: number | null;
+  image_url: string | null;
+}
+
+interface InventoryRow {
+  id: string;
+  store_id: string;
+  sku: string;
+  on_hand: number;
+  reserved: number;
+}
+
+interface CustomerRow {
+  id: string;
+  store_id: string;
+  email: string;
+  order_count: number;
+  total_spent_cents: number;
+  last_order_at: string | null;
+}
+
+interface DiscountUsageRow {
+  id: string;
+  discount_id: string;
+  order_id: string;
+  customer_email: string;
+  discount_amount_cents: number;
+  count?: number;
+}
+
+// ============================================================
 // ORDER ROUTES
 // ============================================================
 
@@ -51,7 +127,7 @@ ordersRoutes.get('/', async (c) => {
   query += ` ORDER BY created_at DESC LIMIT ?`;
   params.push(limit + 1); // Fetch one extra to check for next page
 
-  const orderList = await db.query<any>(query, params);
+  const orderList = await db.query<OrderRow>(query, params);
 
   // Check if there's a next page
   const hasMore = orderList.length > limit;
@@ -59,11 +135,11 @@ ordersRoutes.get('/', async (c) => {
 
   // Batch fetch all order items (avoids N+1 query)
   const orderIds = orderList.map((o) => o.id);
-  const itemsByOrder: Record<string, any[]> = {};
+  const itemsByOrder: Record<string, OrderItemRow[]> = {};
 
   if (orderIds.length > 0) {
     const placeholders = orderIds.map(() => '?').join(',');
-    const allItems = await db.query<any>(
+    const allItems = await db.query<OrderItemRow>(
       `SELECT * FROM order_items WHERE order_id IN (${placeholders})`,
       orderIds
     );
@@ -96,13 +172,13 @@ ordersRoutes.get('/:orderId', async (c) => {
   const { store } = c.get('auth');
   const db = getDb(c.env);
 
-  const [order] = await db.query<any>(`SELECT * FROM orders WHERE id = ? AND store_id = ?`, [
+  const [order] = await db.query<OrderRow>(`SELECT * FROM orders WHERE id = ? AND store_id = ?`, [
     orderId,
     store.id,
   ]);
   if (!order) throw ApiError.notFound('Order not found');
 
-  const orderItems = await db.query<any>(`SELECT * FROM order_items WHERE order_id = ?`, [
+  const orderItems = await db.query<OrderItemRow>(`SELECT * FROM order_items WHERE order_id = ?`, [
     order.id,
   ]);
 
@@ -118,7 +194,7 @@ ordersRoutes.patch('/:orderId', async (c) => {
   const { store } = c.get('auth');
   const db = getDb(c.env);
 
-  const [order] = await db.query<any>(`SELECT * FROM orders WHERE id = ? AND store_id = ?`, [
+  const [order] = await db.query<OrderRow>(`SELECT * FROM orders WHERE id = ? AND store_id = ?`, [
     orderId,
     store.id,
   ]);
@@ -169,8 +245,10 @@ ordersRoutes.patch('/:orderId', async (c) => {
 
   await db.run(`UPDATE orders SET ${updates.join(', ')} WHERE id = ? AND store_id = ?`, params);
 
-  const [updated] = await db.query<any>(`SELECT * FROM orders WHERE id = ?`, [orderId]);
-  const orderItems = await db.query<any>(`SELECT * FROM order_items WHERE order_id = ?`, [orderId]);
+  const [updated] = await db.query<OrderRow>(`SELECT * FROM orders WHERE id = ?`, [orderId]);
+  const orderItems = await db.query<OrderItemRow>(`SELECT * FROM order_items WHERE order_id = ?`, [
+    orderId,
+  ]);
 
   // Dispatch webhooks for status changes
   const formattedOrder = formatOrder(updated, orderItems);
@@ -200,10 +278,10 @@ ordersRoutes.patch('/:orderId', async (c) => {
             subtotal_cents: updated.subtotal_cents,
             tax_cents: updated.tax_cents,
             shipping_cents: updated.shipping_cents,
-            discount_amount_cents: updated.discount_amount_cents,
+            discount_amount_cents: updated.discount_amount_cents ?? undefined,
             total_cents: updated.total_cents,
           },
-          orderItems.map((i: any) => ({
+          orderItems.map((i) => ({
             sku: i.sku,
             title: i.title,
             qty: i.qty,
@@ -234,7 +312,7 @@ ordersRoutes.post('/:orderId/refund', async (c) => {
 
   const db = getDb(c.env);
 
-  const [order] = await db.query<any>(`SELECT * FROM orders WHERE id = ? AND store_id = ?`, [
+  const [order] = await db.query<OrderRow>(`SELECT * FROM orders WHERE id = ? AND store_id = ?`, [
     orderId,
     store.id,
   ]);
@@ -261,10 +339,13 @@ ordersRoutes.post('/:orderId/refund', async (c) => {
       await db.run(`UPDATE orders SET status = 'refunded' WHERE id = ?`, [orderId]);
 
       // Dispatch refund webhook
-      const [refundedOrder] = await db.query<any>(`SELECT * FROM orders WHERE id = ?`, [orderId]);
-      const orderItems = await db.query<any>(`SELECT * FROM order_items WHERE order_id = ?`, [
+      const [refundedOrder] = await db.query<OrderRow>(`SELECT * FROM orders WHERE id = ?`, [
         orderId,
       ]);
+      const orderItems = await db.query<OrderItemRow>(
+        `SELECT * FROM order_items WHERE order_id = ?`,
+        [orderId]
+      );
 
       await dispatchWebhooks(c.env, c.executionCtx, store.id, 'order.refunded', {
         order: formatOrder(refundedOrder, orderItems),
@@ -276,8 +357,9 @@ ordersRoutes.post('/:orderId/refund', async (c) => {
     }
 
     return c.json({ stripe_refund_id: refund.id, status: refund.status });
-  } catch (e: any) {
-    throw ApiError.stripeError(e.message || 'Refund failed');
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'Refund failed';
+    throw ApiError.stripeError(message);
   }
 });
 
@@ -303,17 +385,17 @@ ordersRoutes.post('/test', async (c) => {
       throw ApiError.invalidRequest('Each item needs sku and qty > 0');
     }
 
-    const [variant] = await db.query<any>(`SELECT * FROM variants WHERE store_id = ? AND sku = ?`, [
-      store.id,
-      sku,
-    ]);
+    const [variant] = await db.query<VariantRow>(
+      `SELECT * FROM variants WHERE store_id = ? AND sku = ?`,
+      [store.id, sku]
+    );
     if (!variant) throw ApiError.notFound(`SKU not found: ${sku}`);
 
     // Check inventory
-    const [inv] = await db.query<any>(`SELECT * FROM inventory WHERE store_id = ? AND sku = ?`, [
-      store.id,
-      sku,
-    ]);
+    const [inv] = await db.query<InventoryRow>(
+      `SELECT * FROM inventory WHERE store_id = ? AND sku = ?`,
+      [store.id, sku]
+    );
     const available = (inv?.on_hand ?? 0) - (inv?.reserved ?? 0);
     if (available < qty) throw ApiError.insufficientInventory(sku);
 
@@ -334,17 +416,17 @@ ordersRoutes.post('/test', async (c) => {
 
   if (discount_code) {
     const normalizedCode = discount_code.toUpperCase().trim();
-    const [discountRow] = await db.query<any>(
+    const [discountRow] = await db.query<Discount>(
       `SELECT * FROM discounts WHERE code = ? AND store_id = ?`,
       [normalizedCode, store.id]
     );
 
     if (discountRow) {
-      await validateDiscount(db, discountRow as Discount, subtotal, customer_email);
-      discountAmountCents = calculateDiscount(discountRow as Discount, subtotal);
+      await validateDiscount(db, discountRow, subtotal, customer_email);
+      discountAmountCents = calculateDiscount(discountRow, subtotal);
       discountId = discountRow.id;
       discountCode = discountRow.code;
-      discount = discountRow as Discount;
+      discount = discountRow;
     } else {
       throw ApiError.notFound('Discount code not found');
     }
@@ -355,7 +437,7 @@ ordersRoutes.post('/test', async (c) => {
   // Upsert customer (same logic as real checkout)
   const timestamp = now();
   let customerId: string | null = null;
-  const [existingCustomer] = await db.query<any>(
+  const [existingCustomer] = await db.query<CustomerRow>(
     `SELECT id, order_count, total_spent_cents FROM customers WHERE store_id = ? AND email = ?`,
     [store.id, customer_email]
   );
@@ -389,7 +471,7 @@ ordersRoutes.post('/test', async (c) => {
     // Note: There's a small race condition window here, but for test orders (admin-only),
     // this is acceptable. The unique constraint on discount_usage will prevent duplicates.
     if (discount.usage_limit_per_customer !== null) {
-      const [usage] = await db.query<any>(
+      const [usage] = await db.query<{ count: number }>(
         `SELECT COUNT(*) as count FROM discount_usage WHERE discount_id = ? AND customer_email = ?`,
         [discount.id, customer_email.toLowerCase()]
       );
@@ -474,7 +556,7 @@ ordersRoutes.post('/test', async (c) => {
   // Record discount usage for per-customer tracking and audit purposes
   // The usage_count was already incremented atomically above, this just records the usage
   if (discount && discountAmountCents > 0) {
-    const [existingUsage] = await db.query<any>(
+    const [existingUsage] = await db.query<DiscountUsageRow>(
       `SELECT id FROM discount_usage WHERE order_id = ? AND discount_id = ?`,
       [orderId, discountId]
     );
@@ -489,11 +571,18 @@ ordersRoutes.post('/test', async (c) => {
     // If already exists, silently skip (idempotent)
   }
 
-  const [order] = await db.query<any>(`SELECT * FROM orders WHERE id = ?`, [orderId]);
+  const [order] = await db.query<OrderRow>(`SELECT * FROM orders WHERE id = ?`, [orderId]);
   return c.json(formatOrder(order, orderItems));
 });
 
-function formatOrder(order: any, items: any[]) {
+interface FormatOrderItem {
+  sku: string;
+  title: string;
+  qty: number;
+  unit_price_cents: number;
+}
+
+function formatOrder(order: OrderRow, items: FormatOrderItem[]) {
   return {
     id: order.id,
     number: order.number,
