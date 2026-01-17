@@ -16,3 +16,21 @@ export {
   type SendEmailOptions,
   type SendEmailResult,
 } from './ses-client.js';
+
+// Email Templates
+export {
+  DropLaunchEmail,
+  type DropLaunchEmailProps,
+} from './templates/drop-launch.js';
+
+export {
+  OrderConfirmationEmail,
+  type OrderConfirmationEmailProps,
+  type OrderItem,
+} from './templates/order-confirmation.js';
+
+export {
+  ShippingUpdateEmail,
+  type ShippingUpdateEmailProps,
+  type ShippingItem,
+} from './templates/shipping-update.js';

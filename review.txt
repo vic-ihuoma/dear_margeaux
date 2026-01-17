@@ -975,3 +975,48 @@
 - Consider adding unit tests with mocked SES client
 - Consider adding retry logic for transient failures
 - Add rate limiting awareness for SES quotas
+
+## [5.5]: Create email templates
+**Status:** PASSED
+**Tests Written:** N/A (React Email templates, visual testing recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (all packages: 0 errors)
+**Build:** PASSED (packages/email builds successfully)
+**Lint:** N/A (no linter configured for packages/email yet)
+**Findings:**
+- Created three React Email templates per PRD specification:
+  - drop-launch.tsx: Announces drop launch to waitlist subscribers
+    - Personalization with subscriber name
+    - Drop name, description, featured image support
+    - CTA button linking to drop shop page
+    - Unsubscribe link in footer
+  - order-confirmation.tsx: Confirms order placement
+    - Green success banner with checkmark
+    - Order items table with thumbnails, quantities, line totals
+    - Order summary: subtotal, discount, shipping, tax, total
+    - Shipping address display
+    - "What's Next" section with 3-step process
+  - shipping-update.tsx: Notifies of shipment
+    - Blue shipping banner with package icon
+    - Tracking info box with carrier, number, estimated delivery
+    - "Track Your Package" CTA button
+    - Shipped items list
+    - Delivery tips section
+- All templates use Dear Margeaux brand colors:
+  - Primary: warm brown (#8B4513) for headers and accents
+  - Accent: terracotta (#E2725B) for CTA buttons
+  - Background: off-white (#fafafa)
+- Templates export TypeScript interfaces for all props:
+  - DropLaunchEmailProps, OrderConfirmationEmailProps, ShippingUpdateEmailProps
+  - OrderItem, ShippingItem for item lists
+- Email preview script configured: `pnpm email` runs React Email dev server on port 3001
+- All templates have sensible default props for easy preview during development
+- Templates use inline styles for maximum email client compatibility
+
+**Recommendations:**
+- Next task: PRD 5.6 - Implement notification triggers
+- Consider adding visual regression tests for email templates
+- Test templates in multiple email clients (Gmail, Outlook, Apple Mail)
+- Consider adding dark mode styles for email clients that support it
+- Add unsubscribe link generation utility function
+- Consider adding template rendering function that converts React to HTML string

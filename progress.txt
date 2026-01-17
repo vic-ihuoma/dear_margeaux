@@ -1488,3 +1488,69 @@
 - Error handling returns structured SendEmailResult object
 - validateSESConfig() useful for startup/health checks
 - Ready for Task 5.5 (Create email templates)
+
+## 2026-01-17: Task 5.5 - Create email templates
+
+### Completed
+- Added react-email and @react-email/components dependencies to packages/email
+- Updated tsconfig.json with jsx: "react-jsx" for React Email support
+- Created templates directory at packages/email/src/templates/
+- Created drop-launch.tsx email template:
+  - Announces drop launch to waitlist subscribers
+  - Includes subscriber personalization, drop name/description
+  - Featured image support, CTA button to shop
+  - Unsubscribe link in footer
+  - Matches Dear Margeaux brand colors (warm brown #8B4513, terracotta #E2725B)
+- Created order-confirmation.tsx email template:
+  - Order confirmation with green success banner
+  - Order items list with thumbnails, variants, quantities, prices
+  - Order summary with subtotal, discount, shipping, tax, total
+  - Shipping address display
+  - "What's Next" section explaining order process
+  - Support email in footer
+- Created shipping-update.tsx email template:
+  - Blue shipping banner with package icon
+  - Tracking box with carrier, tracking number, estimated delivery
+  - "Track Your Package" CTA button
+  - Items shipped list
+  - Shipping address
+  - Delivery tips section
+- Updated packages/email/package.json:
+  - Added email preview script: "pnpm email" starts preview server on port 3001
+  - Added @types/react dev dependency
+- Updated packages/email/src/index.ts:
+  - Exported DropLaunchEmail and DropLaunchEmailProps
+  - Exported OrderConfirmationEmail, OrderConfirmationEmailProps, OrderItem
+  - Exported ShippingUpdateEmail, ShippingUpdateEmailProps, ShippingItem
+
+### Files Created/Modified
+- packages/email/tsconfig.json (modified: added jsx config)
+- packages/email/package.json (modified: added dependencies, email script)
+- packages/email/src/templates/drop-launch.tsx (new)
+- packages/email/src/templates/order-confirmation.tsx (new)
+- packages/email/src/templates/shipping-update.tsx (new)
+- packages/email/src/index.ts (modified: added template exports)
+
+### Acceptance Criteria Verified
+- [x] Templates render correctly (TypeScript compiles, exports valid React components)
+- [x] Preview available in dev (pnpm email script configured)
+- [x] All dynamic content works (props interfaces with sensible defaults)
+
+### Test Results
+- Type Check (packages/email): PASSED (tsc --noEmit)
+- Type Check (packages/api): PASSED
+- Type Check (packages/ui): PASSED
+- Type Check (packages/auth): PASSED
+- Type Check (apps/storefront): PASSED (0 errors, 0 warnings, 1 hint)
+- Type Check (apps/admin): PASSED (0 errors, 0 warnings)
+- Build (packages/email): PASSED
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- Using react-email v5.2.5 and @react-email/components v1.0.4
+- Templates use Dear Margeaux design system colors (primary brown, accent terracotta)
+- All templates have default props for easy preview
+- Templates include both styled components and inline styles for email client compatibility
+- formatPrice utility included in order-confirmation for cents-to-currency conversion
+- React Email preview server can be started with: cd packages/email && pnpm email
+- Ready for Task 5.6 (Implement notification triggers)
