@@ -61,6 +61,11 @@ import type {
   UnsubscribeWaitlistParams,
   ListWaitlistParams,
   UnsubscribeResult,
+  // Customer Auth
+  AuthenticatedCustomer,
+  RegisterCustomerParams,
+  LoginCustomerParams,
+  CustomerOrder,
 } from './types.js';
 
 // ============================================================================
@@ -809,5 +814,113 @@ export class MerchantClient {
    */
   async getWaitlistEntry(id: string): Promise<WaitlistEntry> {
     return this.request<WaitlistEntry>('GET', `/waitlist/${id}`);
+  }
+
+  // ==========================================================================
+  // Customer Auth
+  // ==========================================================================
+
+  /**
+   * Register a new customer account
+   */
+  async registerCustomer(
+    data: RegisterCustomerParams
+  ): Promise<AuthenticatedCustomer> {
+    return this.request<AuthenticatedCustomer>(
+      'POST',
+      '/customers/auth/register',
+      {
+        body: data,
+      }
+    );
+  }
+
+  /**
+   * Login to a customer account
+   */
+  async loginCustomer(
+    data: LoginCustomerParams
+  ): Promise<AuthenticatedCustomer> {
+    return this.request<AuthenticatedCustomer>(
+      'POST',
+      '/customers/auth/login',
+      {
+        body: data,
+      }
+    );
+  }
+
+  /**
+   * Logout (invalidate session)
+   * Note: This method requires a session token via X-Customer-Session header
+   */
+  async logoutCustomer(sessionId: string): Promise<{ success: boolean }> {
+    const url = new URL(`${this.baseUrl}/v1/customers/auth/logout`);
+    const response = await this.fetchFn(url.toString(), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'X-Customer-Session': sessionId,
+      },
+    });
+
+    if (!response.ok) {
+      await this.handleErrorResponse(response);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get current customer from session
+   * Note: This method requires a session token via X-Customer-Session header
+   */
+  async getCurrentCustomer(sessionId: string): Promise<AuthenticatedCustomer> {
+    const url = new URL(`${this.baseUrl}/v1/customers/auth/me`);
+    const response = await this.fetchFn(url.toString(), {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'X-Customer-Session': sessionId,
+      },
+    });
+
+    if (!response.ok) {
+      await this.handleErrorResponse(response);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get orders for the current authenticated customer (self-service)
+   * Note: This method requires a session token via X-Customer-Session header
+   */
+  async getMyOrders(
+    sessionId: string,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<CustomerOrder>> {
+    const url = new URL(`${this.baseUrl}/v1/customers/auth/orders`);
+
+    if (params?.limit) {
+      url.searchParams.set('limit', String(params.limit));
+    }
+    if (params?.cursor) {
+      url.searchParams.set('cursor', params.cursor);
+    }
+
+    const response = await this.fetchFn(url.toString(), {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'X-Customer-Session': sessionId,
+      },
+    });
+
+    if (!response.ok) {
+      await this.handleErrorResponse(response);
+    }
+
+    return response.json();
   }
 }

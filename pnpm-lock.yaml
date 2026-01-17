@@ -174,6 +174,9 @@ importers:
 
   merchant:
     dependencies:
+      '@dear-margeaux/auth':
+        specifier: workspace:*
+        version: link:../packages/auth
       '@dear-margeaux/email':
         specifier: workspace:*
         version: link:../packages/email

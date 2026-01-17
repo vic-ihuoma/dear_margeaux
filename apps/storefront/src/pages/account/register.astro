@@ -1,0 +1,106 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RegisterForm from '../../components/RegisterForm';
+
+// Get redirect URL if provided
+const redirectTo = Astro.url.searchParams.get('redirect') || '/account/orders';
+---
+
+<BaseLayout
+  title="Create Account"
+  description="Create a Dear Margeaux account to track your orders"
+>
+  <div
+    class="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
+  >
+    <div class="max-w-md w-full space-y-8">
+      <!-- Header -->
+      <div class="text-center">
+        <h1 class="text-3xl font-semibold text-text-primary">
+          Create an Account
+        </h1>
+        <p class="mt-2 text-text-secondary">
+          Track your orders and get notified about exclusive drops
+        </p>
+      </div>
+
+      <!-- Register Form -->
+      <div
+        class="bg-background-secondary rounded-xl shadow-sm border border-border p-8"
+      >
+        <RegisterForm client:load redirectTo={redirectTo} />
+      </div>
+
+      <!-- Login link -->
+      <p class="text-center text-sm text-text-secondary">
+        Already have an account?{' '}
+        <a
+          href={`/account/login${redirectTo !== '/account/orders' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`}
+          class="font-medium text-primary hover:text-primary-600 transition-colors"
+        >
+          Sign in
+        </a>
+      </p>
+
+      <!-- Benefits -->
+      <div class="border-t border-border pt-6 mt-6">
+        <h2 class="text-sm font-medium text-text-primary mb-4 text-center">
+          Benefits of an account
+        </h2>
+        <ul class="space-y-3">
+          <li class="flex items-start gap-3">
+            <svg
+              class="w-5 h-5 text-success mt-0.5 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span class="text-sm text-text-secondary"
+              >View your order history and track shipments</span
+            >
+          </li>
+          <li class="flex items-start gap-3">
+            <svg
+              class="w-5 h-5 text-success mt-0.5 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span class="text-sm text-text-secondary"
+              >Save addresses for faster checkout</span
+            >
+          </li>
+          <li class="flex items-start gap-3">
+            <svg
+              class="w-5 h-5 text-success mt-0.5 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span class="text-sm text-text-secondary"
+              >Get early access to limited drops</span
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

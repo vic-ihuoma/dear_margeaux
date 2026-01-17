@@ -561,3 +561,75 @@ export interface UnsubscribeResult {
   unsubscribed: boolean;
   count?: number;
 }
+
+// ============================================================================
+// Customer Auth Types
+// ============================================================================
+
+/** Customer session info */
+export interface CustomerSession {
+  id: string;
+  expires_at: ISODateString;
+}
+
+/** Authenticated customer response */
+export interface AuthenticatedCustomer {
+  customer: CustomerAuth;
+  session: CustomerSession;
+}
+
+/** Customer info for auth responses (subset of full Customer) */
+export interface CustomerAuth {
+  id: string;
+  email: string;
+  name: string | null;
+  phone: string | null;
+  accepts_marketing: boolean;
+  order_count: number;
+  total_spent_cents: number;
+  last_order_at: ISODateString | null;
+  created_at: ISODateString;
+}
+
+/** Parameters for customer registration */
+export interface RegisterCustomerParams {
+  email: string;
+  password: string;
+  name?: string;
+}
+
+/** Parameters for customer login */
+export interface LoginCustomerParams {
+  email: string;
+  password: string;
+}
+
+/** Customer order with items (for order history) */
+export interface CustomerOrder {
+  id: string;
+  number: string;
+  status: OrderStatus;
+  amounts: {
+    subtotal_cents: number;
+    discount_cents: number;
+    tax_cents: number;
+    shipping_cents: number;
+    total_cents: number;
+    currency: string;
+  };
+  items: CustomerOrderItem[];
+  tracking: {
+    number: string;
+    url: string | null;
+  } | null;
+  created_at: ISODateString;
+}
+
+/** Order item in customer order */
+export interface CustomerOrderItem {
+  sku: string;
+  title: string;
+  qty: number;
+  unit_price_cents: number;
+  image_url: string | null;
+}

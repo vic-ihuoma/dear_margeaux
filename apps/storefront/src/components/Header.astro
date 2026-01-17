@@ -1,5 +1,6 @@
 ---
 import CartIcon from './CartIcon';
+import AccountIcon from './AccountIcon';
 
 interface Props {
   class?: string;
@@ -46,8 +47,9 @@ const { class: className } = Astro.props;
       </a>
     </div>
 
-    <!-- Cart Icon (React island) -->
-    <div class="flex items-center gap-4">
+    <!-- User actions -->
+    <div class="flex items-center gap-2">
+      <AccountIcon client:load />
       <CartIcon client:load />
 
       <!-- Mobile menu button -->
@@ -94,6 +96,12 @@ const { class: className } = Astro.props;
         class="block text-sm font-medium text-text-secondary hover:text-text transition-colors duration-normal"
       >
         About
+      </a>
+      <a
+        href="/account/orders"
+        class="block text-sm font-medium text-text-secondary hover:text-text transition-colors duration-normal"
+      >
+        My Account
       </a>
     </div>
   </div>

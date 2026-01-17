@@ -18,6 +18,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@dear-margeaux/auth": "workspace:*",
     "@dear-margeaux/email": "workspace:*",
     "hono": "^4.6.0",
     "stripe": "^17.0.0"
