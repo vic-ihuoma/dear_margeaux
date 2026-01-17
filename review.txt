@@ -32,6 +32,54 @@
 - After 1.3, update wrangler.jsonc with actual database_id and bucket IDs
 - Consider upgrading stripe from 17.7.0 to 20.1.2 when stable
 
+## [1.3]: Create Cloudflare resources
+**Status:** PASSED
+**Tests Written:** N/A (manual infrastructure setup)
+**Test Results:** N/A
+**Type Check:** N/A
+**Lint:** N/A
+**Findings:**
+- D1 database 'dear-margeaux-db' created (ID: 85cf7e89-cb4c-44a1-a039-44200e60913a)
+- R2 bucket 'dear-margeaux-images' created
+- wrangler.jsonc updated with actual database_id and bucket_name
+- Base schema applied to remote D1 (37 commands, 78 rows written)
+- Migrations marked as applied (001-004 already included in base schema)
+
+**Recommendations:**
+- Completed: 1.4 and 1.5
+
+## [1.4]: Connect Stripe (test mode)
+**Status:** PASSED
+**Tests Written:** N/A (manual configuration)
+**Test Results:** N/A
+**Type Check:** N/A
+**Lint:** N/A
+**Findings:**
+- STRIPE_SECRET_KEY added via wrangler secret put
+- Webhook endpoint registered in Stripe dashboard: https://dear-margeaux-api.622hmwgngv.workers.dev/v1/webhooks/stripe
+- Events configured: checkout.session.completed, charge.refunded
+- STRIPE_WEBHOOK_SECRET added via wrangler secret put
+
+**Recommendations:**
+- Test checkout flow end-to-end after seeding products
+
+## [1.5]: Deploy Merchant API
+**Status:** PASSED
+**Tests Written:** N/A (deployment task)
+**Test Results:** N/A
+**Type Check:** N/A
+**Lint:** N/A
+**Findings:**
+- Worker deployed to https://dear-margeaux-api.622hmwgngv.workers.dev
+- D1 database bound (dear-margeaux-db)
+- R2 bucket provisioned and bound (dear-margeaux-images)
+- Cron trigger configured: */15 * * * *
+- Version ID: 72f904b1-25ca-44ad-a3ca-d5bd63b1feea
+
+**Recommendations:**
+- Update storefront .env with PUBLIC_MERCHANT_API_URL=https://dear-margeaux-api.622hmwgngv.workers.dev
+- Seed products to test the full flow
+
 ## [2.1]: Create Astro storefront project
 **Status:** PASSED
 **Tests Written:** N/A (infrastructure setup, no tests applicable)

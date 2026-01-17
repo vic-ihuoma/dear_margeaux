@@ -1,35 +1,32 @@
 {
-  "name": "dear-margeaux-api",
-  "main": "src/index.ts",
-  "compatibility_date": "2025-12-01",
-
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "dear-margeaux-db",
-      // Replaced with actual database_id after creating in Cloudflare dashboard (Task 1.3)
-      "database_id": "85cf7e89-cb4c-44a1-a039-44200e60913a"
-    }
-  ],
-
-  "r2_buckets": [
-    {
-      "binding": "IMAGES",
-      // Replaced with actual bucket name after creating in Cloudflare dashboard (Task 1.3)
-      "bucket_name": "dear-margeaux-images"
-    }
-  ],
-
-  "vars": {
-    // Update with public R2 URL after deployment
-    "IMAGES_URL": "",
-  },
-
-  "triggers": {
-    "crons": ["*/15 * * * *"],
-  },
-
-  "dev": {
-    "port": 8787,
-  },
+	"name": "dear-margeaux-api",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-12-01",
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "dear-margeaux-db",
+			// Replaced with actual database_id after creating in Cloudflare dashboard (Task 1.3)
+			"database_id": "85cf7e89-cb4c-44a1-a039-44200e60913a"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "IMAGES",
+			// Replaced with actual bucket name after creating in Cloudflare dashboard (Task 1.3)
+			"bucket_name": "dear-margeaux-images"
+		}
+	],
+	"vars": {
+		// Update with public R2 URL after deployment
+		"IMAGES_URL": "",
+	},
+	"triggers": {
+		"crons": [
+			"*/15 * * * *"
+		],
+	},
+	"dev": {
+		"port": 8787,
+	},
 }

@@ -36,11 +36,11 @@ export default function VariantSelector({
   }
 
   return (
-    <div className="space-y-3">
-      <label className="block text-sm font-medium text-text">
+    <fieldset className="space-y-3">
+      <legend className="block text-sm font-medium text-text">
         Select Option
-      </label>
-      <div className="flex flex-wrap gap-2">
+      </legend>
+      <div className="flex flex-wrap gap-2" role="group">
         {variants.map((variant) => {
           const isSelected = selected === variant.id;
           const isDisabled = !variant.available;
@@ -79,6 +79,6 @@ export default function VariantSelector({
           );
         })}
       </div>
-    </div>
+    </fieldset>
   );
 }
