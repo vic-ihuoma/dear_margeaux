@@ -11,7 +11,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   ...astro.configs.recommended,
   {
-    ignores: ['node_modules', 'dist', '.astro'],
+    ignores: ['node_modules', 'dist', '.astro', 'public/sw.js'],
   },
   {
     files: ['**/*.ts', '**/*.tsx'],

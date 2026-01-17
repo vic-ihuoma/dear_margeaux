@@ -1,0 +1,126 @@
+---
+/**
+ * OptimizedImage - Performance-optimized image component
+ *
+ * Features:
+ * - Lazy loading by default (below fold)
+ * - Native aspect-ratio support for CLS prevention
+ * - Placeholder/skeleton for loading state
+ * - fetchpriority="high" support for LCP images
+ * - Responsive sizes with srcset
+ */
+interface Props {
+  /** Image source URL */
+  src: string;
+  /** Alt text for accessibility */
+  alt: string;
+  /** Fixed width (for sizing calculations) */
+  width?: number;
+  /** Fixed height (for sizing calculations) */
+  height?: number;
+  /** Aspect ratio (e.g., "1/1", "16/9", "4/3") */
+  aspectRatio?: string;
+  /** Loading strategy: "lazy" (default) or "eager" for above-fold images */
+  loading?: 'lazy' | 'eager';
+  /** Set to true for LCP (Largest Contentful Paint) images */
+  priority?: boolean;
+  /** CSS class for the image element */
+  class?: string;
+  /** CSS class for the container */
+  containerClass?: string;
+  /** Responsive sizes attribute */
+  sizes?: string;
+  /** Object fit strategy */
+  fit?: 'cover' | 'contain' | 'fill' | 'none';
+  /** Decoding strategy */
+  decoding?: 'sync' | 'async' | 'auto';
+}
+
+const {
+  src,
+  alt,
+  width,
+  height,
+  aspectRatio = '1/1',
+  loading = 'lazy',
+  priority = false,
+  class: className = '',
+  containerClass = '',
+  sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw',
+  fit = 'cover',
+  decoding = 'async',
+} = Astro.props;
+
+// Priority images should be eager loaded and have high fetch priority
+const loadingStrategy = priority ? 'eager' : loading;
+const fetchPriority = priority ? 'high' : 'auto';
+
+// Generate srcset for responsive images if no width specified
+// This helps browsers choose the right size
+const srcsetWidths = [320, 640, 768, 1024, 1280, 1536];
+const srcset = src.includes('?')
+  ? undefined
+  : srcsetWidths.map((w) => `${src}?w=${w} ${w}w`).join(', ');
+
+// Object-fit class mapping
+const fitClasses = {
+  cover: 'object-cover',
+  contain: 'object-contain',
+  fill: 'object-fill',
+  none: 'object-none',
+};
+---
+
+<div
+  class:list={['relative overflow-hidden bg-secondary-100', containerClass]}
+  style={aspectRatio ? `aspect-ratio: ${aspectRatio}` : undefined}
+>
+  {/* Placeholder skeleton shown while image loads */}
+  <div
+    class="absolute inset-0 animate-pulse bg-gradient-to-r from-secondary-100 via-secondary-200 to-secondary-100 bg-[length:200%_100%]"
+    aria-hidden="true"
+  >
+  </div>
+
+  <img
+    src={src}
+    alt={alt}
+    width={width}
+    height={height}
+    loading={loadingStrategy}
+    decoding={decoding}
+    fetchpriority={fetchPriority}
+    sizes={sizes}
+    srcset={srcset}
+    class:list={[
+      'relative w-full h-full',
+      fitClasses[fit],
+      'transition-opacity duration-300',
+      className,
+    ]}
+    onload="this.style.opacity='1';this.previousElementSibling.style.display='none'"
+    style="opacity: 0"
+  />
+</div>
+
+<style>
+  /* Smooth fade-in animation for loaded images */
+  img[data-loaded='true'] {
+    opacity: 1;
+  }
+
+  /* Skeleton pulse animation */
+  @keyframes skeleton-pulse {
+    0%,
+    100% {
+      background-position: 200% 0;
+    }
+    50% {
+      background-position: -200% 0;
+    }
+  }
+
+  .animate-pulse {
+    animation: skeleton-pulse 2s ease-in-out infinite;
+  }
+</style>

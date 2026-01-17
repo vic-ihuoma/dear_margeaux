@@ -2220,3 +2220,86 @@ USD, EUR, GBP, CAD, AUD, JPY, CHF, SEK, NOK, DKK, NZD, SGD, HKD, MXN, BRL, PLN, 
 - Merchant Tests: 18 passed (2 test files)
 - Lint (admin): PASSED (0 errors, 4 pre-existing warnings)
 - Lint (storefront): PASSED (0 errors, 1 pre-existing warning)
+
+## 2026-01-17: Task 8.2 - Performance optimization
+
+### Completed
+- Enhanced Astro configuration for performance:
+  - Enabled built-in image optimization with Sharp
+  - Configured remote image domains for R2 bucket
+  - Enabled link prefetching on hover
+  - Enabled HTML compression
+  - Set static output mode for optimal caching
+- Updated BaseLayout.astro with performance enhancements:
+  - Added DNS prefetch for fonts.googleapis.com, fonts.gstatic.com, js.stripe.com
+  - Added preconnect for font domains
+  - Added font preloading with woff2 format
+  - Added LCP image preloading support (preloadLcpImage prop)
+  - Added async font loading to prevent render blocking
+  - Added critical CSS inline styles
+  - Added canonical URL support
+  - Added Open Graph and Twitter Card meta tags
+  - Added theme-color meta tags for mobile browsers
+  - Added service worker registration for production
+- Created OptimizedImage.astro component:
+  - Lazy loading by default with eager option for LCP images
+  - Fixed aspect ratio container for CLS prevention
+  - Skeleton loading animation
+  - fetchpriority="high" support for priority images
+  - Responsive srcset generation
+  - decoding="async" for non-blocking decode
+- Updated ProductCard.astro:
+  - Added explicit width/height attributes (400x400)
+  - Added decoding="async"
+  - Added responsive sizes attribute
+- Enhanced _headers for edge caching:
+  - Astro build assets (_astro/*): 1 year, immutable
+  - Static assets: 1 year, immutable
+  - JavaScript and CSS bundles: 1 year, immutable
+  - Fonts: 1 year, immutable
+  - Images (webp, avif, jpg, png, gif, svg): 1 week with stale-while-revalidate
+  - Favicon: 1 day
+  - Service worker: no-cache
+  - HTML pages: must-revalidate
+  - Index/shop/product pages: 5 minutes with stale-while-revalidate
+  - Blog/lookbook pages: 1 hour with stale-while-revalidate
+- Created service worker (sw.js):
+  - Cache-first strategy for static assets
+  - Stale-while-revalidate for HTML pages
+  - Versioned cache management (v1)
+  - Pre-caches critical assets on install
+  - Auto-activates new service workers
+- Created robots.txt for search engine crawling
+
+### Files Created/Modified
+- apps/storefront/astro.config.mjs (modified: added image, prefetch, build, compressHTML, output)
+- apps/storefront/src/layouts/BaseLayout.astro (modified: comprehensive performance updates)
+- apps/storefront/src/components/OptimizedImage.astro (new)
+- apps/storefront/src/components/ProductCard.astro (modified: width/height, decoding, sizes)
+- apps/storefront/public/_headers (modified: comprehensive caching rules)
+- apps/storefront/public/sw.js (new)
+- apps/storefront/public/robots.txt (new)
+- apps/storefront/eslint.config.js (modified: ignore sw.js)
+
+### Acceptance Criteria Verified
+- [x] Image optimization configured (via Astro image service)
+- [x] Lazy loading for images below fold (loading="lazy" default)
+- [x] Static page generation enabled (output: 'static')
+- [x] Edge caching with Cloudflare (_headers file)
+- [x] Core Web Vitals addressed (CLS via aspect-ratio, LCP via preload)
+
+### Test Results
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 2 hints)
+- Type Check (admin): PASSED (0 errors, 0 warnings, 1 hint)
+- Build: PASSED (28 pages built in 8.25s)
+- Lint (storefront): PASSED (0 errors, 1 warning)
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- Lighthouse scores need to be verified on deployed site
+- Service worker is only registered in production (import.meta.env.PROD)
+- Font preloading targets the Inter variable font woff2 file
+- Edge caching rules use stale-while-revalidate for better UX during updates
+- LCP preloading can be used by passing preloadLcpImage prop to BaseLayout
+- OptimizedImage component provides skeleton animation during load
+

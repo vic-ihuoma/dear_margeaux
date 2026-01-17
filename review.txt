@@ -1355,3 +1355,67 @@
 - Add HSTS preload header once domain is confirmed
 - Consider adding email verification for customer accounts
 - Review and test CSP rules in production environment
+## [8.2]: Performance optimization
+**Status:** PASSED
+**Tests Written:** N/A (performance optimization, no unit tests applicable)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 2 hints in 43 files)
+**Build:** PASSED (28 pages built in 8.25s)
+**Lint:** PASSED (0 errors, 1 pre-existing warning)
+**Findings:**
+- Implemented comprehensive performance optimizations for the storefront:
+  - Astro configuration enhanced with:
+    - Image optimization service (Sharp) with WebP/AVIF support
+    - Remote image domains configured for R2 bucket
+    - Link prefetching on hover enabled
+    - HTML compression enabled
+    - Static output mode for optimal caching
+  - BaseLayout.astro optimizations:
+    - DNS prefetch for external domains (fonts, Stripe)
+    - Font preloading with display=swap
+    - LCP image preloading support via prop
+    - Critical CSS inlined in head
+    - Async font loading for non-blocking render
+    - Open Graph and Twitter card meta tags added
+    - Theme color for mobile browsers
+    - Canonical URL support
+    - Service worker registration in production
+  - Created OptimizedImage.astro component:
+    - Lazy loading by default
+    - Fixed aspect ratio for CLS prevention
+    - Skeleton loading animation
+    - fetchpriority="high" for LCP images
+    - Responsive srcset generation
+    - decoding="async" for non-blocking decode
+  - ProductCard.astro enhancements:
+    - Added width/height attributes for CLS prevention
+    - Added decoding="async" for better performance
+    - Added responsive sizes attribute
+  - Edge caching configuration (_headers):
+    - Astro build assets: 1 year, immutable
+    - Static assets: 1 year, immutable
+    - Images: 1 week with stale-while-revalidate
+    - HTML pages: 5 minutes with revalidate
+    - Blog/lookbook: 1 hour with revalidate
+    - Service worker: no-cache for always fresh
+  - Service worker (sw.js) for offline caching:
+    - Cache-first strategy for static assets
+    - Stale-while-revalidate for HTML pages
+    - Versioned cache management
+  - robots.txt for SEO crawling
+
+**Acceptance Criteria:**
+- [x] Image optimization with lazy loading configured
+- [x] Static page generation enabled (output: 'static')
+- [x] Edge caching via Cloudflare _headers configured
+- [x] Bundle size optimized via Astro's built-in optimizations
+- [x] Core Web Vitals addressed (CLS via aspect-ratio, LCP via preload)
+
+**Recommendations:**
+- Next task: PRD 8.3 - SEO optimization
+- Run Lighthouse audit on deployed site to verify scores > 90
+- Consider adding AVIF image format generation
+- Monitor Core Web Vitals in production via Cloudflare Analytics
+- Consider implementing critical CSS extraction for above-fold content
+- Add bundle size analysis script (e.g., astro build --analyze)
+

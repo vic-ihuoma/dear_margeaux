@@ -41,15 +41,19 @@ const productUrl = href || `/product/${id}`;
 
 <article class:list={['group relative', className]}>
   <a href={productUrl} class="block">
-    <!-- Image Container -->
+    <!-- Image Container with fixed aspect ratio for CLS prevention -->
     <div class="relative aspect-square overflow-hidden rounded-lg bg-secondary">
       {
         image ? (
           <img
             src={image}
             alt={imageAlt}
+            width={400}
+            height={400}
             class="h-full w-full object-cover object-center transition-transform duration-slow group-hover:scale-105"
             loading="lazy"
+            decoding="async"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           />
         ) : (
           <div class="flex h-full w-full items-center justify-center">

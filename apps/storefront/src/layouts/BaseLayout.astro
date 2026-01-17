@@ -7,26 +7,117 @@ import CartDrawer from '../components/CartDrawer';
 interface Props {
   title: string;
   description?: string;
+  /** Set to true for pages with LCP images to preload */
+  preloadLcpImage?: string;
+  /** Open Graph image URL */
+  ogImage?: string;
 }
 
-const { title, description = 'Boutique bags, limited drops.' } = Astro.props;
+const {
+  title,
+  description = 'Boutique bags, limited drops.',
+  preloadLcpImage,
+  ogImage = '/og-default.png',
+} = Astro.props;
+
+const canonicalUrl = new URL(
+  Astro.url.pathname,
+  Astro.site || 'https://dearmargeaux.com'
+);
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content={description} />
-    <meta name="generator" content={Astro.generator} />
-    <title>{title} | Dear Margeaux</title>
+
+    <!-- Performance: DNS prefetch and preconnect for external resources -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    <link rel="dns-prefetch" href="https://js.stripe.com" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Performance: Preload critical fonts with font-display swap -->
+    <link
+      rel="preload"
+      href="https://fonts.gstatic.com/s/inter/v14/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <!-- Performance: Preload LCP image if specified -->
+    {
+      preloadLcpImage && (
+        <link
+          rel="preload"
+          href={preloadLcpImage}
+          as="image"
+          fetchpriority="high"
+        />
+      )
+    }
+
+    <!-- Fonts with display=swap for better CLS -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <!-- Primary Meta Tags -->
+    <title>{title} | Dear Margeaux</title>
+    <meta name="title" content={`${title} | Dear Margeaux`} />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={`${title} | Dear Margeaux`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalUrl} />
+    <meta property="twitter:title" content={`${title} | Dear Margeaux`} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={ogImage} />
+
+    <!-- Theme Color for mobile browsers -->
+    <meta name="theme-color" content="#8B4513" />
+    <meta name="msapplication-TileColor" content="#8B4513" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <!-- Performance: Hint the browser about the critical rendering path -->
+    <style>
+      /* Critical CSS for above-the-fold content - prevents FOUC */
+      body {
+        font-family:
+          'Inter',
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background-color: #fafafa;
+        margin: 0;
+      }
+    </style>
   </head>
   <body class="bg-background min-h-screen flex flex-col">
     <Header />
@@ -36,5 +127,17 @@ const { title, description = 'Boutique bags, limited drops.' } = Astro.props;
     <Footer />
     <!-- Cart Drawer (React component hydrated on client) -->
     <CartDrawer client:load />
+
+    <!-- Performance: Register service worker for caching -->
+    <script>
+      // Only register SW in production
+      if ('serviceWorker' in navigator && import.meta.env.PROD) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {
+            // Service worker registration failed, continue without it
+          });
+        });
+      }
+    </script>
   </body>
 </html>
