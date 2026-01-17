@@ -332,3 +332,53 @@
 - Newsletter form needs backend integration (Task 5.x)
 - Product inventory/sold-out status will be dynamic after inventory integration
 - Drop countdown feature ready for scheduled drops (commented placeholder)
+
+## 2026-01-17: Task 2.6 - Build product listing page
+
+### Completed
+- Created product listing page at apps/storefront/src/pages/shop/index.astro:
+  - Page header with title and description
+  - Filter section with collection/drop filter chips
+  - Product grid displaying all products from API or sample data
+  - Product count display
+  - Empty state with helpful messaging
+  - Newsletter CTA section
+- Created drop-specific listing page at apps/storefront/src/pages/shop/[drop].astro:
+  - Dynamic routing with getStaticPaths for static generation
+  - Breadcrumb navigation (Shop / Collection Name)
+  - Past collection badge when all products are sold out
+  - Active filter highlighting in filter chips
+  - Collection-specific title and description
+  - Graceful handling of non-existent collections
+- Both pages integrate with Merchant API when configured, fall back to sample data
+- Responsive design for mobile/tablet/desktop
+- Sold-out products clearly marked via ProductCard component
+
+### Files Created/Modified
+- apps/storefront/src/pages/shop/index.astro (new)
+- apps/storefront/src/pages/shop/[drop].astro (new)
+
+### Acceptance Criteria Verified
+- [x] Products load from API (when configured)
+- [x] Grid displays correctly (responsive 1-4 columns)
+- [x] Sold-out products marked (via ProductCard soldOut prop)
+
+### Test Results
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 0 hints in 12 files)
+- Type Check (packages/api): PASSED
+- Type Check (packages/ui): PASSED
+- Build: PASSED (5 pages built in 1.82s)
+  - /index.html
+  - /shop/index.html
+  - /shop/spring-2026/index.html
+  - /shop/winter-2025/index.html
+  - /shop/fall-2025/index.html
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- Using getStaticPaths for static generation of drop pages
+- Filter UI links to /shop/{collection-slug} for drop filtering
+- Collection names derived from sample data (Spring 2026, Winter 2025, Fall 2025)
+- Will transition to actual Drops API when Phase 4 (Drops System) is implemented
+- Empty state design ready for when no products match filter
+- Ready for Task 2.7 (Build product detail page)

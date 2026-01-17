@@ -172,3 +172,37 @@
 - Current drop banner is static placeholder - will be dynamic in Task 4.x
 - Newsletter form needs backend integration in Task 5.x
 - Consider adding Storybook for component documentation
+
+## [2.6]: Build product listing page
+**Status:** PASSED
+**Tests Written:** N/A (Astro pages, visual testing recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 0 hints in 12 files)
+**Build:** PASSED (5 pages built in 1.82s)
+**Lint:** N/A (no linter configured for storefront yet)
+**Findings:**
+- Created comprehensive product listing functionality:
+  - /shop/index.astro: All products page with filter chips
+  - /shop/[drop].astro: Dynamic drop-specific pages with getStaticPaths
+- Features implemented:
+  - Page header with title and description
+  - Collection filter chips with active state highlighting
+  - Responsive product grid (1-4 columns)
+  - Product count display ("Showing X products")
+  - Empty state with helpful messaging and CTA
+  - Newsletter CTA section
+  - Breadcrumb navigation on drop pages
+  - Past collection badge for sold-out drops
+- Static generation working correctly:
+  - getStaticPaths generates pages for spring-2026, winter-2025, fall-2025
+  - Build outputs 5 HTML pages total
+- API integration with graceful fallback to sample data
+- Consistent design with homepage using shared components
+
+**Recommendations:**
+- Next task: PRD 2.7 - Build product detail page
+- Consider adding pagination for large product catalogs
+- Add loading skeleton states for better UX
+- Consider adding sorting options (price, newest, etc.)
+- Will need to update getStaticPaths when Drops API is implemented (Phase 4)
+- Consider extracting common DisplayProduct interface to shared location
