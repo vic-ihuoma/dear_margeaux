@@ -886,4 +886,63 @@
 - ProductEditor uses functional state updates (setProduct(prev => ...)) to avoid stale closure issues
 - All API routes use getAdminMerchantClient() for authenticated requests
 - Forms include proper validation with field-level error messages
-- Ready for Task 3.5 (Build orders management)
+- Ready for Task 3.5 (Build inventory management)
+
+## 2026-01-17: Task 3.5 - Build inventory management
+
+### Completed
+- Created inventory list page at apps/admin/src/pages/inventory/index.astro:
+  - Page header with title and description
+  - Search input for filtering by SKU, product name, or variant name
+  - Low stock filter checkbox
+  - Responsive data table with columns: Product/Variant, SKU, Status, On Hand, Reserved, Available, Actions
+  - Status badges (In Stock: green, Low Stock: yellow/warning, Out of Stock: red)
+  - Available count with color-coded styling based on stock level
+  - Product links to edit page
+  - Empty state with helpful messaging
+  - Error state for API failures
+  - Inventory count with "items need attention" alert for low stock
+- Created InventoryAdjuster.tsx React component:
+  - Modal dialog triggered by "Adjust" button
+  - SKU info display with current on-hand and available counts
+  - Quantity adjustment input (positive to add, negative to remove)
+  - Preview of new on-hand quantity before submission
+  - Reason select dropdown (Restock, Correction, Damaged, Return)
+  - Validation: prevents reducing by more than current on-hand
+  - Loading state during submission
+  - Success feedback with auto-refresh
+  - Error display for failed adjustments
+- Created inventory API route at apps/admin/src/pages/api/inventory/[sku]/adjust.ts:
+  - POST endpoint for adjusting inventory
+  - Validates delta (non-zero integer)
+  - Validates reason (must be valid InventoryAdjustmentReason)
+  - Calls Merchant API adjustInventory method
+  - Returns updated inventory item
+
+### Files Created/Modified
+- apps/admin/src/pages/inventory/index.astro (new)
+- apps/admin/src/components/InventoryAdjuster.tsx (new)
+- apps/admin/src/pages/api/inventory/[sku]/adjust.ts (new)
+
+### Acceptance Criteria Verified
+- [x] Inventory displays correctly (on_hand, reserved, available per SKU)
+- [x] Can adjust stock levels (via InventoryAdjuster modal)
+- [x] Adjustment reasons recorded (restock, correction, damaged, return)
+
+### Test Results
+- Type Check (apps/admin): PASSED (0 errors, 0 warnings, 1 hint)
+- Type Check (apps/storefront): PASSED (0 errors, 0 warnings, 1 hint)
+- Type Check (packages/api): PASSED
+- Type Check (packages/ui): PASSED
+- Type Check (packages/auth): PASSED
+- Build (apps/admin): PASSED (server build in 2.71s)
+- Lint (apps/admin): PASSED (0 errors)
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- Inventory list fetches both inventory items and products to map SKUs to product/variant names
+- Low stock threshold set to 5 units (configurable in future)
+- InventoryAdjuster uses window.location.reload() after success for simple state refresh
+- API route validates reason against enum to prevent invalid values
+- Inventory items are displayed with color-coded available counts for quick visual scanning
+- Ready for Task 3.6 (Build orders management)

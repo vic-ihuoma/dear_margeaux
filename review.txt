@@ -561,10 +561,50 @@
   - /api/images/upload (POST)
 
 **Recommendations:**
-- Next task: PRD 3.5 - Build orders management interface
+- Next task: PRD 3.5 - Build inventory management interface
 - Consider adding bulk operations (bulk delete, bulk status change)
 - Add pagination for products list when catalog grows large
 - Consider adding product duplication feature
 - Add integration tests for API routes with mock Merchant client
 - Consider adding undo functionality for delete operations
 - Add visual regression tests for product forms and editor
+
+## [3.5]: Build inventory management
+**Status:** PASSED
+**Tests Written:** N/A (React components + API routes, integration testing recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 1 hint)
+**Build:** PASSED (server build in 2.71s)
+**Lint:** PASSED (eslint: 0 errors)
+**Findings:**
+- Created complete inventory management interface:
+  - Inventory list page with search and low stock filter
+  - Responsive data table displaying all inventory items
+  - Status badges (In Stock/Low Stock/Out of Stock)
+  - Color-coded available counts for quick visual scanning
+  - Links to product edit pages from inventory items
+- InventoryAdjuster.tsx provides stock adjustment modal:
+  - Displays current SKU, on-hand, and available counts
+  - Delta input with positive/negative validation
+  - Preview of new on-hand value before submission
+  - Reason dropdown (Restock, Correction, Damaged, Return)
+  - Validation prevents reducing below zero
+  - Success feedback with auto-page-refresh
+- Inventory API route:
+  - /api/inventory/[sku]/adjust (POST)
+  - Validates delta and reason parameters
+  - Calls Merchant API adjustInventory method
+  - Returns updated inventory item
+- PRD inventory features implemented:
+  - View on_hand, reserved, available per SKU
+  - Adjust stock with reason (restock, damaged, correction, return)
+  - Low stock alerts (items with available <= 5)
+
+**Recommendations:**
+- Next task: PRD 3.6 - Build orders management interface
+- Consider adding bulk inventory adjustments
+- Add pagination for inventory list when SKU count grows large
+- Consider adding inventory history/audit log view
+- Add low stock threshold configuration in admin settings
+- Consider adding reorder point alerts and notifications
+- Add export to CSV functionality for inventory reports
