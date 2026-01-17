@@ -3,6 +3,7 @@ import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import CartDrawer from '../components/CartDrawer';
+import SEO from '../components/SEO.astro';
 
 interface Props {
   title: string;
@@ -25,6 +26,16 @@ const formattedDate = date.toLocaleDateString('en-US', {
 // Calculate reading time (rough estimate: 200 words per minute)
 const wordCount = Astro.slots.has('default') ? 500 : 0; // Approximate
 const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+
+// Build article URL for structured data
+const articleUrl = Astro.url.href;
+
+// Build breadcrumb data for structured data
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Blog', url: '/blog' },
+  { name: title, url: Astro.url.pathname },
+];
 ---
 
 <!doctype html>
@@ -65,6 +76,20 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 200));
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
+    />
+
+    <!-- Structured Data for SEO -->
+    <SEO
+      type={['article', 'breadcrumb']}
+      article={{
+        headline: title,
+        description: description,
+        image: image,
+        datePublished: date.toISOString(),
+        author: author,
+        url: articleUrl,
+      }}
+      breadcrumbs={breadcrumbs}
     />
   </head>
   <body class="bg-background min-h-screen flex flex-col">

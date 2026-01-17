@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import SEO from '../../components/SEO.astro';
 import ProductControls from '../../components/ProductControls';
 import { sampleProducts } from '../../data/sample-products';
 import type { Variant, Drop, InventoryItem } from '@dear-margeaux/api';
@@ -162,12 +163,48 @@ const allSoldOut = product.variants.every((v) => !v.available);
 
 // Product is unavailable if all sold out OR from a past drop
 const isUnavailable = allSoldOut || isPastDrop;
+
+// Determine product availability for structured data
+const productAvailability = isPastDrop
+  ? 'Discontinued'
+  : allSoldOut
+    ? 'OutOfStock'
+    : 'InStock';
+
+// Build breadcrumb data for structured data
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Shop', url: '/shop' },
+  ...(product.collection && product.collectionSlug
+    ? [{ name: product.collection, url: `/shop/${product.collectionSlug}` }]
+    : []),
+  { name: product.title, url: `/product/${product.id}` },
+];
+
+// Product canonical URL
+const productUrl = `https://dearmargeaux.com/product/${product.id}`;
 ---
 
 <BaseLayout
   title={product.title}
   description={product.description?.slice(0, 160)}
+  ogImage={defaultVariant?.image_url || undefined}
 >
+  <!-- Structured Data for SEO -->
+  <SEO
+    type={['product', 'breadcrumb']}
+    product={{
+      name: product.title,
+      description: product.description,
+      image: defaultVariant?.image_url || undefined,
+      sku: defaultVariant?.sku,
+      price: (defaultVariant?.price_cents || 0) / 100,
+      availability: productAvailability,
+      url: productUrl,
+    }}
+    breadcrumbs={breadcrumbs}
+  />
+
   <!-- Breadcrumb -->
   <nav class="bg-background-tertiary py-3 border-b border-border">
     <div class="container mx-auto px-4 max-w-6xl">

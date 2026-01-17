@@ -1,0 +1,200 @@
+---
+/**
+ * SEO Component for Dear Margeaux Storefront
+ *
+ * Provides structured data (JSON-LD) and enhanced meta tags for SEO optimization.
+ * Used alongside BaseLayout's existing meta tags to add schema.org structured data.
+ */
+
+interface ProductStructuredData {
+  name: string;
+  description: string;
+  image?: string;
+  sku?: string;
+  brand?: string;
+  price: number;
+  priceCurrency?: string;
+  availability: 'InStock' | 'OutOfStock' | 'PreOrder' | 'Discontinued';
+  url: string;
+}
+
+interface BreadcrumbItem {
+  name: string;
+  url: string;
+}
+
+interface ArticleStructuredData {
+  headline: string;
+  description: string;
+  image?: string;
+  datePublished: string;
+  dateModified?: string;
+  author: string;
+  url: string;
+}
+
+type StructuredDataType =
+  | 'organization'
+  | 'website'
+  | 'product'
+  | 'breadcrumb'
+  | 'article';
+
+interface Props {
+  /** Type of structured data to generate */
+  type: StructuredDataType | StructuredDataType[];
+  /** Product data for Product schema */
+  product?: ProductStructuredData;
+  /** Breadcrumb items for BreadcrumbList schema */
+  breadcrumbs?: BreadcrumbItem[];
+  /** Article data for Article schema */
+  article?: ArticleStructuredData;
+}
+
+const { type, product, breadcrumbs, article } = Astro.props;
+
+const siteUrl = Astro.site?.origin || 'https://dearmargeaux.com';
+
+// Organization Schema - Core brand information
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Dear Margeaux',
+  url: siteUrl,
+  logo: `${siteUrl}/logo.png`,
+  description: 'Boutique bags, limited drops. Handcrafted leather goods.',
+  sameAs: [
+    'https://instagram.com/dearmargeaux',
+    'https://twitter.com/dearmargeaux',
+  ],
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'customer service',
+    email: 'hello@dearmargeaux.com',
+  },
+};
+
+// Website Schema - Search functionality
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Dear Margeaux',
+  url: siteUrl,
+  description: 'Boutique bags, limited drops. Handcrafted leather goods.',
+  publisher: {
+    '@type': 'Organization',
+    name: 'Dear Margeaux',
+    logo: {
+      '@type': 'ImageObject',
+      url: `${siteUrl}/logo.png`,
+    },
+  },
+};
+
+// Product Schema
+const productSchema = product
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.name,
+      description: product.description,
+      image: product.image,
+      sku: product.sku,
+      brand: {
+        '@type': 'Brand',
+        name: product.brand || 'Dear Margeaux',
+      },
+      offers: {
+        '@type': 'Offer',
+        url: product.url,
+        priceCurrency: product.priceCurrency || 'USD',
+        price: product.price.toFixed(2),
+        availability: `https://schema.org/${product.availability}`,
+        seller: {
+          '@type': 'Organization',
+          name: 'Dear Margeaux',
+        },
+      },
+    }
+  : null;
+
+// BreadcrumbList Schema
+const breadcrumbSchema =
+  breadcrumbs && breadcrumbs.length > 0
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: breadcrumbs.map((item, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: item.name,
+          item: item.url.startsWith('http')
+            ? item.url
+            : `${siteUrl}${item.url}`,
+        })),
+      }
+    : null;
+
+// Article Schema for blog posts
+const articleSchema = article
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: article.headline,
+      description: article.description,
+      image: article.image,
+      datePublished: article.datePublished,
+      dateModified: article.dateModified || article.datePublished,
+      author: {
+        '@type': 'Person',
+        name: article.author,
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: 'Dear Margeaux',
+        logo: {
+          '@type': 'ImageObject',
+          url: `${siteUrl}/logo.png`,
+        },
+      },
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': article.url,
+      },
+    }
+  : null;
+
+// Collect schemas to render based on type prop
+const types = Array.isArray(type) ? type : [type];
+const schemas: object[] = [];
+
+for (const t of types) {
+  switch (t) {
+    case 'organization':
+      schemas.push(organizationSchema);
+      break;
+    case 'website':
+      schemas.push(websiteSchema);
+      break;
+    case 'product':
+      if (productSchema) schemas.push(productSchema);
+      break;
+    case 'breadcrumb':
+      if (breadcrumbSchema) schemas.push(breadcrumbSchema);
+      break;
+    case 'article':
+      if (articleSchema) schemas.push(articleSchema);
+      break;
+  }
+}
+---
+
+{/* Render each schema as a separate script tag for clarity */}
+{
+  schemas.map((schema) => (
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(schema, null, 0)}
+    />
+  ))
+}
