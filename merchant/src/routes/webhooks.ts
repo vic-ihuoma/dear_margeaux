@@ -180,10 +180,14 @@ webhooks.post('/stripe', async (c) => {
           }
         }
 
+        // Get actual currency from Stripe session (Stripe returns lowercase currency code)
+        // Fall back to cart currency if not available
+        const orderCurrency = session.currency?.toUpperCase() || cart.currency || 'USD';
+
         // Create order (now with customer link, shipping details, and discount)
         const orderId = uuid();
         await db.run(
-          `INSERT INTO orders (id, store_id, customer_id, number, status, customer_email, 
+          `INSERT INTO orders (id, store_id, customer_id, number, status, customer_email,
            shipping_name, shipping_phone, ship_to,
            subtotal_cents, tax_cents, shipping_cents, total_cents, currency,
            discount_code, discount_id, discount_amount_cents,
@@ -202,7 +206,7 @@ webhooks.post('/stripe', async (c) => {
             session.total_details?.amount_tax ?? 0,
             session.total_details?.amount_shipping ?? 0,
             session.amount_total ?? 0,
-            cart.currency,
+            orderCurrency,
             discountCode,
             discountId,
             discountAmountCents,
@@ -326,7 +330,7 @@ webhooks.post('/stripe', async (c) => {
               tax_cents: session.total_details?.amount_tax ?? 0,
               shipping_cents: session.total_details?.amount_shipping ?? 0,
               total_cents: session.amount_total ?? 0,
-              currency: cart.currency,
+              currency: orderCurrency,
             },
             items: orderItems.map((i: any) => ({
               sku: i.sku,

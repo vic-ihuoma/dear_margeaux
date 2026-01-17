@@ -1180,3 +1180,52 @@
 - Add visual regression tests for lookbook layouts
 - Consider adding social sharing buttons to lookbook pages
 - Consider adding related lookbooks section
+
+## [6.4]: Build blog admin
+**Status:** PASSED
+**Tests Written:** N/A (React components + API routes, integration testing recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 1 hint in 54 files)
+**Build:** PASSED (server build in 2.61s)
+**Lint:** PASSED (eslint: 0 errors)
+**Findings:**
+- Created complete blog admin interface for managing MDX content:
+  - Blog list page with search and status filter at /blog
+  - New post page with CreateBlog component at /blog/new
+  - Edit post page with BlogEditor component at /blog/[slug]
+- BlogForm.tsx component handles post metadata:
+  - Auto-generates slug from title for new posts
+  - Tag management with chip-style display
+  - Draft/Published toggle
+  - Featured image URL with preview
+  - Validation with field-level error messages
+- MDXEditor.tsx provides rich text editing:
+  - Formatting toolbar (Bold, Italic, Headings, Links, Code, Quotes, Lists)
+  - Three view modes: Write, Preview, Split
+  - Simple markdown-to-HTML converter for live preview
+  - Character count in footer
+- BlogEditor.tsx container manages editing flow:
+  - Separates metadata form from content editor
+  - Danger zone with delete confirmation
+  - Success/error feedback messages
+- File-based API routes for blog management:
+  - GET/POST /api/blog - List and create posts
+  - GET/PATCH/DELETE /api/blog/[slug] - Single post operations
+  - Uses Node.js fs APIs to read/write MDX files
+  - MDX files stored in /apps/storefront/src/content/blog/
+- AdminLayout updated with Blog navigation link
+- PRD editor features implemented:
+  - Bold, italic, headings
+  - Links, images (via URL field)
+  - Code blocks
+  - Split/preview modes
+  - Save as draft or publish
+
+**Recommendations:**
+- Phase 6 (Blog) is complete - proceed to Phase 7 (Advanced Features)
+- Note: Blog admin uses Node.js filesystem APIs which only work in development
+- For production, consider migrating blog storage to D1 database or external CMS
+- Consider adding more advanced MDX preview (component rendering)
+- Add integration tests for blog API routes
+- Consider adding image upload to R2 for blog images (currently URL only)
+- Consider adding bulk operations (bulk delete, bulk publish)

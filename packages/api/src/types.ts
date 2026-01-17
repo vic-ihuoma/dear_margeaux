@@ -142,6 +142,22 @@ export interface CartItem {
   unit_price_cents: number;
 }
 
+/** Applied discount info */
+export interface AppliedDiscount {
+  code: string;
+  type: DiscountType;
+  amount_cents: number;
+}
+
+/** Cart totals */
+export interface CartTotals {
+  subtotal_cents: number;
+  discount_cents: number;
+  shipping_cents: number;
+  tax_cents: number;
+  total_cents: number;
+}
+
 /** Shopping cart */
 export interface Cart {
   id: string;
@@ -150,11 +166,15 @@ export interface Cart {
   expires_at: ISODateString | null;
   currency: string;
   items: CartItem[];
-  subtotal_cents: number;
-  discount_cents: number;
-  total_cents: number;
-  discount_code: string | null;
-  stripe_checkout_session_id: string | null;
+  discount: AppliedDiscount | null;
+  totals: CartTotals;
+  stripe_checkout_session_id?: string | null;
+}
+
+/** Result of applying or removing a discount */
+export interface ApplyDiscountResult {
+  discount: AppliedDiscount | null;
+  totals: CartTotals;
 }
 
 /** Parameters for creating a cart */
@@ -208,6 +228,8 @@ export interface Discount {
   usage_count: number;
   stripe_coupon_id: string | null;
   stripe_promotion_code_id: string | null;
+  created_at: ISODateString;
+  updated_at: ISODateString;
 }
 
 /** Parameters for creating a discount */

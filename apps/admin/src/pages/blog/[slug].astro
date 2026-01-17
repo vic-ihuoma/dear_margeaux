@@ -1,0 +1,177 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { BlogEditor } from '../../components/BlogEditor';
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/blog');
+}
+
+// Fetch the blog post from the API
+interface BlogPost {
+  slug: string;
+  title: string;
+  description: string;
+  date: string;
+  author: string;
+  tags: string[];
+  image?: string;
+  draft: boolean;
+  content: string;
+}
+
+let post: BlogPost | null = null;
+let error: string | null = null;
+
+try {
+  const response = await fetch(new URL(`/api/blog/${slug}`, Astro.url));
+  if (response.ok) {
+    post = await response.json();
+  } else if (response.status === 404) {
+    // Post not found, redirect to blog list
+    return Astro.redirect('/blog');
+  } else {
+    const errorData = await response.json();
+    error = errorData.error || 'Failed to load blog post';
+  }
+} catch (e) {
+  console.error('Failed to fetch blog post:', e);
+  error = 'Failed to load blog post. Please try again.';
+}
+
+// Get status badge styles
+function getStatusBadgeClass(draft: boolean): string {
+  return draft
+    ? 'bg-status-warning/10 text-status-warning'
+    : 'bg-status-success/10 text-status-success';
+}
+
+function getStatusLabel(draft: boolean): string {
+  return draft ? 'Draft' : 'Published';
+}
+---
+
+<AdminLayout title={post?.title || 'Edit Blog Post'}>
+  {
+    error ? (
+      <div class="p-8 text-center">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-status-error/10 mb-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-6 h-6 text-status-error"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+            />
+          </svg>
+        </div>
+        <p class="text-text-secondary mb-4">{error}</p>
+        <a
+          href="/blog"
+          class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-600"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-4 h-4"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+            />
+          </svg>
+          Back to Blog
+        </a>
+      </div>
+    ) : post ? (
+      <>
+        {/* Breadcrumb */}
+        <nav class="flex mb-6" aria-label="Breadcrumb">
+          <ol class="flex items-center space-x-2">
+            <li>
+              <a
+                href="/blog"
+                class="text-text-muted hover:text-text-primary text-sm"
+              >
+                Blog
+              </a>
+            </li>
+            <li>
+              <svg
+                class="h-5 w-5 text-text-muted"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </li>
+            <li>
+              <span class="text-text-primary text-sm font-medium line-clamp-1">
+                {post.title}
+              </span>
+            </li>
+          </ol>
+        </nav>
+
+        {/* Page Header */}
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-3">
+              <h1 class="text-2xl font-semibold text-text-primary truncate">
+                {post.title}
+              </h1>
+              <span
+                class:list={[
+                  'shrink-0 inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
+                  getStatusBadgeClass(post.draft),
+                ]}
+              >
+                {getStatusLabel(post.draft)}
+              </span>
+            </div>
+            <p class="mt-1 text-sm text-text-muted">/blog/{post.slug}</p>
+          </div>
+          <a
+            href="/blog"
+            class="inline-flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-4 h-4"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+              />
+            </svg>
+            Back to Blog
+          </a>
+        </div>
+
+        {/* Blog Editor Component */}
+        <BlogEditor post={post} client:load />
+      </>
+    ) : null
+  }
+</AdminLayout>

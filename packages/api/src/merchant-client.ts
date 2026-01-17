@@ -25,6 +25,7 @@ import type {
   AddToCartParams,
   CheckoutParams,
   CheckoutResult,
+  ApplyDiscountResult,
   // Discount
   Discount,
   CreateDiscountParams,
@@ -412,17 +413,27 @@ export class MerchantClient {
   /**
    * Apply a discount code to a cart
    */
-  async applyDiscount(cartId: string, code: string): Promise<Cart> {
-    return this.request<Cart>('POST', `/carts/${cartId}/apply-discount`, {
-      body: { code },
-    });
+  async applyDiscount(
+    cartId: string,
+    code: string
+  ): Promise<ApplyDiscountResult> {
+    return this.request<ApplyDiscountResult>(
+      'POST',
+      `/carts/${cartId}/apply-discount`,
+      {
+        body: { code },
+      }
+    );
   }
 
   /**
    * Remove discount from a cart
    */
-  async removeDiscount(cartId: string): Promise<Cart> {
-    return this.request<Cart>('DELETE', `/carts/${cartId}/discount`);
+  async removeDiscount(cartId: string): Promise<ApplyDiscountResult> {
+    return this.request<ApplyDiscountResult>(
+      'DELETE',
+      `/carts/${cartId}/discount`
+    );
   }
 
   /**

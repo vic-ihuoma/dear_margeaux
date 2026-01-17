@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   $cartItems,
   $cartSubtotal,
+  $currency,
   $isCartEmpty,
   $isCartOpen,
   closeCart,
@@ -11,13 +12,25 @@ import {
   updateCartItemQuantity,
 } from '../stores/cart';
 
+interface AppliedDiscount {
+  code: string;
+  type: 'percentage' | 'fixed_amount';
+  amount_cents: number;
+}
+
 export default function CartDrawer() {
   const items = useStore($cartItems);
   const subtotal = useStore($cartSubtotal);
   const isEmpty = useStore($isCartEmpty);
   const isOpen = useStore($isCartOpen);
+  const currency = useStore($currency);
   const drawerRef = useRef<HTMLDivElement>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [discountCode, setDiscountCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] =
+    useState<AppliedDiscount | null>(null);
+  const [discountError, setDiscountError] = useState<string | null>(null);
+  const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
 
   // Handle escape key to close drawer
   useEffect(() => {
@@ -72,8 +85,8 @@ export default function CartDrawer() {
       const { MerchantClient } = await import('@dear-margeaux/api');
       const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
 
-      // Create a cart in the API
-      const cart = await client.createCart({});
+      // Create a cart in the API with the user's currency
+      const cart = await client.createCart({ currency });
 
       // Add all items to the cart
       for (const item of items) {
@@ -81,6 +94,16 @@ export default function CartDrawer() {
           sku: item.sku,
           qty: item.quantity,
         });
+      }
+
+      // Apply discount if one was entered and validated
+      if (appliedDiscount) {
+        try {
+          await client.applyDiscount(cart.id, appliedDiscount.code);
+        } catch (error) {
+          console.error('Failed to apply discount at checkout:', error);
+          // Continue with checkout without discount
+        }
       }
 
       // Initiate checkout
@@ -97,6 +120,60 @@ export default function CartDrawer() {
       alert('Checkout failed. Please try again.');
       setIsCheckingOut(false);
     }
+  };
+
+  const handleApplyDiscount = async () => {
+    if (!discountCode.trim()) return;
+
+    setIsApplyingDiscount(true);
+    setDiscountError(null);
+
+    try {
+      const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
+      const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY;
+
+      if (!apiUrl || !apiKey) {
+        setDiscountError('Discounts not available');
+        setIsApplyingDiscount(false);
+        return;
+      }
+
+      const { MerchantClient } = await import('@dear-margeaux/api');
+      const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
+
+      // Create a temporary cart to validate the discount
+      const cart = await client.createCart({ currency });
+
+      // Add items to get the correct subtotal
+      for (const item of items) {
+        await client.addToCart(cart.id, {
+          sku: item.sku,
+          qty: item.quantity,
+        });
+      }
+
+      // Apply the discount code
+      const result = await client.applyDiscount(cart.id, discountCode.trim());
+
+      if (result.discount) {
+        setAppliedDiscount({
+          code: result.discount.code,
+          type: result.discount.type,
+          amount_cents: result.discount.amount_cents,
+        });
+        setDiscountCode('');
+      }
+    } catch (error: any) {
+      const message = error?.message || 'Invalid discount code';
+      setDiscountError(message);
+    } finally {
+      setIsApplyingDiscount(false);
+    }
+  };
+
+  const handleRemoveDiscount = () => {
+    setAppliedDiscount(null);
+    setDiscountError(null);
   };
 
   return (
@@ -310,11 +387,88 @@ export default function CartDrawer() {
           {/* Footer with Totals and Checkout */}
           {!isEmpty && (
             <div className="border-t border-border px-6 py-4 space-y-4">
+              {/* Discount Code Section */}
+              {!appliedDiscount ? (
+                <div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={discountCode}
+                      onChange={(e) =>
+                        setDiscountCode(e.target.value.toUpperCase())
+                      }
+                      placeholder="Discount code"
+                      className="flex-1 px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background text-text"
+                      disabled={isApplyingDiscount}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyDiscount}
+                      disabled={isApplyingDiscount || !discountCode.trim()}
+                      className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-normal"
+                    >
+                      {isApplyingDiscount ? '...' : 'Apply'}
+                    </button>
+                  </div>
+                  {discountError && (
+                    <p className="mt-1 text-xs text-status-error">
+                      {discountError}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-3 bg-status-success/10 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <svg
+                      className="w-4 h-4 text-status-success"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <span className="text-sm font-medium text-status-success">
+                      {appliedDiscount.code}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveDiscount}
+                    className="text-xs text-text-secondary hover:text-status-error transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+
               {/* Subtotal */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-text-secondary">Subtotal</span>
-                <span className="text-lg font-semibold text-text">
+                <span className="text-sm text-text">
                   {formatPrice(subtotal)}
+                </span>
+              </div>
+
+              {/* Discount Amount */}
+              {appliedDiscount && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-status-success">Discount</span>
+                  <span className="text-sm text-status-success">
+                    -{formatPrice(appliedDiscount.amount_cents)}
+                  </span>
+                </div>
+              )}
+
+              {/* Total */}
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <span className="text-sm font-medium text-text">Total</span>
+                <span className="text-lg font-semibold text-text">
+                  {formatPrice(subtotal - (appliedDiscount?.amount_cents || 0))}
                 </span>
               </div>
 

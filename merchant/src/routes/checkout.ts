@@ -46,13 +46,49 @@ checkout.get('/:cartId', async (c) => {
   });
 });
 
+// Supported currencies for multi-currency checkout
+// These are the most commonly supported Stripe currencies
+const SUPPORTED_CURRENCIES = new Set([
+  'USD',
+  'EUR',
+  'GBP',
+  'CAD',
+  'AUD',
+  'JPY',
+  'CHF',
+  'SEK',
+  'NOK',
+  'DKK',
+  'NZD',
+  'SGD',
+  'HKD',
+  'MXN',
+  'BRL',
+  'PLN',
+  'CZK',
+  'HUF',
+  'RON',
+  'BGN',
+]);
+
 // POST /v1/carts
 checkout.post('/', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const customerEmail = body?.customer_email;
+  const requestedCurrency = body?.currency;
 
   if (!customerEmail || !isValidEmail(customerEmail)) {
     throw ApiError.invalidRequest('A valid customer_email is required');
+  }
+
+  // Validate and normalize currency (default to USD if not provided or unsupported)
+  let currency = 'USD';
+  if (requestedCurrency && typeof requestedCurrency === 'string') {
+    const normalizedCurrency = requestedCurrency.toUpperCase().trim();
+    if (SUPPORTED_CURRENCIES.has(normalizedCurrency)) {
+      currency = normalizedCurrency;
+    }
+    // Silently fall back to USD for unsupported currencies
   }
 
   const { store } = c.get('auth');
@@ -61,17 +97,15 @@ checkout.post('/', async (c) => {
   const id = uuid();
   const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
-  await db.run(`INSERT INTO carts (id, store_id, customer_email, expires_at) VALUES (?, ?, ?, ?)`, [
-    id,
-    store.id,
-    customerEmail,
-    expiresAt,
-  ]);
+  await db.run(
+    `INSERT INTO carts (id, store_id, customer_email, currency, expires_at) VALUES (?, ?, ?, ?, ?)`,
+    [id, store.id, customerEmail, currency, expiresAt]
+  );
 
   return c.json({
     id,
     status: 'open',
-    currency: 'USD',
+    currency,
     customer_email: customerEmail,
     items: [],
     discount: null,
@@ -440,9 +474,12 @@ checkout.post('/:cartId/checkout', async (c) => {
   // Create Stripe session
   const stripe = new Stripe(store.stripe_secret_key);
 
+  // Use cart currency for checkout (lowercase for Stripe API)
+  const checkoutCurrency = cart.currency.toLowerCase();
+
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map((item) => ({
     price_data: {
-      currency: 'usd',
+      currency: checkoutCurrency,
       product_data: { name: item.title },
       unit_amount: item.unit_price_cents,
     },
@@ -479,14 +516,14 @@ checkout.post('/:cartId/checkout', async (c) => {
           // Use amount_off with the already-calculated capped discount amount
           // discountAmountCents was calculated using calculateDiscount which respects the cap
           couponParams.amount_off = discountAmountCents;
-          couponParams.currency = 'usd';
+          couponParams.currency = checkoutCurrency;
         } else if (discount.type === 'percentage') {
           // Percentage discount without cap - use percent_off
           couponParams.percent_off = discount.value;
         } else {
           // Fixed amount discount
           couponParams.amount_off = discount.value;
-          couponParams.currency = 'usd';
+          couponParams.currency = checkoutCurrency;
         }
 
         const coupon = await stripe.coupons.create(couponParams);
@@ -510,7 +547,7 @@ checkout.post('/:cartId/checkout', async (c) => {
     {
       shipping_rate_data: {
         type: 'fixed_amount',
-        fixed_amount: { amount: 0, currency: 'usd' },
+        fixed_amount: { amount: 0, currency: checkoutCurrency },
         display_name: 'Standard Shipping',
         delivery_estimate: {
           minimum: { unit: 'business_day', value: 5 },

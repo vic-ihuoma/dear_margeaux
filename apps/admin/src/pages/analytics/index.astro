@@ -1,0 +1,441 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { StatCard } from '../../components/StatCard';
+import { SalesChart, type SalesDataPoint } from '../../components/SalesChart';
+import { TopProducts, type TopProductData } from '../../components/TopProducts';
+import { getAdminMerchantClient, formatPrice } from '../../lib/merchant';
+import type { OrderListItem, ProductListItem } from '@dear-margeaux/api';
+
+// Get date range from query params
+const url = new URL(Astro.request.url);
+const rangeParam = url.searchParams.get('range') || '30';
+const range = parseInt(rangeParam, 10);
+
+// Valid ranges: 7, 30, 90
+const validRanges = [7, 30, 90];
+const selectedRange = validRanges.includes(range) ? range : 30;
+
+// Calculate date range
+const endDate = new Date();
+const startDate = new Date();
+startDate.setDate(endDate.getDate() - selectedRange);
+
+// Format dates for display
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+});
+
+const rangeLabels: Record<number, string> = {
+  7: 'Last 7 days',
+  30: 'Last 30 days',
+  90: 'Last 90 days',
+};
+
+// Fetch data from API
+const client = getAdminMerchantClient();
+
+// Analytics metrics
+let totalRevenue = 0;
+let totalOrders = 0;
+let avgOrderValue = 0;
+
+// Chart data
+let salesData: SalesDataPoint[] = [];
+
+// Top products
+let topProducts: TopProductData[] = [];
+
+// Orders for analysis
+let orders: OrderListItem[] = [];
+
+// Status data for bar chart
+interface StatusData {
+  status: string;
+  label: string;
+  color: string;
+  count: number;
+  percent: number;
+}
+let statusData: StatusData[] = [];
+let totalStatusOrders = 0;
+
+// High value orders
+let highValueOrders: OrderListItem[] = [];
+
+if (client) {
+  try {
+    // Fetch all orders (we'll filter by date client-side)
+    // In production, add date filter params to the API
+    const ordersResponse = await client.getOrders({ limit: 100 });
+    orders = ordersResponse.items;
+
+    // Filter orders by date range and status (paid, processing, shipped, delivered)
+    const validStatuses = ['paid', 'processing', 'shipped', 'delivered'];
+    const filteredOrders = orders.filter((order) => {
+      const orderDate = new Date(order.created_at);
+      return (
+        orderDate >= startDate &&
+        orderDate <= endDate &&
+        validStatuses.includes(order.status)
+      );
+    });
+
+    // Calculate total metrics
+    totalOrders = filteredOrders.length;
+    totalRevenue = filteredOrders.reduce(
+      (sum, order) => sum + order.total_cents,
+      0
+    );
+    avgOrderValue =
+      totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+
+    // Build sales data by day
+    const salesByDay = new Map<string, { revenue: number; orders: number }>();
+
+    // Initialize all days in range
+    for (
+      let d = new Date(startDate);
+      d <= endDate;
+      d.setDate(d.getDate() + 1)
+    ) {
+      const dateKey = d.toISOString().split('T')[0];
+      salesByDay.set(dateKey, { revenue: 0, orders: 0 });
+    }
+
+    // Fill in actual data
+    filteredOrders.forEach((order) => {
+      const dateKey = order.created_at.split('T')[0];
+      const existing = salesByDay.get(dateKey);
+      if (existing) {
+        salesByDay.set(dateKey, {
+          revenue: existing.revenue + order.total_cents,
+          orders: existing.orders + 1,
+        });
+      }
+    });
+
+    // Convert to array for chart
+    salesData = Array.from(salesByDay.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([dateKey, data]) => ({
+        date: dateFormatter.format(new Date(dateKey)),
+        revenue: data.revenue,
+        orders: data.orders,
+      }));
+
+    // Get detailed order data for top products analysis
+    // We need full order details with items
+    const productSales = new Map<
+      string,
+      { title: string; unitsSold: number; revenue: number }
+    >();
+
+    // Fetch full order details for filtered orders (limited to avoid too many API calls)
+    const orderDetailsPromises = filteredOrders
+      .slice(0, 50)
+      .map((o) => client.getOrder(o.id).catch(() => null));
+    const orderDetails = await Promise.all(orderDetailsPromises);
+
+    // Aggregate product sales
+    orderDetails.forEach((order) => {
+      if (!order) return;
+      order.items.forEach((item) => {
+        const existing = productSales.get(item.sku);
+        if (existing) {
+          productSales.set(item.sku, {
+            title: existing.title,
+            unitsSold: existing.unitsSold + item.qty,
+            revenue: existing.revenue + item.unit_price_cents * item.qty,
+          });
+        } else {
+          productSales.set(item.sku, {
+            title: item.title,
+            unitsSold: item.qty,
+            revenue: item.unit_price_cents * item.qty,
+          });
+        }
+      });
+    });
+
+    // Convert to top products array and sort by revenue
+    topProducts = Array.from(productSales.entries())
+      .map(([sku, data]) => ({
+        id: sku, // Using SKU as ID since we don't have product ID in order items
+        title: data.title,
+        unitsSold: data.unitsSold,
+        revenue: data.revenue,
+      }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
+
+    // Get products with images for top products display
+    const productsResponse = await client.getProducts({ limit: 100 });
+    const productsByTitle = new Map<string, ProductListItem>();
+    productsResponse.items.forEach((p) => productsByTitle.set(p.title, p));
+
+    // Add images to top products
+    topProducts = topProducts.map((tp) => {
+      const product = productsByTitle.get(tp.title);
+      return {
+        ...tp,
+        id: product?.id || tp.id,
+        image: undefined, // Product list doesn't have images; would need full product fetch
+      };
+    });
+
+    // Calculate status counts for all orders
+    const statusCounts: Record<string, number> = {};
+    orders.forEach((order) => {
+      statusCounts[order.status] = (statusCounts[order.status] || 0) + 1;
+    });
+
+    const statusLabels: Record<string, { label: string; color: string }> = {
+      pending: { label: 'Pending', color: 'bg-yellow-500' },
+      paid: { label: 'Paid', color: 'bg-blue-500' },
+      processing: { label: 'Processing', color: 'bg-purple-500' },
+      shipped: { label: 'Shipped', color: 'bg-cyan-500' },
+      delivered: { label: 'Delivered', color: 'bg-green-500' },
+      canceled: { label: 'Canceled', color: 'bg-gray-400' },
+      refunded: { label: 'Refunded', color: 'bg-red-400' },
+    };
+
+    totalStatusOrders = Object.values(statusCounts).reduce((a, b) => a + b, 0);
+
+    statusData = Object.entries(statusLabels).map(
+      ([status, { label, color }]) => {
+        const count = statusCounts[status] || 0;
+        const percent =
+          totalStatusOrders > 0 ? (count / totalStatusOrders) * 100 : 0;
+        return { status, label, color, count, percent };
+      }
+    );
+
+    // High value orders
+    highValueOrders = orders
+      .filter((o) => o.total_cents >= 10000) // $100+
+      .sort((a, b) => b.total_cents - a.total_cents)
+      .slice(0, 5);
+  } catch (error) {
+    console.error('Failed to fetch analytics data:', error);
+  }
+}
+
+// Calculate total products sold
+const totalProductsSold = topProducts.reduce((sum, p) => sum + p.unitsSold, 0);
+---
+
+<AdminLayout title="Analytics">
+  <!-- Page Header -->
+  <div
+    class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+  >
+    <div>
+      <h1 class="text-2xl font-semibold text-text-primary">Analytics</h1>
+      <p class="mt-1 text-sm text-text-secondary">
+        Track your store performance and sales metrics.
+      </p>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div class="flex items-center gap-2">
+      {
+        validRanges.map((r) => (
+          <a
+            href={`?range=${r}`}
+            class:list={[
+              'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+              r === selectedRange
+                ? 'bg-primary-600 text-white'
+                : 'bg-background-secondary text-text-secondary hover:bg-background-tertiary hover:text-text-primary border border-border',
+            ]}
+          >
+            {r}d
+          </a>
+        ))
+      }
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <StatCard
+      client:load
+      label="Total Revenue"
+      value={formatPrice(totalRevenue)}
+      iconType="revenue"
+      iconBgColor="bg-status-success/20"
+      iconColor="text-status-success"
+      subtitle={rangeLabels[selectedRange]}
+    />
+
+    <StatCard
+      client:load
+      label="Orders"
+      value={totalOrders}
+      href="/orders"
+      iconType="orders"
+      iconBgColor="bg-accent-100"
+      iconColor="text-accent-600"
+      subtitle={rangeLabels[selectedRange]}
+    />
+
+    <StatCard
+      client:load
+      label="Avg Order Value"
+      value={formatPrice(avgOrderValue)}
+      iconType="revenue"
+      iconBgColor="bg-primary-100"
+      iconColor="text-primary-600"
+      subtitle="Per order"
+    />
+
+    <StatCard
+      client:load
+      label="Products Sold"
+      value={totalProductsSold}
+      href="/products"
+      iconType="products"
+      iconBgColor="bg-secondary-400"
+      iconColor="text-primary-700"
+      subtitle="Total units"
+    />
+  </div>
+
+  <!-- Charts Section -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Revenue Chart (2 columns) -->
+    <div
+      class="lg:col-span-2 bg-background-secondary rounded-xl border border-border shadow-sm"
+    >
+      <div
+        class="px-6 py-4 border-b border-border flex items-center justify-between"
+      >
+        <h2 class="text-lg font-semibold text-text-primary">
+          Revenue Over Time
+        </h2>
+        <span class="text-sm text-text-muted">{rangeLabels[selectedRange]}</span
+        >
+      </div>
+      <div class="p-6">
+        <SalesChart client:load data={salesData} />
+      </div>
+    </div>
+
+    <!-- Top Products (1 column) -->
+    <div
+      class="bg-background-secondary rounded-xl border border-border shadow-sm"
+    >
+      <div
+        class="px-6 py-4 border-b border-border flex items-center justify-between"
+      >
+        <h2 class="text-lg font-semibold text-text-primary">Top Products</h2>
+        <a
+          href="/products"
+          class="text-sm text-primary-600 hover:text-primary-700 font-medium"
+        >
+          View all
+        </a>
+      </div>
+      <div class="p-6">
+        <TopProducts client:load products={topProducts} limit={5} />
+      </div>
+    </div>
+  </div>
+
+  <!-- Additional Metrics -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Orders by Status -->
+    <div
+      class="bg-background-secondary rounded-xl border border-border shadow-sm"
+    >
+      <div class="px-6 py-4 border-b border-border">
+        <h2 class="text-lg font-semibold text-text-primary">
+          Orders by Status
+        </h2>
+      </div>
+      <div class="p-6">
+        {
+          totalStatusOrders === 0 ? (
+            <div class="h-32 flex items-center justify-center text-text-muted text-sm">
+              No orders in this period
+            </div>
+          ) : (
+            <div class="space-y-3">
+              {statusData.map((item) => (
+                <div>
+                  <div class="flex justify-between text-sm mb-1">
+                    <span class="text-text-secondary">{item.label}</span>
+                    <span class="font-medium text-text-primary">
+                      {item.count} ({item.percent.toFixed(0)}%)
+                    </span>
+                  </div>
+                  <div class="h-2 bg-background-tertiary rounded-full overflow-hidden">
+                    <div
+                      class={`h-full ${item.color} rounded-full transition-all duration-500`}
+                      style={`width: ${item.percent}%`}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        }
+      </div>
+    </div>
+
+    <!-- Recent High-Value Orders -->
+    <div
+      class="bg-background-secondary rounded-xl border border-border shadow-sm"
+    >
+      <div
+        class="px-6 py-4 border-b border-border flex items-center justify-between"
+      >
+        <h2 class="text-lg font-semibold text-text-primary">
+          High-Value Orders
+        </h2>
+        <a
+          href="/orders"
+          class="text-sm text-primary-600 hover:text-primary-700 font-medium"
+        >
+          View all
+        </a>
+      </div>
+      <div class="p-6">
+        {
+          highValueOrders.length === 0 ? (
+            <div class="h-32 flex items-center justify-center text-text-muted text-sm">
+              No high-value orders ($100+) in this period
+            </div>
+          ) : (
+            <div class="space-y-3">
+              {highValueOrders.map((order) => (
+                <a
+                  href={`/orders/${order.id}`}
+                  class="flex items-center justify-between p-3 rounded-lg border border-border hover:border-primary-300 hover:bg-primary-50 transition-colors block"
+                >
+                  <div>
+                    <p class="text-sm font-medium text-text-primary">
+                      Order #{order.number}
+                    </p>
+                    <p class="text-xs text-text-muted">
+                      {order.customer_email}
+                    </p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-sm font-semibold text-primary-600">
+                      {formatPrice(order.total_cents)}
+                    </p>
+                    <p class="text-xs text-text-muted capitalize">
+                      {order.status}
+                    </p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</AdminLayout>
