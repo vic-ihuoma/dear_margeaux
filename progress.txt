@@ -439,3 +439,87 @@
 - Variant/cart state sync via custom events ready for cart store integration
 - Product images are placeholders - API integration handles real images
 - Ready for Task 2.8 (Implement shopping cart)
+
+## 2026-01-17: Task 2.8 - Implement shopping cart
+
+### Completed
+- Installed nanostores@1.1.0 and @nanostores/react@1.0.0 for state management
+- Created cart store at apps/storefront/src/stores/cart.ts:
+  - CartItem interface with variantId, sku, title, variantTitle, price, quantity, imageUrl
+  - $cartItems atom for cart items array
+  - $isCartOpen atom for drawer visibility
+  - $cartCount computed for total item count
+  - $cartSubtotal computed for subtotal in cents
+  - $isCartEmpty computed for empty state
+  - LocalStorage persistence for cart across page navigation
+  - Helper functions: addToCart, updateCartItemQuantity, removeFromCart, clearCart
+  - formatPrice utility for currency formatting
+- Created CartIcon.tsx React component:
+  - Dynamic cart count badge (shows 9+ for >9 items)
+  - Initializes cart from localStorage on mount
+  - Toggle cart drawer on click
+  - Accessible aria-label with item count
+- Created CartDrawer.tsx React component:
+  - Slide-out drawer from right side
+  - Backdrop overlay with click-to-close
+  - Keyboard support (Escape to close)
+  - Body scroll lock when open
+  - Cart item list with images, titles, variant info
+  - Quantity controls (+/- buttons, range 1-10)
+  - Remove item button
+  - Line totals and subtotal
+  - Checkout button with Stripe redirect
+  - Continue shopping link
+  - Empty cart state with CTA
+- Created ProductControls.tsx React component:
+  - Combines VariantSelector and AddToCart in single island
+  - Manages variant selection state
+  - Passes correct props to AddToCart including variantId, imageUrl
+- Updated AddToCart.tsx:
+  - Connected to cart store via addToCart function
+  - Added variantId, variantTitle, productTitle, imageUrl props
+  - Opens cart drawer after adding item
+- Updated Header.astro:
+  - Replaced static cart button with CartIcon React component
+- Updated BaseLayout.astro:
+  - Added CartDrawer component at body level
+- Created checkout pages:
+  - /checkout/success.astro: Order confirmation with session ID display
+  - /checkout/cancel.astro: Checkout cancelled page with return options
+
+### Files Created/Modified
+- apps/storefront/package.json (modified: added nanostores dependencies)
+- apps/storefront/src/stores/cart.ts (new)
+- apps/storefront/src/components/CartIcon.tsx (new)
+- apps/storefront/src/components/CartDrawer.tsx (new)
+- apps/storefront/src/components/ProductControls.tsx (new)
+- apps/storefront/src/components/AddToCart.tsx (modified: connected to cart store)
+- apps/storefront/src/components/Header.astro (modified: uses CartIcon)
+- apps/storefront/src/layouts/BaseLayout.astro (modified: includes CartDrawer)
+- apps/storefront/src/pages/product/[id].astro (modified: uses ProductControls)
+- apps/storefront/src/pages/checkout/success.astro (new)
+- apps/storefront/src/pages/checkout/cancel.astro (new)
+
+### Acceptance Criteria Verified
+- [x] Cart persists across page navigation (localStorage)
+- [x] Items can be added/removed/updated
+- [x] Cart totals calculate correctly
+- [x] Checkout button redirects to Stripe (via Merchant API)
+
+### Test Results
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 0 hints in 22 files)
+- Build: PASSED (15 pages built in 2.20s)
+  - 8 product pages
+  - 3 shop collection pages
+  - 1 shop index page
+  - 1 homepage
+  - 2 checkout pages (success, cancel)
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- Using nanostores for lightweight, Astro-native state management
+- Cart drawer has smooth slide-in animation with backdrop
+- Checkout flow creates cart via Merchant API, redirects to Stripe Checkout
+- Success page clears cart automatically
+- Cancel page preserves cart for retry
+- Ready for Task 2.9 (Implement Stripe checkout flow) - partially complete via checkout button

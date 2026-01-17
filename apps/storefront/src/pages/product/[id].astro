@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import VariantSelector from '../../components/VariantSelector';
-import AddToCart from '../../components/AddToCart';
+import ProductControls from '../../components/ProductControls';
 import { sampleProducts } from '../../data/sample-products';
 import type { Variant } from '@dear-margeaux/api';
 
@@ -115,7 +114,6 @@ if (!product) {
 
 // Get the first variant as default
 const defaultVariant = product.variants[0];
-const hasMultipleVariants = product.variants.length > 1;
 
 // Check if all variants are sold out
 const allSoldOut = product.variants.every((v) => !v.available);
@@ -274,31 +272,13 @@ const allSoldOut = product.variants.every((v) => !v.available);
 
           <hr class="border-border" />
 
-          {/* Interactive Product Controls */}
-          <div id="product-controls" class="space-y-6">
-            {/* Variant Selector (React Island) */}
-            {
-              hasMultipleVariants && (
-                <VariantSelector
-                  client:load
-                  variants={product.variants}
-                  selectedVariantId={defaultVariant?.id ?? null}
-                  onVariantSelect={(variantId: string) => {
-                    // This will be handled client-side
-                    console.log('Selected variant:', variantId);
-                  }}
-                />
-              )
-            }
-
-            {/* Add to Cart (React Island) */}
-            <AddToCart
-              client:load
-              variantSku={defaultVariant?.sku ?? null}
-              price={defaultVariant?.price_cents ?? 0}
-              available={defaultVariant?.available ?? false}
-            />
-          </div>
+          {/* Interactive Product Controls (React Island) */}
+          <ProductControls
+            client:load
+            productTitle={product.title}
+            variants={product.variants}
+            defaultVariantId={defaultVariant?.id ?? null}
+          />
 
           <hr class="border-border" />
 

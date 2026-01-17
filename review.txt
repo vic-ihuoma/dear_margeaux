@@ -255,3 +255,54 @@
 - Consider adding "Share" button for social sharing
 - Add structured data (JSON-LD) for SEO
 - Consider lazy loading for related products section
+
+## [2.8]: Implement shopping cart
+**Status:** PASSED
+**Tests Written:** N/A (React components + state management, integration testing recommended)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 0 hints in 22 files)
+**Build:** PASSED (15 pages built in 2.20s)
+**Lint:** N/A (no linter configured for storefront yet)
+**Findings:**
+- Implemented complete shopping cart with nanostores state management:
+  - Cart store (stores/cart.ts) with atoms and computed values
+  - localStorage persistence for cart data across page navigation
+  - CartItem interface with full product/variant information
+- CartIcon.tsx React component:
+  - Dynamic badge showing item count (caps at 9+)
+  - Initializes cart from localStorage on mount
+  - Accessible aria-labels including item count
+- CartDrawer.tsx React component:
+  - Slide-out drawer with smooth CSS transition
+  - Backdrop overlay with click-to-close
+  - Keyboard accessibility (Escape to close)
+  - Body scroll lock when open
+  - Cart item list with:
+    - Product image (with placeholder)
+    - Title and variant name
+    - Unit price and line total
+    - Quantity controls (+/- buttons, 1-10 range)
+    - Remove button
+  - Subtotal calculation
+  - Checkout button with loading state
+  - API integration for Stripe checkout redirect
+  - Empty state with CTA to continue shopping
+- ProductControls.tsx component:
+  - Single React island combining VariantSelector and AddToCart
+  - Manages variant selection state properly
+  - Passes all required props for cart integration
+- Updated AddToCart.tsx:
+  - Connected to cart store
+  - Opens cart drawer after adding item
+  - Shows success feedback
+- Checkout pages:
+  - /checkout/success: Order confirmation with session ID
+  - /checkout/cancel: Cancelled checkout with retry options
+
+**Recommendations:**
+- Next task: PRD 2.9 - Implement Stripe checkout flow (partially complete)
+- Consider adding unit tests for cart store functions
+- Add visual regression testing for cart drawer states
+- Consider adding discount code input to cart drawer (Phase 7)
+- Add cart item quantity validation against inventory
+- Consider optimistic UI updates for cart operations

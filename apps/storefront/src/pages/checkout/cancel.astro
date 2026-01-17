@@ -1,0 +1,92 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Checkout Cancelled"
+  description="Your checkout was cancelled."
+>
+  <section class="py-16 md:py-24">
+    <div class="container mx-auto px-4 max-w-2xl text-center">
+      <!-- Info Icon -->
+      <div
+        class="w-20 h-20 mx-auto mb-8 rounded-full bg-accent/10 flex items-center justify-center"
+      >
+        <svg
+          class="w-10 h-10 text-accent"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </div>
+
+      <h1 class="text-3xl md:text-4xl font-bold text-text mb-4">
+        Checkout Cancelled
+      </h1>
+
+      <p class="text-lg text-text-secondary mb-8">
+        No worries! Your order was not processed and no charges were made. Your
+        items are still in your cart if you'd like to complete your purchase.
+      </p>
+
+      <!-- Reassurance -->
+      <div class="bg-secondary rounded-xl p-6 mb-8">
+        <h2 class="text-lg font-semibold text-text mb-3">
+          Your items are safe
+        </h2>
+        <p class="text-text-secondary">
+          Your cart has been saved and you can return to checkout whenever
+          you're ready. If you have any questions, feel free to contact us.
+        </p>
+      </div>
+
+      <!-- CTA Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+          href="/shop"
+          class="inline-flex items-center justify-center px-8 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+        >
+          Return to Shop
+        </a>
+        <button
+          type="button"
+          id="open-cart-btn"
+          class="inline-flex items-center justify-center px-8 py-3 border border-border text-text font-medium rounded-lg hover:border-primary hover:text-primary transition-colors duration-normal"
+        >
+          View Your Cart
+        </button>
+      </div>
+
+      <!-- Help Links -->
+      <div class="mt-12 pt-8 border-t border-border">
+        <p class="text-sm text-text-muted mb-4">Need help?</p>
+        <div class="flex flex-wrap justify-center gap-4 text-sm">
+          <a href="/contact" class="text-primary hover:underline">Contact Us</a>
+          <span class="text-text-muted">|</span>
+          <a href="/shipping" class="text-primary hover:underline"
+            >Shipping Info</a
+          >
+          <span class="text-text-muted">|</span>
+          <a href="/returns" class="text-primary hover:underline"
+            >Returns Policy</a
+          >
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { openCart } from '../../stores/cart';
+
+  const openCartBtn = document.getElementById('open-cart-btn');
+  openCartBtn?.addEventListener('click', () => {
+    openCart();
+  });
+</script>

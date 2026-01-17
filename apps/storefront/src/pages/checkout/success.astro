@@ -1,0 +1,108 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+// Get the session_id from URL params (passed by Stripe redirect)
+const sessionId = Astro.url.searchParams.get('session_id');
+---
+
+<BaseLayout title="Order Confirmed" description="Thank you for your order!">
+  <section class="py-16 md:py-24">
+    <div class="container mx-auto px-4 max-w-2xl text-center">
+      <!-- Success Icon -->
+      <div
+        class="w-20 h-20 mx-auto mb-8 rounded-full bg-status-success/10 flex items-center justify-center"
+      >
+        <svg
+          class="w-10 h-10 text-status-success"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M5 13l4 4L19 7"></path>
+        </svg>
+      </div>
+
+      <h1 class="text-3xl md:text-4xl font-bold text-text mb-4">
+        Thank You for Your Order!
+      </h1>
+
+      <p class="text-lg text-text-secondary mb-8">
+        Your order has been confirmed and is being processed. We'll send you a
+        confirmation email with your order details shortly.
+      </p>
+
+      {
+        sessionId && (
+          <div class="bg-background-tertiary rounded-lg p-4 mb-8">
+            <p class="text-sm text-text-muted">
+              Order Reference:
+              <span class="font-mono text-text">
+                {sessionId.slice(0, 20)}...
+              </span>
+            </p>
+          </div>
+        )
+      }
+
+      <!-- What's Next -->
+      <div class="bg-secondary rounded-xl p-6 mb-8 text-left">
+        <h2 class="text-lg font-semibold text-text mb-4">What happens next?</h2>
+        <ul class="space-y-3">
+          <li class="flex items-start gap-3">
+            <span
+              class="w-6 h-6 shrink-0 rounded-full bg-primary text-text-inverse flex items-center justify-center text-sm font-medium"
+              >1</span
+            >
+            <span class="text-text-secondary"
+              >You'll receive an order confirmation email with your receipt.</span
+            >
+          </li>
+          <li class="flex items-start gap-3">
+            <span
+              class="w-6 h-6 shrink-0 rounded-full bg-primary text-text-inverse flex items-center justify-center text-sm font-medium"
+              >2</span
+            >
+            <span class="text-text-secondary"
+              >We'll prepare your handcrafted bag with care.</span
+            >
+          </li>
+          <li class="flex items-start gap-3">
+            <span
+              class="w-6 h-6 shrink-0 rounded-full bg-primary text-text-inverse flex items-center justify-center text-sm font-medium"
+              >3</span
+            >
+            <span class="text-text-secondary"
+              >You'll receive a shipping notification with tracking details.</span
+            >
+          </li>
+        </ul>
+      </div>
+
+      <!-- CTA Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+          href="/shop"
+          class="inline-flex items-center justify-center px-8 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+        >
+          Continue Shopping
+        </a>
+        <a
+          href="/"
+          class="inline-flex items-center justify-center px-8 py-3 border border-border text-text font-medium rounded-lg hover:border-primary hover:text-primary transition-colors duration-normal"
+        >
+          Back to Home
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  // Clear the cart on successful checkout
+  import { clearCart } from '../../stores/cart';
+  clearCart();
+</script>

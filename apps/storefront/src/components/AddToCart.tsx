@@ -1,17 +1,24 @@
 import { useState } from 'react';
+import { addToCart } from '../stores/cart';
 
 interface AddToCartProps {
+  variantId: string | null;
   variantSku: string | null;
+  variantTitle: string;
+  productTitle: string;
   price: number;
   available: boolean;
-  onAddToCart?: (sku: string, quantity: number) => void;
+  imageUrl: string | null;
 }
 
 export default function AddToCart({
+  variantId,
   variantSku,
+  variantTitle,
+  productTitle,
   price,
   available,
-  onAddToCart,
+  imageUrl,
 }: AddToCartProps) {
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
@@ -35,14 +42,22 @@ export default function AddToCart({
   };
 
   const handleAddToCart = async () => {
-    if (!variantSku || !available) return;
+    if (!variantId || !variantSku || !available) return;
 
     setIsAdding(true);
 
-    // Simulate cart addition (will be connected to cart store in Task 2.8)
-    if (onAddToCart) {
-      onAddToCart(variantSku, quantity);
-    }
+    // Add item to cart store
+    addToCart(
+      {
+        variantId,
+        sku: variantSku,
+        title: productTitle,
+        variantTitle,
+        price,
+        imageUrl,
+      },
+      quantity
+    );
 
     // Show success feedback
     setTimeout(() => {
@@ -52,7 +67,7 @@ export default function AddToCart({
     }, 300);
   };
 
-  const isDisabled = !variantSku || !available || isAdding;
+  const isDisabled = !variantId || !variantSku || !available || isAdding;
 
   return (
     <div className="space-y-4">
