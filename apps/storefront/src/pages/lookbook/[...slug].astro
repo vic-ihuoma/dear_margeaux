@@ -1,0 +1,28 @@
+---
+import { getCollection, render } from 'astro:content';
+import Lookbook from '../../layouts/Lookbook.astro';
+
+export async function getStaticPaths() {
+  const lookbooks = await getCollection('lookbook', ({ data }) => {
+    // In production, filter out drafts
+    return import.meta.env.PROD ? !data.draft : true;
+  });
+
+  return lookbooks.map((lookbook) => ({
+    params: { slug: lookbook.slug },
+    props: { lookbook },
+  }));
+}
+
+const { lookbook } = Astro.props;
+const { Content } = await render(lookbook);
+---
+
+<Lookbook
+  title={lookbook.data.title}
+  drop={lookbook.data.drop}
+  date={lookbook.data.date}
+  images={lookbook.data.images}
+>
+  <Content />
+</Lookbook>

@@ -1734,3 +1734,64 @@
 - Reading time is an approximate calculation (could be enhanced with actual word count)
 - Prose styling uses Tailwind Typography plugin conventions
 - Ready for Task 6.3 (Build lookbook pages)
+
+## 2026-01-17: Task 6.3 - Build lookbook pages
+
+### Completed
+- Created lookbook listing page at apps/storefront/src/pages/lookbook/index.astro:
+  - Page header with "Lookbook" title and description
+  - Fetches all published lookbooks from content collection
+  - Sorts lookbooks by date (newest first)
+  - Displays lookbook cards with:
+    - Cover image (first image from images array)
+    - Placeholder for lookbooks without images
+    - Title with hover effect
+    - Date formatted as month and year
+    - Image count indicator
+    - "View Lookbook" link with animated arrow
+  - Empty state with helpful messaging
+  - Shop CTA section
+  - Filters out draft lookbooks in production
+- Created lookbook detail page at apps/storefront/src/pages/lookbook/[...slug].astro:
+  - Uses getStaticPaths for static generation
+  - Passes lookbook data to Lookbook layout
+  - Renders MDX content via Astro's render() function
+- Created Lookbook layout at apps/storefront/src/layouts/Lookbook.astro:
+  - Breadcrumb navigation (Home / Lookbook / Title)
+  - Collection badge linking to drop shop page
+  - Lookbook title (responsive sizing) and date
+  - Hero image (first image) full-width with 21:9 aspect ratio
+  - Prose-styled content section for MDX
+  - Gallery section with remaining images:
+    - 2-column grid with alternating full-width images
+    - Hover scale effect on images
+    - Rounded corners and proper aspect ratios
+  - Shop the Collection CTA with link to drop
+  - Back to Lookbook navigation link
+- Comprehensive SEO meta tags in Lookbook layout:
+  - Standard meta: title, description
+  - Open Graph: type, title, description, image
+  - Twitter Card: card type, title, description, image
+
+### Files Created
+- apps/storefront/src/pages/lookbook/index.astro (new)
+- apps/storefront/src/pages/lookbook/[...slug].astro (new)
+- apps/storefront/src/layouts/Lookbook.astro (new)
+
+### Acceptance Criteria Verified
+- [x] Lookbooks display large images beautifully (hero + gallery layout)
+- [x] Can link to products/drops (collection badge links to /shop/{drop})
+- [x] Responsive image handling (different aspect ratios for hero vs gallery)
+
+### Test Results
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 1 hint in 32 files)
+- Build: PASSED (2 lookbook pages built: /lookbook/, /lookbook/spring-2026/)
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- Lookbook uses Astro Content Collections with Zod schemas (from Task 6.1)
+- Lookbook layout includes Header/Footer/CartDrawer for consistent site navigation
+- Gallery uses varied aspect ratios (4:5 for pairs, 21:9 for full-width) for visual interest
+- Drop title is generated from slug (e.g., spring-2026 -> Spring 2026)
+- Images use hover scale effect for interactivity
+- Ready for Task 6.4 (Build blog admin)
