@@ -577,3 +577,67 @@
 - Success page is static but functional - could be enhanced with order details API in future
 - Cancel page preserves cart state for easy retry
 - Phase 2 (Storefront Foundation) is now complete
+
+## 2026-01-17: Task 3.1 - Create admin Astro project
+
+### Completed
+- Created Astro project at apps/admin using minimal template with TypeScript strict
+- Added Tailwind CSS v4 via @tailwindcss/vite integration
+- Added @astrojs/react integration with React 19.2.3
+- Configured astro.config.mjs with vite tailwindcss plugin and react integration
+- Created comprehensive global.css with @theme design tokens matching storefront palette:
+  - Primary colors (warm brown scale)
+  - Secondary colors (cream scale)
+  - Accent colors (terracotta scale)
+  - Background, text, border, and status colors
+  - Typography with Inter font
+  - Spacing, border radius, shadows, transitions
+- Created AdminLayout.astro with:
+  - Sidebar navigation (Dashboard, Products, Orders, Inventory, Drops)
+  - Active state highlighting for current route
+  - Mobile responsive with hamburger menu
+  - User profile section at bottom
+- Created dashboard index page with:
+  - Quick Stats cards (Total Products, Total Orders, Revenue, Active Drop)
+  - Recent Activity section (empty state)
+  - Quick Actions section (Add Product, Schedule Drop, View Orders)
+- Added workspace dependencies:
+  - @dear-margeaux/api
+  - @dear-margeaux/ui
+  - nanostores and @nanostores/react
+- Created eslint.config.js matching storefront config
+- Created .env.example with MERCHANT_API_URL, MERCHANT_ADMIN_KEY, SESSION_SECRET
+- Set dev port to 4322 to avoid conflict with storefront (4321)
+
+### Files Created/Modified
+- apps/admin/ (new: Astro project)
+- apps/admin/package.json (modified: added scripts, dependencies, devDependencies)
+- apps/admin/astro.config.mjs (auto-generated with integrations)
+- apps/admin/tsconfig.json (auto-generated with React JSX config)
+- apps/admin/src/styles/global.css (new: comprehensive design tokens)
+- apps/admin/src/layouts/AdminLayout.astro (new)
+- apps/admin/src/pages/index.astro (modified: dashboard page)
+- apps/admin/src/components/ (new: empty, ready for components)
+- apps/admin/src/lib/ (new: empty, ready for utilities)
+- apps/admin/eslint.config.js (new)
+- apps/admin/.env.example (new)
+
+### Acceptance Criteria Verified
+- [x] Admin project at apps/admin
+- [x] Separate from storefront (different port, separate project)
+- [x] Shares packages/ui components (workspace dependency added)
+
+### Test Results
+- Type Check (admin): PASSED (0 errors, 0 warnings, 1 hint in 5 files)
+- Build: PASSED (1 page built in 1.36s)
+- Lint: PASSED (no errors)
+- Type Check (storefront): PASSED (0 errors, 0 warnings, 1 hint in 23 files)
+- Merchant Tests: 18 tests passed (2 test files)
+
+### Notes
+- Using Tailwind CSS v4 (@tailwindcss/vite) instead of v3 (@astrojs/tailwind)
+- Design tokens defined via CSS @theme directive (Tailwind v4 approach)
+- Dashboard shows static placeholder values - will be connected to API in Task 3.3
+- Admin layout has sidebar with navigation ready for future pages
+- Mobile menu implemented with vanilla JS
+- Ready for Task 3.2 (Implement admin authentication)

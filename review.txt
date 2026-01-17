@@ -402,3 +402,36 @@
 - Consider adding a public endpoint to fetch order by session_id for enhanced success page
 - Add integration tests for the full checkout flow
 - Consider adding email confirmation on checkout success (Phase 5)
+
+## [3.1]: Create admin Astro project
+**Status:** PASSED
+**Tests Written:** N/A (infrastructure setup, no tests applicable)
+**Test Results:** Merchant backend tests: 18 passed (2 test files)
+**Type Check:** PASSED (astro check: 0 errors, 0 warnings, 1 hint in 5 files)
+**Build:** PASSED (1 page built in 1.36s)
+**Lint:** PASSED (eslint: no errors)
+**Findings:**
+- Successfully created admin Astro project at apps/admin
+- Using Tailwind CSS v4 (@tailwindcss/vite) - different from storefront's v3
+- Design tokens configured via CSS @theme directive with same color palette
+- AdminLayout.astro provides sidebar navigation structure:
+  - Dashboard, Products, Orders, Inventory, Drops navigation links
+  - Active state highlighting based on current route
+  - Mobile responsive hamburger menu with slide-out navigation
+  - User profile section at sidebar bottom
+- Dashboard page displays:
+  - Quick Stats cards (Products, Orders, Revenue, Active Drop) - static placeholders
+  - Recent Activity section with empty state
+  - Quick Actions with links to create product, schedule drop, view orders
+- Workspace dependencies configured:
+  - @dear-margeaux/api and @dear-margeaux/ui packages linked
+  - nanostores installed for future state management
+- ESLint configured with same rules as storefront
+- Dev server runs on port 4322 (separate from storefront's 4321)
+
+**Recommendations:**
+- Next task: PRD 3.2 - Implement admin authentication (Lucia recommended)
+- Dashboard stats should be connected to Merchant API in Task 3.3
+- Consider adding visual regression tests for admin layout
+- The hint in type check is about deprecated tseslint signature - non-blocking
+- Could add loading skeletons for dashboard stats when API connected

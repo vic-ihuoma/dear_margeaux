@@ -1,0 +1,191 @@
+@import 'tailwindcss';
+
+/* Dear Margeaux Admin Design System */
+/* Theme configuration using Tailwind CSS v4 @theme directive */
+
+@theme {
+  /* Colors - Primary (Warm Brown) */
+  --color-primary-50: #f7f0eb;
+  --color-primary-100: #ede0d4;
+  --color-primary-200: #dbc1a9;
+  --color-primary-300: #c9a27e;
+  --color-primary-400: #b78353;
+  --color-primary-500: #8b4513;
+  --color-primary-600: #7a3d11;
+  --color-primary-700: #69350f;
+  --color-primary-800: #582d0d;
+  --color-primary-900: #47250b;
+  --color-primary-950: #361d08;
+  --color-primary: #8b4513;
+
+  /* Colors - Secondary (Cream) */
+  --color-secondary-50: #fffefb;
+  --color-secondary-100: #fffdf7;
+  --color-secondary-200: #fffbef;
+  --color-secondary-300: #fff9e7;
+  --color-secondary-400: #fff8dc;
+  --color-secondary-500: #fff3c4;
+  --color-secondary-600: #ffeaab;
+  --color-secondary-700: #ffe193;
+  --color-secondary-800: #ffd87a;
+  --color-secondary-900: #ffcf62;
+  --color-secondary-950: #ffc649;
+  --color-secondary: #fff8dc;
+
+  /* Colors - Accent (Terracotta) */
+  --color-accent-50: #fcf0ed;
+  --color-accent-100: #f9e1db;
+  --color-accent-200: #f3c3b7;
+  --color-accent-300: #eda593;
+  --color-accent-400: #e7876f;
+  --color-accent-500: #e2725b;
+  --color-accent-600: #d95a40;
+  --color-accent-700: #c14832;
+  --color-accent-800: #9d3b29;
+  --color-accent-900: #792e20;
+  --color-accent-950: #552117;
+  --color-accent: #e2725b;
+
+  /* Background Colors */
+  --color-background: #fafafa;
+  --color-background-primary: #fafafa;
+  --color-background-secondary: #ffffff;
+  --color-background-tertiary: #f5f5f5;
+  --color-background-inverse: #333333;
+
+  /* Text Colors */
+  --color-text: #333333;
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-muted: #999999;
+  --color-text-inverse: #ffffff;
+
+  /* Border Colors */
+  --color-border: #e5e5e5;
+  --color-border-light: #f0f0f0;
+  --color-border-dark: #cccccc;
+
+  /* Status Colors */
+  --color-status-success: #22c55e;
+  --color-status-warning: #f59e0b;
+  --color-status-error: #ef4444;
+  --color-status-info: #3b82f6;
+
+  /* Typography */
+  --font-family-sans: 'Inter', system-ui, sans-serif;
+  --font-family-serif: Georgia, serif;
+  --font-family-mono:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-size-5xl: 3rem;
+
+  /* Line Heights */
+  --line-height-xs: 1rem;
+  --line-height-sm: 1.25rem;
+  --line-height-base: 1.5rem;
+  --line-height-lg: 1.75rem;
+  --line-height-xl: 1.75rem;
+  --line-height-2xl: 2rem;
+  --line-height-3xl: 2.25rem;
+  --line-height-4xl: 2.5rem;
+  --line-height-5xl: 1;
+
+  /* Spacing */
+  --spacing-px: 1px;
+  --spacing-0: 0;
+  --spacing-0-5: 0.125rem;
+  --spacing-1: 0.25rem;
+  --spacing-1-5: 0.375rem;
+  --spacing-2: 0.5rem;
+  --spacing-2-5: 0.625rem;
+  --spacing-3: 0.75rem;
+  --spacing-3-5: 0.875rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-7: 1.75rem;
+  --spacing-8: 2rem;
+  --spacing-9: 2.25rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-14: 3.5rem;
+  --spacing-16: 4rem;
+  --spacing-20: 5rem;
+  --spacing-24: 6rem;
+  --spacing-28: 7rem;
+  --spacing-32: 8rem;
+  --spacing-36: 9rem;
+  --spacing-40: 10rem;
+  --spacing-44: 11rem;
+  --spacing-48: 12rem;
+  --spacing-52: 13rem;
+  --spacing-56: 14rem;
+  --spacing-60: 15rem;
+  --spacing-64: 16rem;
+  --spacing-72: 18rem;
+  --spacing-80: 20rem;
+  --spacing-96: 24rem;
+
+  /* Border Radius */
+  --radius-sm: 0.125rem;
+  --radius: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl:
+    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+  /* Transition Durations */
+  --transition-fast: 150ms;
+  --transition-normal: 200ms;
+  --transition-slow: 300ms;
+}
+
+/* Base Styles */
+html {
+  font-family: var(--font-family-sans);
+  color: var(--color-text-primary);
+  background-color: var(--color-background-tertiary);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* Focus styles for accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection styles */
+::selection {
+  background-color: var(--color-primary-200);
+  color: var(--color-primary-900);
+}
