@@ -1957,3 +1957,112 @@ wrangler d1 migrations apply merchant-db --remote
 ### Next Steps
 - newsletter-3: Create newsletter subscription API endpoint
 - newsletter-4: Create double opt-in verification email template
+
+## 2026-01-18: newsletter-3 - Create newsletter subscription API endpoint
+
+### Task Completed
+Created the newsletter subscription API endpoint at `POST /v1/newsletter/subscribe` with email validation, normalization, verification token generation, and privacy-preserving responses.
+
+### Key Decisions
+- Created new route file `merchant/src/routes/newsletter.ts` following existing patterns from waitlist.ts
+- Endpoint returns identical success response whether email is new or already exists (prevents email enumeration attacks)
+- Email is normalized (trimmed and lowercased) before storage and lookup
+- Uses existing `isValidEmail` helper from types.ts for validation
+- Generates verification token using `uuid()` for double opt-in flow
+- Inserts subscriber with `verified=0` (false) to support double opt-in
+- Registered route at `/v1/newsletter` in main index.ts
+
+### Files Created
+- `merchant/src/routes/newsletter.ts` - Newsletter subscription API route (62 lines)
+- `merchant/tests/routes/newsletter.test.ts` - 11 unit tests
+
+### Files Changed
+- `merchant/src/index.ts` - Added import and route registration for newsletter
+- `prd.json` - Set passes: true for newsletter-3
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors, 232 pre-existing warnings in other files)
+- Merchant Tests: PASSED (352 tests - 11 new newsletter + 341 existing)
+
+### Test Coverage Summary
+All PRD unit tests documented:
+- POST /v1/newsletter/subscribe returns 200 for valid email ✓
+- Email is normalized to lowercase ✓
+- Invalid email format returns 400 ✓
+- Verification token is generated ✓
+- Subscriber inserted with verified=false ✓
+- Same response for existing email (no leak) ✓
+
+Additional test coverage:
+- Missing email returns 400 ✓
+- Already verified email returns same success response ✓
+- Whitespace trimmed from email ✓
+- Emails without TLD rejected ✓
+- Emails with spaces rejected ✓
+
+### API Endpoint Details
+```
+POST /v1/newsletter/subscribe
+Request Body: { "email": "user@example.com" }
+Response: { "success": true, "message": "Check your email to confirm your subscription" }
+```
+
+### Next Steps
+- newsletter-4: Create double opt-in verification email template
+- newsletter-5: Create verification endpoint
+---
+
+## 2026-01-18: newsletter-3 - Create newsletter subscription API endpoint
+
+### Task Completed
+Created the newsletter subscription API endpoint at `POST /v1/newsletter/subscribe` with email validation, normalization, verification token generation, and privacy-preserving responses.
+
+### Key Decisions
+- Created new route file `merchant/src/routes/newsletter.ts` following existing patterns from waitlist.ts
+- Endpoint returns identical success response whether email is new or already exists (prevents email enumeration attacks)
+- Email is normalized (trimmed and lowercased) before storage and lookup
+- Uses existing `isValidEmail` helper from types.ts for validation
+- Generates verification token using `uuid()` for double opt-in flow
+- Inserts subscriber with `verified=0` (false) to support double opt-in
+- Registered route at `/v1/newsletter` in main index.ts
+
+### Files Created
+- `merchant/src/routes/newsletter.ts` - Newsletter subscription API route (62 lines)
+- `merchant/tests/routes/newsletter.test.ts` - 11 unit tests
+
+### Files Changed
+- `merchant/src/index.ts` - Added import and route registration for newsletter
+- `prd.json` - Set passes: true for newsletter-3
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors, 232 pre-existing warnings in other files)
+- Merchant Tests: PASSED (352 tests - 11 new newsletter + 341 existing)
+
+### Test Coverage Summary
+All PRD unit tests documented:
+- POST /v1/newsletter/subscribe returns 200 for valid email ✓
+- Email is normalized to lowercase ✓
+- Invalid email format returns 400 ✓
+- Verification token is generated ✓
+- Subscriber inserted with verified=false ✓
+- Same response for existing email (no leak) ✓
+
+Additional test coverage:
+- Missing email returns 400 ✓
+- Already verified email returns same success response ✓
+- Whitespace trimmed from email ✓
+- Emails without TLD rejected ✓
+- Emails with spaces rejected ✓
+
+### API Endpoint Details
+```
+POST /v1/newsletter/subscribe
+Request Body: { "email": "user@example.com" }
+Response: { "success": true, "message": "Check your email to confirm your subscription" }
+```
+
+### Next Steps
+- newsletter-4: Create double opt-in verification email template
+- newsletter-5: Create verification endpoint

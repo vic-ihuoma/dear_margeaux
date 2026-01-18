@@ -15,6 +15,7 @@ import { waitlist } from './routes/waitlist';
 import { customerAuth } from './routes/customer-auth';
 import { counts } from './routes/counts';
 import { emailUsage } from './routes/email-usage';
+import { newsletter } from './routes/newsletter';
 import { handleCron } from './cron';
 import { rateLimitMiddleware } from './middleware/rate-limit';
 import { securityHeaders } from './middleware/security-headers';
@@ -78,6 +79,7 @@ app.route('/v1/waitlist', waitlist);
 app.route('/v1/customers/auth', customerAuth);
 app.route('/v1/counts', counts);
 app.route('/v1/email-usage', emailUsage);
+app.route('/v1/newsletter', newsletter);
 
 export default {
   fetch: app.fetch,

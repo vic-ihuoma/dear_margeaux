@@ -1431,3 +1431,32 @@ Created apps/admin/tests/components/VariantForm.test.ts with 40 documented tests
 - Migration requires `wrangler d1 migrations apply merchant-db --remote` for production deployment
 - Consider adding status field for draft/queued/sent states in future iteration
 
+
+## [newsletter-3]: Create newsletter subscription API endpoint
+**Status:** PASSED
+**Tests Written:** 11 unit tests in merchant/tests/routes/newsletter.test.ts
+**Test Results:** 352 tests passed (merchant - 11 new + 341 existing)
+**Type Check:** PASSED - 0 errors across all 7 packages
+**Lint:** PASSED - 0 errors on new files (232 pre-existing warnings in other files)
+**Browser Tests:** N/A - backend API implementation, no visual tests in PRD
+**Pre-commit Hooks:** Pending (commit in progress)
+**Findings:**
+- Created `merchant/src/routes/newsletter.ts` with POST /v1/newsletter/subscribe endpoint
+- Privacy-preserving response: returns identical success message for new and existing emails (prevents enumeration attacks)
+- Email validation using existing `isValidEmail` helper (RFC 5322 simplified regex)
+- Email normalization: trim whitespace and convert to lowercase
+- Generates verification token via `uuid()` for double opt-in flow
+- Inserts subscriber with `verified=0` (false) to support verification workflow
+- Registered route at `/v1/newsletter` in main index.ts
+- Test coverage includes: valid email, invalid formats, missing email, normalization, token generation, existing email handling
+**PRD Coverage:**
+- POST /v1/newsletter/subscribe returns 200 for valid email ✓
+- Email is normalized to lowercase ✓
+- Invalid email format returns 400 ✓
+- Verification token is generated ✓
+- Subscriber inserted with verified=false ✓
+- Same response for existing email (no leak) ✓
+**Recommendations:**
+- newsletter-4: Create double opt-in verification email template
+- newsletter-5: Create verification endpoint to complete the flow
+- Consider adding rate limiting to prevent subscription spam
