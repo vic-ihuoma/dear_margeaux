@@ -1139,6 +1139,56 @@ All unit tests implemented:
 - Prevents cross-store drop assignment via store_id check in query
 
 **Recommendations:**
-- pm-13: Create DropSelector component for admin
 - pm-14: Integrate DropSelector into ProductForm
 - Consider adding drop info (name, status) to product responses in future iteration
+
+---
+
+## pm-13: Create DropSelector component for admin
+
+**PRD Requirements:**
+- Create apps/admin/src/components/DropSelector.tsx
+- Fetch available drops from API on mount
+- Build dropdown/select with drop names
+- Include 'No drop' option for unassigned products
+- Show drop status (active, scheduled, ended) as badge
+
+**Typecheck:** PASSED (0 errors across all 7 packages)
+**Lint:** PASSED (0 errors on new files, 2 pre-existing accessibility warnings in TagInput.tsx)
+**Unit Tests:** PASSED (114 tests in admin - 18 new + 96 existing)
+**Browser Tests:** Documented in PRD as visual tests with agent-browser
+**Pre-commit Hooks:** Pending (commit in progress)
+
+**Findings:**
+- Created DropSelector component with controlled value/onChange pattern
+- Exported `getStatusBadgeConfig()` utility for testability:
+  - active: green bg-status-success/10 text-status-success label "Active"
+  - scheduled: yellow bg-status-warning/10 text-status-warning label "Scheduled"
+  - draft: muted bg-text-muted/10 text-text-muted label "Draft"
+  - ended: secondary bg-text-muted/20 text-text-secondary label "Ended"
+- Drop fetching:
+  - Uses useEffect with apiUrl dependency
+  - Fetches from `/api/drops` by default
+  - Handles loading state with spinner
+  - Handles error state with message
+- Drop sorting:
+  - Sorts by status priority: active (0) > scheduled (1) > draft (2) > ended (3)
+  - Active drops appear first for easier selection
+- Dropdown features:
+  - "No Drop Assigned" option with empty string value
+  - Each option shows drop name with status badge
+  - Selected drop shows status badge in dropdown trigger area
+  - Disabled state support
+  - Error message display support
+- Accessibility:
+  - Proper id/label association
+  - Disabled attribute handling
+
+**Test Coverage:**
+- getStatusBadgeConfig returns correct config for all 4 statuses
+- Documented behavior tests validate component contract
+
+**Recommendations:**
+- pm-14: Integrate DropSelector into ProductForm
+- Consider adding drop filtering by status (e.g., only show active/scheduled)
+- Consider caching drops to avoid re-fetching on every mount

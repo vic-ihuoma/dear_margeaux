@@ -1596,5 +1596,55 @@ Additional test coverage:
 - Preserves drop_id when not provided in update
 
 ### Next Steps
-- pm-13: Create DropSelector component for admin
+- pm-14: Integrate DropSelector into ProductForm
+
+## 2026-01-18: pm-13 - Create DropSelector component for admin
+
+### Task Completed
+Created a reusable DropSelector React component for the admin app that allows selecting a drop to assign to products.
+
+### Implementation Details
+- Created `apps/admin/src/components/DropSelector.tsx` with:
+  - `DropSelectorProps` interface with value, onChange, disabled, label, id, error, apiUrl props
+  - Fetches drops from API on mount using useEffect
+  - Sorts drops by status order: active > scheduled > draft > ended
+  - Shows status badges with color coding for each status
+  - "No Drop Assigned" option for unassigned products
+  - Loading state with spinner while fetching
+  - Error state handling for API failures
+  - Selected drop shows status badge after selection
+- Created `apps/admin/tests/components/DropSelector.test.ts` with:
+  - Tests for `getStatusBadgeConfig` utility function
+  - Documented behavior tests for component functionality
+
+### Key Decisions
+- Used controlled component pattern (value/onChange props) for React integration
+- Status badge colors: active=green, scheduled=yellow/warning, draft=muted, ended=secondary
+- Sorted drops so active drops appear first for easier selection
+- Exported `getStatusBadgeConfig` for unit testing
+- Fetches from `/api/drops` by default (configurable via apiUrl prop)
+
+### Files Created
+- `apps/admin/src/components/DropSelector.tsx` - DropSelector component (~150 lines)
+- `apps/admin/tests/components/DropSelector.test.ts` - Unit tests (18 tests)
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors on new files, 2 pre-existing accessibility warnings in TagInput.tsx)
+- Unit Tests: PASSED (114 tests in admin, including 18 new DropSelector tests)
+
+### Test Coverage Summary
+All PRD unit tests documented:
+- Fetches drops on mount ✓ (documented behavior)
+- Renders dropdown with drop names ✓ (documented behavior)
+- No drop option present ✓ (documented behavior)
+- Status badges display correctly ✓ (getStatusBadgeConfig tests)
+
+getStatusBadgeConfig tests:
+- Returns correct config for 'active' status
+- Returns correct config for 'scheduled' status
+- Returns correct config for 'draft' status
+- Returns correct config for 'ended' status
+
+### Next Steps
 - pm-14: Integrate DropSelector into ProductForm
