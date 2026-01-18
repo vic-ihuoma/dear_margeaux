@@ -1,0 +1,129 @@
+{
+  "timestamp": "2026-01-18T17:34:02.593Z",
+  "mode": "WRANGLER",
+  "bucket": "dear-margeaux-images",
+  "results": {
+    "success": [
+      {
+        "source": "products",
+        "file": "prod-1.webp",
+        "targetFolder": "products",
+        "targetName": "prod-1.webp",
+        "key": "products/prod-1.webp"
+      },
+      {
+        "source": "products",
+        "file": "prod-2.webp",
+        "targetFolder": "products",
+        "targetName": "prod-2.webp",
+        "key": "products/prod-2.webp"
+      },
+      {
+        "source": "products",
+        "file": "prod-3.webp",
+        "targetFolder": "products",
+        "targetName": "prod-3.webp",
+        "key": "products/prod-3.webp"
+      },
+      {
+        "source": "products",
+        "file": "prod-4.webp",
+        "targetFolder": "products",
+        "targetName": "prod-4.webp",
+        "key": "products/prod-4.webp"
+      },
+      {
+        "source": "products",
+        "file": "prod-5.webp",
+        "targetFolder": "products",
+        "targetName": "prod-5.webp",
+        "key": "products/prod-5.webp"
+      },
+      {
+        "source": "products",
+        "file": "prod-6.webp",
+        "targetFolder": "products",
+        "targetName": "prod-6.webp",
+        "key": "products/prod-6.webp"
+      },
+      {
+        "source": "products",
+        "file": "prod-7.webp",
+        "targetFolder": "products",
+        "targetName": "prod-7.webp",
+        "key": "products/prod-7.webp"
+      },
+      {
+        "source": "blogLookbook",
+        "file": "blog-about.webp",
+        "targetFolder": "blog",
+        "targetName": "blog-about.webp",
+        "key": "blog/blog-about.webp"
+      },
+      {
+        "source": "blogLookbook",
+        "file": "lookbook-1.webp",
+        "targetFolder": "lookbook",
+        "targetName": "lookbook-1.webp",
+        "key": "lookbook/lookbook-1.webp"
+      },
+      {
+        "source": "blogLookbook",
+        "file": "lookbook-2.webp",
+        "targetFolder": "lookbook",
+        "targetName": "lookbook-2.webp",
+        "key": "lookbook/lookbook-2.webp"
+      },
+      {
+        "source": "blogLookbook",
+        "file": "branding-hero.webp",
+        "targetFolder": "branding",
+        "targetName": "branding-hero.webp",
+        "key": "branding/branding-hero.webp"
+      },
+      {
+        "source": "logos",
+        "file": "logo-main.webp",
+        "targetFolder": "branding",
+        "targetName": "logo-main.webp",
+        "key": "branding/logo-main.webp"
+      },
+      {
+        "source": "logos",
+        "file": "logo-main.png",
+        "targetFolder": "branding",
+        "targetName": "logo-main.png",
+        "key": "branding/logo-main.png"
+      },
+      {
+        "source": "logos",
+        "file": "logo-light.webp",
+        "targetFolder": "branding",
+        "targetName": "logo-light.webp",
+        "key": "branding/logo-light.webp"
+      },
+      {
+        "source": "logos",
+        "file": "logo-light.png",
+        "targetFolder": "branding",
+        "targetName": "logo-light.png",
+        "key": "branding/logo-light.png"
+      },
+      {
+        "source": "logos",
+        "file": "logo-light-bold.webp",
+        "targetFolder": "branding",
+        "targetName": "logo-light-bold.webp",
+        "key": "branding/logo-light-bold.webp"
+      },
+      {
+        "source": "logos",
+        "file": "logo-light-bold.png",
+        "targetFolder": "branding",
+        "targetName": "logo-light-bold.png",
+        "key": "branding/logo-light-bold.png"
+      }
+    ],
+    "failed": []
+  }
+}

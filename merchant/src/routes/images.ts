@@ -15,6 +15,8 @@ export const images = new Hono<{
 // POST/DELETE require admin auth
 
 // POST /v1/images - Upload image (admin only)
+// Supports optional 'folder' parameter to organize images (e.g., products, blog, branding)
+// Supports optional 'filename' parameter to use a specific filename instead of UUID
 images.post('/', authMiddleware, adminOnly, async (c) => {
   const { store } = c.get('auth');
 
@@ -24,6 +26,8 @@ images.post('/', authMiddleware, adminOnly, async (c) => {
 
   const formData = await c.req.formData();
   const file = formData.get('file') as File | null;
+  const folder = formData.get('folder') as string | null;
+  const filename = formData.get('filename') as string | null;
 
   if (!file) throw ApiError.invalidRequest('file is required');
 
@@ -38,9 +42,15 @@ images.post('/', authMiddleware, adminOnly, async (c) => {
     throw ApiError.invalidRequest('File must be under 5MB');
   }
 
-  // Generate key
+  // Validate folder if provided (alphanumeric, hyphens, underscores only)
+  if (folder && !/^[a-zA-Z0-9_-]+$/.test(folder)) {
+    throw ApiError.invalidRequest('Folder must be alphanumeric with hyphens/underscores only');
+  }
+
+  // Generate key with optional folder and filename
   const ext = file.type.split('/')[1];
-  const key = `${store.id}/${uuid()}.${ext}`;
+  const baseName = filename || `${uuid()}.${ext}`;
+  const key = folder ? `${store.id}/${folder}/${baseName}` : `${store.id}/${baseName}`;
 
   // Upload to R2
   await c.env.IMAGES.put(key, file.stream(), {
