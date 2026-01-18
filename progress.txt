@@ -1027,3 +1027,78 @@ The following fields are redacted in logs:
 - api-5: Add email retry mechanism (queue for failed emails)
 - api-6: Add email rate limiting per store
 - Consider adding structured logging (JSON format) for log aggregation services
+
+## 2026-01-18: api-5 - Add email retry mechanism
+
+### Task Completed
+Implemented email queue system for retrying failed email sends with exponential backoff. Failed emails are stored in a queue table and processed by the cron job, moving to a dead letter table after max retries.
+
+### Key Decisions
+- Created D1 tables `email_queue` and `email_dead_letter` for persistence
+- Exponential backoff delays: 1min, 5min, 15min for retries 0, 1, 2
+- Default max retries: 3 attempts before moving to dead letter
+- Queue integration is optional via `queueOnFailure` option in `sendEmailViaResend`
+- Cron job processes up to 10 emails per batch
+- Logging at every stage for monitoring and debugging
+
+### Files Created
+- `merchant/migrations/011-email-queue.sql` - Database migration with email_queue and email_dead_letter tables
+- `merchant/src/lib/email-queue.ts` - Core email queue module (~270 lines)
+- `merchant/tests/lib/email-queue.test.ts` - 41 unit tests for email queue
+
+### Files Changed
+- `merchant/src/lib/notifications.ts`:
+  - Added import for email-queue module
+  - Extended `ResendEmailOptions` interface with `queueOnFailure` option
+  - Updated `sendEmailViaResend` to queue failed emails when option provided
+  - Updated `sendDropLaunchToSubscriber` to accept storeId and enable queuing
+  - Updated `sendOrderConfirmationEmail` to use storeId and enable queuing
+  - Updated `sendShippingUpdateEmail` to use storeId and enable queuing
+- `merchant/src/cron.ts`:
+  - Added imports for email queue processing
+  - Added email queue processing step after drop notifications
+  - Created email sender wrapper for retry (without re-queuing)
+- `prd.json` - Set passes: true for api-5
+
+### Test Results
+- Merchant Tests: PASSED (212 tests - 41 new email queue + 171 existing)
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors, pre-existing warnings only)
+
+### Test Coverage Summary
+All PRD unit tests implemented:
+- Failed email is added to queue ✓
+- Queue entry includes retry count ✓
+- Retry job processes queued emails ✓
+- Retry job applies exponential backoff ✓
+- Email moves to dead letter after 3 failures ✓
+- Retry attempts are logged ✓
+
+Integration behavior covered:
+- Failed email send triggers queue insertion ✓
+- Cron job retries queued emails ✓
+
+Additional test coverage:
+- calculateNextRetryAt for each retry level
+- getBackoffDelayMs for delay calculation
+- getEmailsReadyToRetry with batch limiting
+- updateAfterRetry with shouldMoveToDeadLetter flag
+- moveToDeadLetter with complete email transfer
+- removeFromQueue for successful sends
+- getQueueStats for monitoring
+- processEmailQueue with success, failure, and exception handling
+
+### Email Queue Flow
+1. Email send attempt fails in `sendEmailViaResend`
+2. If `queueOnFailure` option provided, failed email is inserted into `email_queue`
+3. Cron job runs `processEmailQueue` every minute
+4. Emails ready to retry (next_retry_at <= now) are fetched
+5. Each email is resent using the email sender
+6. On success: email removed from queue
+7. On failure: retry_count incremented, next_retry_at calculated with exponential backoff
+8. After max_retries reached: email moved to `email_dead_letter` for manual review
+
+### Next Steps
+- api-6: Add email rate limiting per store
+- Consider adding admin endpoints to view queue stats and dead letter entries
+- The migration requires `wrangler d1 execute` to apply in production

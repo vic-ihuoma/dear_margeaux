@@ -1,7 +1,8 @@
 import { getDb } from './db';
 import { uuid, now, type Env } from './types';
 import { retryFailedDeliveries } from './lib/webhooks';
-import { processDropNotifications } from './lib/notifications';
+import { processDropNotifications, sendEmailViaResend } from './lib/notifications';
+import { processEmailQueue } from './lib/email-queue';
 
 // ============================================================
 // CRON - Scheduled tasks
@@ -81,4 +82,17 @@ export async function handleCron(env: Env, ctx: ExecutionContext) {
 
   // Process drop notifications (activate scheduled drops and send emails)
   await processDropNotifications(env, ctx);
+
+  // Process email queue (retry failed emails with exponential backoff)
+  const emailSender = async (recipient: string, subject: string, html: string) => {
+    // Note: We don't pass queueOnFailure here since we're already retrying from the queue
+    const result = await sendEmailViaResend(env, { to: recipient, subject, html });
+    return { success: result.success, error: result.error };
+  };
+  const emailQueueResult = await processEmailQueue(env, emailSender);
+  if (emailQueueResult.processed > 0) {
+    console.log(
+      `Email queue: ${emailQueueResult.succeeded} sent, ${emailQueueResult.failed} will retry, ${emailQueueResult.movedToDeadLetter} moved to dead letter`
+    );
+  }
 }

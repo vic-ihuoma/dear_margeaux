@@ -23,6 +23,7 @@
 
 import { getDb } from '../db';
 import { now, type Env } from '../types';
+import { queueFailedEmail, type EmailType } from './email-queue';
 
 // ============================================================
 // TYPES
@@ -128,6 +129,7 @@ function logEmailStub(
 
 async function sendDropLaunchToSubscriber(
   env: Env,
+  storeId: string,
   email: string,
   drop: DropData,
   subscriberName?: string,
@@ -148,6 +150,11 @@ async function sendDropLaunchToSubscriber(
     to: email,
     subject: `${drop.name} is now live! Shop before it sells out`,
     html,
+    queueOnFailure: {
+      storeId,
+      emailType: 'drop_launch',
+      metadata: { dropId: drop.id, dropName: drop.name },
+    },
   });
 }
 
@@ -190,6 +197,7 @@ export async function sendDropLaunchEmails(
       batch.map(async (subscriber) => {
         const sendResult = await sendDropLaunchToSubscriber(
           env,
+          storeId,
           subscriber.email,
           drop,
           undefined,
@@ -225,7 +233,7 @@ export async function sendDropLaunchEmails(
 
 export async function sendOrderConfirmationEmail(
   env: Env,
-  _storeId: string,
+  storeId: string,
   order: OrderData,
   items: OrderItemData[]
 ): Promise<NotificationResult> {
@@ -254,12 +262,17 @@ export async function sendOrderConfirmationEmail(
     to: order.customer_email,
     subject: `Order Confirmed - #${order.number}`,
     html,
+    queueOnFailure: {
+      storeId,
+      emailType: 'order_confirmation',
+      metadata: { orderId: order.id, orderNumber: order.number },
+    },
   });
 }
 
 export async function sendShippingUpdateEmail(
   env: Env,
-  _storeId: string,
+  storeId: string,
   order: OrderData,
   _items: OrderItemData[],
   tracking: TrackingInfo
@@ -282,6 +295,11 @@ export async function sendShippingUpdateEmail(
     to: order.customer_email,
     subject: `Your Order Has Shipped - #${order.number}`,
     html,
+    queueOnFailure: {
+      storeId,
+      emailType: 'shipping_update',
+      metadata: { orderId: order.id, orderNumber: order.number },
+    },
   });
 }
 
@@ -373,6 +391,12 @@ interface ResendEmailOptions {
   text?: string;
   from?: string;
   replyTo?: string;
+  // Queue options for retry mechanism
+  queueOnFailure?: {
+    storeId: string;
+    emailType: EmailType;
+    metadata?: Record<string, unknown>;
+  };
 }
 
 interface ResendResponse {
@@ -393,6 +417,8 @@ async function sendEmailViaResend(
       html: options.html.substring(0, 200) + '...',
     });
   }
+
+  let result: NotificationResult;
 
   try {
     const response = await fetch('https://api.resend.com/emails', {
@@ -415,21 +441,38 @@ async function sendEmailViaResend(
 
     if (!response.ok || data.error) {
       console.error('Resend API error:', data.error);
-      return {
+      result = {
         success: false,
         error: data.error?.message || 'Unknown Resend error',
       };
+    } else {
+      return {
+        success: true,
+        messageId: data.id,
+      };
     }
-
-    return {
-      success: true,
-      messageId: data.id,
-    };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error('Resend send exception:', errorMsg);
-    return { success: false, error: errorMsg };
+    result = { success: false, error: errorMsg };
   }
+
+  // Queue failed email for retry if options provided
+  if (!result.success && options.queueOnFailure) {
+    const db = getDb(env);
+    const recipient = Array.isArray(options.to) ? options.to[0] : options.to;
+    await queueFailedEmail(db, {
+      storeId: options.queueOnFailure.storeId,
+      emailType: options.queueOnFailure.emailType,
+      recipient,
+      subject: options.subject,
+      html: options.html,
+      metadata: options.queueOnFailure.metadata,
+      error: result.error || 'Unknown error',
+    });
+  }
+
+  return result;
 }
 
 // ============================================================
