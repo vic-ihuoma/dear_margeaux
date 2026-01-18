@@ -1,0 +1,2090 @@
+{
+  "meta": {
+    "description": "Tasks ready for implementation - filtered from prd.json with passes:false and no manual testing required",
+    "source": "prd.json",
+    "last_updated": "2026-01-18"
+  },
+  "tasks": [
+    {
+      "id": "assets-1",
+      "category": "assets",
+      "description": "Pre-process product images for upload",
+      "steps": [
+        "Read all 7 product images from ~/Downloads/dear_margeaux_pics/",
+        "Resize images to max 1200px width maintaining aspect ratio",
+        "Compress images to reduce file size (target <200KB each)",
+        "Convert to WebP format for optimal web performance",
+        "Save processed images to scratchpad directory with consistent naming: prod-1.webp through prod-7.webp"
+      ],
+      "tests": {
+        "unit": [
+          "All 7 product images processed successfully",
+          "Processed images are max 1200px width",
+          "Processed images maintain aspect ratio",
+          "Processed images are <200KB each",
+          "Output files are WebP format",
+          "Output files named prod-1.webp through prod-7.webp"
+        ],
+        "visual": [],
+        "manual": []
+      },
+      "passes": true
+    },
+    {
+      "id": "assets-2",
+      "category": "assets",
+      "description": "Pre-process blog and lookbook images",
+      "steps": [
+        "Process 'dear_margeaux - blog image.jpg' → blog-about.webp",
+        "Process 'dear_margeaux lookbook.jpg' → lookbook-1.webp",
+        "Process 'dear_margeaux lookbook and blog.jpg' → lookbook-2.webp",
+        "Process 'dear_margeaux image branding and lookbook.jpg' → branding-hero.webp",
+        "Resize to max 1600px width for blog/lookbook (larger than products)",
+        "Compress and convert to WebP"
+      ],
+      "tests": {
+        "unit": [
+          "blog-about.webp created successfully",
+          "lookbook-1.webp created successfully",
+          "lookbook-2.webp created successfully",
+          "branding-hero.webp created successfully",
+          "All images are max 1600px width",
+          "All images are WebP format"
+        ],
+        "visual": [],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "assets-3",
+      "category": "assets",
+      "description": "Pre-process logo images",
+      "steps": [
+        "Process 'dear_margeaux main logo.jpg' → logo-main.webp (preserve quality)",
+        "Process 'dear_margeaux - light logo.jpg' → logo-light.webp",
+        "Process 'dear_margeaux light logo bold.jpg' → logo-light-bold.webp",
+        "Create PNG versions for contexts requiring transparency support",
+        "Resize logos to standard header height (48-64px height)"
+      ],
+      "tests": {
+        "unit": [
+          "logo-main.webp created with high quality",
+          "logo-light.webp created successfully",
+          "logo-light-bold.webp created successfully",
+          "PNG versions created for each logo",
+          "Logo heights are between 48-64px"
+        ],
+        "visual": [],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "assets-4",
+      "category": "assets",
+      "description": "Generate full favicon set from logo",
+      "steps": [
+        "Use 'dear_margeaux - light logo.jpg' as favicon source",
+        "Generate favicon.ico (multi-size: 16x16, 32x32, 48x48)",
+        "Generate favicon-16x16.png",
+        "Generate favicon-32x32.png",
+        "Generate apple-touch-icon.png (180x180)",
+        "Generate android-chrome-192x192.png",
+        "Generate android-chrome-512x512.png",
+        "Create site.webmanifest file with icon references"
+      ],
+      "tests": {
+        "unit": [
+          "favicon.ico contains 16x16, 32x32, 48x48 sizes",
+          "favicon-16x16.png is exactly 16x16px",
+          "favicon-32x32.png is exactly 32x32px",
+          "apple-touch-icon.png is exactly 180x180px",
+          "android-chrome-192x192.png is exactly 192x192px",
+          "android-chrome-512x512.png is exactly 512x512px",
+          "site.webmanifest is valid JSON",
+          "site.webmanifest references correct icon paths"
+        ],
+        "visual": [],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "assets-5",
+      "category": "assets",
+      "description": "Upload processed images to Cloudflare R2",
+      "steps": [
+        "Ensure R2 bucket and API credentials are configured",
+        "Upload product images to products/ folder in R2",
+        "Upload blog images to blog/ folder in R2",
+        "Upload lookbook images to lookbook/ folder in R2",
+        "Upload branding images to branding/ folder in R2",
+        "Upload logo files to branding/ folder in R2",
+        "Verify all uploads successful and URLs accessible"
+      ],
+      "tests": {
+        "unit": [
+          "R2 bucket credentials are configured",
+          "Product images uploaded to products/ folder",
+          "Blog images uploaded to blog/ folder",
+          "Lookbook images uploaded to lookbook/ folder",
+          "Branding images uploaded to branding/ folder",
+          "All uploaded URLs return 200 OK"
+        ],
+        "visual": [
+          "agent-browser: open each R2 URL directly",
+          "agent-browser: verify images load correctly"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "assets-6",
+      "category": "assets",
+      "description": "Install favicon files in storefront",
+      "steps": [
+        "Copy favicon.ico to apps/storefront/public/",
+        "Copy favicon-16x16.png to apps/storefront/public/",
+        "Copy favicon-32x32.png to apps/storefront/public/",
+        "Copy apple-touch-icon.png to apps/storefront/public/",
+        "Copy android-chrome-*.png to apps/storefront/public/",
+        "Copy site.webmanifest to apps/storefront/public/",
+        "Update apps/storefront/src/layouts/BaseLayout.astro with favicon links"
+      ],
+      "tests": {
+        "unit": [
+          "favicon.ico exists in apps/storefront/public/",
+          "All favicon PNG files exist in public/",
+          "site.webmanifest exists in public/",
+          "BaseLayout.astro includes favicon link tags"
+        ],
+        "visual": [
+          "agent-browser: navigate to storefront",
+          "agent-browser: verify favicon appears in browser tab",
+          "agent-browser: screenshot browser tab with favicon"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "assets-7",
+      "category": "assets",
+      "description": "Add logo to footer",
+      "steps": [
+        "Open apps/storefront/src/components/Footer.astro",
+        "Add logo image to brand column (use logo-light.webp for dark backgrounds if applicable)",
+        "Size appropriately for footer context",
+        "Ensure logo links to homepage",
+        "Test visual consistency with header"
+      ],
+      "tests": {
+        "unit": [
+          "Footer.astro includes logo img element",
+          "Logo img has correct src URL",
+          "Logo is wrapped in link to homepage"
+        ],
+        "visual": [
+          "agent-browser: navigate to any storefront page",
+          "agent-browser: scroll to footer",
+          "agent-browser: screenshot footer logo",
+          "agent-browser: click footer logo",
+          "agent-browser: verify navigation to homepage"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "assets-8",
+      "category": "assets",
+      "description": "Update Our Story section with branding image",
+      "steps": [
+        "Open apps/storefront/src/pages/index.astro",
+        "Find 'Our Story' section with placeholder image",
+        "Replace placeholder with branding-hero.webp URL from R2",
+        "Add descriptive alt text for accessibility",
+        "Verify image displays correctly and maintains layout"
+      ],
+      "tests": {
+        "unit": [
+          "index.astro Our Story section has img element",
+          "img src points to branding-hero.webp R2 URL",
+          "img has descriptive alt text"
+        ],
+        "visual": [
+          "agent-browser: navigate to homepage",
+          "agent-browser: scroll to Our Story section",
+          "agent-browser: screenshot Our Story section with image",
+          "agent-browser: verify image loaded (not broken)"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "perf-1",
+      "category": "performance",
+      "description": "Self-host Inter font",
+      "steps": [
+        "Download Inter font files (woff2 format)",
+        "Place font files in public/fonts/ directory",
+        "Create @font-face declarations in CSS",
+        "Remove Google Fonts CDN links",
+        "Add font-display: swap for performance",
+        "Test font loading across browsers"
+      ],
+      "tests": {
+        "unit": [
+          "Font files exist in public/fonts directory",
+          "CSS includes @font-face declarations for Inter",
+          "font-display: swap is set in @font-face"
+        ],
+        "visual": [
+          "agent-browser: open homepage and verify Inter font loads",
+          "agent-browser: check network tab - no requests to fonts.googleapis.com",
+          "agent-browser: screenshot text rendering"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "sf-10",
+      "category": "storefront",
+      "description": "Add saved addresses feature",
+      "steps": [
+        "Create /account/addresses page",
+        "List saved addresses",
+        "Add address form component",
+        "Implement add/edit/delete address",
+        "Set default address option",
+        "Pre-fill checkout with default address"
+      ],
+      "tests": {
+        "unit": [
+          "Address list fetches addresses from API",
+          "Add address form validates required fields",
+          "Add address saves to API successfully",
+          "Edit address updates existing address",
+          "Delete address removes from list",
+          "Set default marks address as default",
+          "Checkout pre-fills default address"
+        ],
+        "visual": [
+          "agent-browser: login to account",
+          "agent-browser: navigate to /account/addresses",
+          "agent-browser: screenshot address list",
+          "agent-browser: click Add Address",
+          "agent-browser: fill form and submit",
+          "agent-browser: verify new address in list",
+          "agent-browser: navigate to checkout and verify address pre-filled"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-1",
+      "category": "admin",
+      "description": "Add bulk operations for products",
+      "steps": [
+        "Add checkboxes to product list rows",
+        "Add 'Select All' checkbox in header",
+        "Create bulk action dropdown menu",
+        "Implement bulk delete with confirmation",
+        "Implement bulk status change (active/draft)",
+        "Show progress indicator for bulk operations"
+      ],
+      "tests": {
+        "unit": [
+          "Individual checkbox toggles selection state",
+          "Select All checkbox selects all visible products",
+          "Bulk delete shows confirmation dialog",
+          "Bulk delete calls API for each selected product",
+          "Bulk status change updates all selected products"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin products list",
+          "agent-browser: click select all checkbox",
+          "agent-browser: screenshot all selected state",
+          "agent-browser: click bulk actions dropdown",
+          "agent-browser: screenshot bulk actions menu"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-2",
+      "category": "admin",
+      "description": "Add product duplication",
+      "steps": [
+        "Add 'Duplicate' button to product actions",
+        "Copy product data with new ID",
+        "Copy all variants with new IDs",
+        "Append ' (Copy)' to duplicated title",
+        "Set duplicated product status to draft",
+        "Navigate to edit page for duplicate"
+      ],
+      "tests": {
+        "unit": [
+          "Duplicate creates new product with new ID",
+          "Duplicate copies all variants with new IDs",
+          "Duplicate appends (Copy) to title",
+          "Duplicate sets status to draft",
+          "Duplicate preserves all other fields"
+        ],
+        "visual": [
+          "agent-browser: navigate to product list",
+          "agent-browser: click duplicate on a product",
+          "agent-browser: verify redirect to edit page",
+          "agent-browser: verify title has (Copy) suffix",
+          "agent-browser: screenshot duplicated product form"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-3",
+      "category": "admin",
+      "description": "Add undo for delete operations",
+      "steps": [
+        "Implement soft delete (deleted_at timestamp)",
+        "Show undo toast notification on delete",
+        "Implement undo action within 30 seconds",
+        "Create scheduled cleanup job for hard delete",
+        "Update list queries to exclude soft-deleted"
+      ],
+      "tests": {
+        "unit": [
+          "Delete sets deleted_at timestamp instead of removing",
+          "Undo clears deleted_at timestamp",
+          "Undo only works within 30 seconds",
+          "List queries exclude soft-deleted items",
+          "Cleanup job removes items older than 30 days"
+        ],
+        "visual": [
+          "agent-browser: delete a product",
+          "agent-browser: screenshot undo toast",
+          "agent-browser: click undo button",
+          "agent-browser: verify product restored in list"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-5",
+      "category": "admin",
+      "description": "Add inventory history/audit log",
+      "steps": [
+        "Create inventory_adjustments table in D1",
+        "Log all adjustments with timestamp, reason, admin_id",
+        "Create /inventory/[sku]/history page",
+        "Display adjustment history list",
+        "Show who made each adjustment",
+        "Add date range filter"
+      ],
+      "tests": {
+        "unit": [
+          "Inventory adjustment creates history record",
+          "History record includes timestamp, reason, admin_id",
+          "History page fetches adjustments for SKU",
+          "History shows admin name for each entry",
+          "Date filter limits results"
+        ],
+        "visual": [
+          "agent-browser: adjust inventory for a product",
+          "agent-browser: navigate to inventory history page",
+          "agent-browser: screenshot history list",
+          "agent-browser: verify new adjustment appears"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-6",
+      "category": "admin",
+      "description": "Add low stock alerts configuration",
+      "steps": [
+        "Add low_stock_threshold column to variants table",
+        "Add threshold input to variant form",
+        "Create low stock notification list",
+        "Highlight low stock items on inventory page",
+        "Optional: send email alerts when threshold reached"
+      ],
+      "tests": {
+        "unit": [
+          "Threshold saves to variant record",
+          "Low stock list shows items below threshold",
+          "Inventory page highlights low stock rows",
+          "Email sent when inventory drops below threshold"
+        ],
+        "visual": [
+          "agent-browser: set low stock threshold on variant",
+          "agent-browser: navigate to inventory page",
+          "agent-browser: screenshot highlighted low stock items"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-7",
+      "category": "admin",
+      "description": "Add reorder point alerts",
+      "steps": [
+        "Add reorder_point column to variants table",
+        "Add reorder point input to variant form",
+        "Create reorder alerts list in admin",
+        "Show badge count on inventory nav",
+        "Optional: send email when reorder point reached"
+      ],
+      "tests": {
+        "unit": [
+          "Reorder point saves to variant record",
+          "Reorder alerts list shows items at reorder point",
+          "Nav badge shows count of items needing reorder"
+        ],
+        "visual": [
+          "agent-browser: set reorder point on variant",
+          "agent-browser: navigate to admin dashboard",
+          "agent-browser: verify inventory nav badge visible"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-9",
+      "category": "admin",
+      "description": "Add order notes/comments",
+      "steps": [
+        "Create order_notes table in D1",
+        "Add notes section to order detail page",
+        "Create add note form",
+        "Display notes with timestamp and admin name",
+        "Allow editing/deleting own notes"
+      ],
+      "tests": {
+        "unit": [
+          "Add note creates record in order_notes",
+          "Note includes timestamp and admin_id",
+          "Edit note updates existing record",
+          "Delete note removes record",
+          "Cannot edit/delete other admin's notes"
+        ],
+        "visual": [
+          "agent-browser: navigate to order detail",
+          "agent-browser: scroll to notes section",
+          "agent-browser: add a note",
+          "agent-browser: screenshot note in list",
+          "agent-browser: edit the note",
+          "agent-browser: delete the note"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-11",
+      "category": "admin",
+      "description": "Add email notification on order status changes",
+      "steps": [
+        "Create order-status-update.tsx email template",
+        "Trigger email on status change to processing",
+        "Trigger email on status change to delivered",
+        "Include order details in email",
+        "Add tracking info for shipped status",
+        "Log email sends on order"
+      ],
+      "tests": {
+        "unit": [
+          "Email template renders order details",
+          "Status change to processing triggers email",
+          "Status change to delivered triggers email",
+          "Shipped status includes tracking info",
+          "Email send is logged on order"
+        ],
+        "visual": [
+          "agent-browser: navigate to order detail",
+          "agent-browser: change status to processing",
+          "agent-browser: verify email sent indicator"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-12",
+      "category": "admin",
+      "description": "Add drop cover image support",
+      "steps": [
+        "Add cover_image column to drops table",
+        "Add image upload to drop form",
+        "Upload image to R2 bucket",
+        "Display cover image in drop list",
+        "Display cover image on storefront drop pages"
+      ],
+      "tests": {
+        "unit": [
+          "Drop form accepts image upload",
+          "Image uploads to R2 successfully",
+          "Drop record stores cover_image URL",
+          "Drop list displays cover image"
+        ],
+        "visual": [
+          "agent-browser: navigate to create drop",
+          "agent-browser: upload cover image",
+          "agent-browser: screenshot image preview",
+          "agent-browser: save drop",
+          "agent-browser: navigate to drops list",
+          "agent-browser: verify cover image visible"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-13",
+      "category": "admin",
+      "description": "Add drag-and-drop product reordering in drops",
+      "steps": [
+        "Add position column to product-drop relationship",
+        "Install drag-and-drop library",
+        "Implement drag handles on product cards",
+        "Update position on drop",
+        "Save positions to API",
+        "Respect position in storefront display"
+      ],
+      "tests": {
+        "unit": [
+          "Product cards have drag handles",
+          "Drag updates position state",
+          "Drop saves new positions to API",
+          "Storefront displays products in position order"
+        ],
+        "visual": [
+          "agent-browser: navigate to drop edit page",
+          "agent-browser: screenshot product list with drag handles",
+          "agent-browser: drag product to new position",
+          "agent-browser: verify order changed"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-14",
+      "category": "admin",
+      "description": "Add sent notifications view",
+      "steps": [
+        "Create email_sends table in D1",
+        "Log all sent emails with type, recipient, timestamp",
+        "Create /notifications page in admin",
+        "Display sent notifications list",
+        "Add type and date filters",
+        "Show delivery status (sent, failed)"
+      ],
+      "tests": {
+        "unit": [
+          "Email sends are logged to table",
+          "Log includes type, recipient, timestamp, status",
+          "Notifications page fetches email sends",
+          "Type filter limits results",
+          "Date filter limits results"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin notifications page",
+          "agent-browser: screenshot sent notifications list",
+          "agent-browser: apply type filter",
+          "agent-browser: verify filtered results"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-15",
+      "category": "admin",
+      "description": "Add blog image upload to R2",
+      "steps": [
+        "Add image upload button to MDXEditor",
+        "Upload image to R2 bucket",
+        "Insert markdown image with R2 URL",
+        "Show image preview in editor",
+        "Handle upload errors gracefully"
+      ],
+      "tests": {
+        "unit": [
+          "Upload button appears in MDXEditor toolbar",
+          "Image uploads to R2 successfully",
+          "Markdown image syntax inserted with R2 URL",
+          "Upload error shows error message"
+        ],
+        "visual": [
+          "agent-browser: navigate to blog editor",
+          "agent-browser: click image upload in toolbar",
+          "agent-browser: upload test image",
+          "agent-browser: verify image appears in preview"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-16",
+      "category": "admin",
+      "description": "Add export to CSV for analytics",
+      "steps": [
+        "Add 'Export' button to analytics page",
+        "Generate CSV with orders data",
+        "Include date range in export",
+        "Trigger browser download",
+        "Include summary stats row"
+      ],
+      "tests": {
+        "unit": [
+          "Export button visible on analytics page",
+          "CSV includes orders in date range",
+          "CSV includes summary stats row",
+          "Filename includes date range"
+        ],
+        "visual": [
+          "agent-browser: navigate to analytics page",
+          "agent-browser: set date range",
+          "agent-browser: click Export button",
+          "agent-browser: verify download initiated"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-17",
+      "category": "admin",
+      "description": "Upgrade to proper charting library",
+      "steps": [
+        "Choose charting library (recharts recommended)",
+        "Install library dependencies",
+        "Replace SalesChart.tsx implementation",
+        "Add line chart for revenue trend",
+        "Add tooltip with detailed data",
+        "Ensure responsive behavior"
+      ],
+      "tests": {
+        "unit": [
+          "Chart renders with revenue data",
+          "Chart displays correct data points",
+          "Tooltip shows on hover"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin dashboard",
+          "agent-browser: screenshot revenue chart",
+          "agent-browser: hover over data point",
+          "agent-browser: screenshot tooltip displayed",
+          "agent-browser: resize window and verify chart responsive"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-18",
+      "category": "admin",
+      "description": "Add real-time WebSocket updates",
+      "steps": [
+        "Set up Cloudflare Durable Objects for WebSocket",
+        "Create WebSocket endpoint in Merchant API",
+        "Connect admin dashboard to WebSocket",
+        "Push order events in real-time",
+        "Update activity feed without refresh",
+        "Handle reconnection gracefully"
+      ],
+      "tests": {
+        "unit": [
+          "WebSocket connection established on dashboard load",
+          "Order events pushed via WebSocket",
+          "Activity feed updates on new event",
+          "Reconnection attempts on disconnect"
+        ],
+        "visual": [
+          "agent-browser: open admin dashboard",
+          "agent-browser: create order in separate tab",
+          "agent-browser: verify activity feed updates without refresh"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "content-1",
+      "category": "content",
+      "description": "Add lookbook image lightbox",
+      "steps": [
+        "Reuse ImageLightbox component from storefront",
+        "Add click handlers to lookbook gallery images",
+        "Support navigation between images",
+        "Add touch/swipe for mobile",
+        "Add keyboard navigation"
+      ],
+      "tests": {
+        "unit": [
+          "Lightbox opens on image click",
+          "Navigation arrows appear when multiple images",
+          "Keyboard navigation works (arrows, Escape)"
+        ],
+        "visual": [
+          "agent-browser: navigate to lookbook page",
+          "agent-browser: click gallery image",
+          "agent-browser: screenshot lightbox open",
+          "agent-browser: navigate with arrow keys",
+          "agent-browser: press Escape and verify closes"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "content-2",
+      "category": "content",
+      "description": "Add lookbook image lazy loading",
+      "steps": [
+        "Add loading='lazy' to gallery images",
+        "Implement intersection observer for load trigger",
+        "Add skeleton placeholder while loading",
+        "Test scroll performance with many images"
+      ],
+      "tests": {
+        "unit": [
+          "Images have loading=lazy attribute",
+          "Skeleton shows before image loads",
+          "Image loads when scrolled into view"
+        ],
+        "visual": [
+          "agent-browser: navigate to lookbook with many images",
+          "agent-browser: check network requests - only visible images loaded",
+          "agent-browser: scroll down slowly",
+          "agent-browser: verify more images load as they enter viewport"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "content-4",
+      "category": "content",
+      "description": "Add MDX component preview in editor",
+      "steps": [
+        "Define supported MDX components",
+        "Implement component rendering in preview",
+        "Handle component errors gracefully",
+        "Add toolbar buttons for inserting components"
+      ],
+      "tests": {
+        "unit": [
+          "Preview renders supported MDX components",
+          "Preview shows error for unsupported components",
+          "Toolbar has buttons for each component"
+        ],
+        "visual": [
+          "agent-browser: navigate to blog editor",
+          "agent-browser: insert MDX component via toolbar",
+          "agent-browser: screenshot component in preview",
+          "agent-browser: insert invalid component and verify error"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "newsletter-24",
+      "category": "newsletter",
+      "description": "Add newsletter signup to individual blog posts",
+      "steps": [
+        "Update blog post layout apps/storefront/src/layouts/BlogPost.astro or [...slug].astro",
+        "Add newsletter CTA section at end of post content",
+        "Use consistent styling with other signup forms",
+        "Wire up form submission",
+        "Show inline feedback"
+      ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: navigate to blog post",
+          "agent-browser: scroll to end of post",
+          "agent-browser: screenshot newsletter CTA section",
+          "agent-browser: submit email and verify feedback"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "nav-15",
+      "category": "navigation",
+      "description": "Test all navigation flows end-to-end",
+      "steps": [
+        "Start dev server and navigate through all main routes",
+        "Verify logo image displays in header",
+        "Verify /drops shows drops listing with countdown for scheduled",
+        "Verify /drops/archive shows ended drops",
+        "Verify /blog shows posts with pinned 'About' post first",
+        "Verify 'Journal' header link works and links to /blog",
+        "Verify 'Lookbook' header link works and links to /lookbook",
+        "Verify 'Our Story' section links to about blog post",
+        "Verify footer 'Journal' link works (consistent with header)",
+        "Verify newsletter signup in footer and blog pages works"
+      ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: record start ./navigation-e2e.webm",
+          "agent-browser: navigate to homepage",
+          "agent-browser: verify logo in header",
+          "agent-browser: click Drops link and verify /drops",
+          "agent-browser: verify drops listing with countdown",
+          "agent-browser: navigate to /drops/archive",
+          "agent-browser: verify ended drops",
+          "agent-browser: click Journal link and verify /blog",
+          "agent-browser: verify pinned About post first",
+          "agent-browser: click Lookbook link and verify /lookbook",
+          "agent-browser: navigate to homepage",
+          "agent-browser: scroll to Our Story and click link",
+          "agent-browser: verify blog post page",
+          "agent-browser: scroll to footer",
+          "agent-browser: verify Journal link works",
+          "agent-browser: fill newsletter signup",
+          "agent-browser: record stop"
+        ],
+        "integration": ["Full navigation flow across all main routes"],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-20",
+      "category": "product-management",
+      "description": "Add price input field to ProductFormComplete",
+      "steps": [
+        "Add price input with dollar sign prefix ($)",
+        "Use type='number' with step='0.01' for cents precision",
+        "Convert dollars to cents on form submission (multiply by 100)",
+        "Convert cents to dollars when editing existing variant (divide by 100)",
+        "Add validation: price must be positive number",
+        "Display formatted price preview below input"
+      ],
+      "tests": {
+        "unit": [
+          "Price input accepts decimal values with 2 decimal places",
+          "Price converts dollars to cents on submission (19.99 -> 1999)",
+          "Price converts cents to dollars in edit mode (1999 -> 19.99)",
+          "Price validation rejects negative numbers",
+          "Price validation rejects non-numeric input",
+          "Formatted price preview updates on input change"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: type '29.99' in price input",
+          "agent-browser: verify price preview shows '$29.99'",
+          "agent-browser: screenshot price field with preview"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-21",
+      "category": "product-management",
+      "description": "Add SKU input field to ProductFormComplete",
+      "steps": [
+        "Add SKU input field with uppercase transformation",
+        "Add validation: SKU required, alphanumeric with hyphens/underscores only",
+        "Add helper text explaining SKU purpose",
+        "Auto-generate SKU suggestion from product title if empty",
+        "Show validation error for invalid SKU format"
+      ],
+      "tests": {
+        "unit": [
+          "SKU input transforms to uppercase",
+          "SKU validation accepts alphanumeric with hyphens/underscores",
+          "SKU validation rejects special characters",
+          "SKU auto-generates from product title when empty",
+          "SKU validation error displays for invalid format"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: type product title",
+          "agent-browser: verify SKU auto-populated from title",
+          "agent-browser: type lowercase in SKU field",
+          "agent-browser: verify auto-converted to uppercase"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-22",
+      "category": "product-management",
+      "description": "Integrate ImageUploader for product featured image",
+      "steps": [
+        "Import ImageUploader component into ProductFormComplete",
+        "Add image upload section with label 'Featured Image'",
+        "Wire onUpload callback to store image URL in form state",
+        "Display image preview after successful upload",
+        "Add remove/replace image functionality",
+        "Store URL in featured_image_url field"
+      ],
+      "tests": {
+        "unit": [
+          "ImageUploader renders with 'Featured Image' label",
+          "onUpload callback stores URL in form state",
+          "Image preview displays after upload",
+          "Remove button clears featured_image_url",
+          "Replace triggers new upload dialog"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: locate featured image upload section",
+          "agent-browser: upload test image",
+          "agent-browser: screenshot image preview displayed",
+          "agent-browser: click remove and verify image cleared"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-23",
+      "category": "product-management",
+      "description": "Integrate ImageUploader for variant image",
+      "steps": [
+        "Add second ImageUploader for variant image in Default Variant section",
+        "Label as 'Variant Image' to distinguish from featured image",
+        "Wire onUpload callback to store in variant image_url field",
+        "Display image preview after upload",
+        "Add remove/replace functionality",
+        "Make variant image optional (featured image can be used as fallback)"
+      ],
+      "tests": {
+        "unit": [
+          "Variant ImageUploader renders with 'Variant Image' label",
+          "onUpload callback stores URL in variant image_url",
+          "Variant image preview displays after upload",
+          "Remove button clears variant image_url",
+          "Form submits successfully without variant image (optional)"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: scroll to Default Variant section",
+          "agent-browser: locate variant image upload",
+          "agent-browser: upload test image",
+          "agent-browser: screenshot variant image preview"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-24",
+      "category": "product-management",
+      "description": "Create product with default variant in single API call",
+      "steps": [
+        "Update apps/admin/src/pages/api/products/index.ts POST handler",
+        "Accept extended payload with variant fields: sku, price_cents, variant_title, image_url",
+        "After creating product, automatically create first variant if variant fields provided",
+        "Return complete product object with variants array populated",
+        "Handle partial variant data gracefully (allow product-only creation)"
+      ],
+      "tests": {
+        "unit": [
+          "POST /api/products creates product with variant when variant fields provided",
+          "POST /api/products returns product with variants array populated",
+          "POST /api/products creates product-only when no variant fields",
+          "POST /api/products handles partial variant data gracefully",
+          "Variant has correct product_id foreign key"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: fill all product and variant fields",
+          "agent-browser: submit form",
+          "agent-browser: verify redirect to product edit page",
+          "agent-browser: verify variant appears in variants list"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-25",
+      "category": "product-management",
+      "description": "Update /products/new page to use ProductFormComplete",
+      "steps": [
+        "Open apps/admin/src/pages/products/new.astro",
+        "Replace CreateProduct component with new ProductFormComplete",
+        "Update page description to reflect full product creation capability",
+        "Remove text saying 'add variants after creating'",
+        "Test creating product with title, description, price, SKU, and images"
+      ],
+      "tests": {
+        "unit": [
+          "Page renders ProductFormComplete component",
+          "Page does not render old CreateProduct component",
+          "Page description mentions variant creation"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: verify full form with variant fields visible",
+          "agent-browser: screenshot complete form layout",
+          "agent-browser: verify no 'add variants after creating' text"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-26",
+      "category": "product-management",
+      "description": "Update ProductEditor to show editable featured image",
+      "steps": [
+        "Open apps/admin/src/components/ProductEditor.tsx",
+        "Add featured image display and edit section to Product Details",
+        "Show current featured image with edit/replace button",
+        "Integrate ImageUploader for changing featured image",
+        "Add alt text input field below image",
+        "Save featured image changes via PATCH /api/products/:id"
+      ],
+      "tests": {
+        "unit": [
+          "ProductEditor displays current featured image",
+          "Edit/replace button triggers ImageUploader",
+          "Alt text input field renders below image",
+          "PATCH /api/products/:id updates featured_image_url",
+          "Image preview updates after replacement"
+        ],
+        "visual": [
+          "agent-browser: navigate to product edit page",
+          "agent-browser: screenshot featured image section",
+          "agent-browser: click replace button",
+          "agent-browser: upload new image",
+          "agent-browser: verify new image displayed"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-28",
+      "category": "product-management",
+      "description": "Update VariantForm with ImageUploader component",
+      "steps": [
+        "Open apps/admin/src/components/VariantForm.tsx",
+        "Replace image URL text input with ImageUploader component",
+        "Add image_alt field for accessibility",
+        "Show image preview after upload",
+        "Keep URL input as fallback/alternative for external URLs",
+        "Add toggle between upload and URL input modes"
+      ],
+      "tests": {
+        "unit": [
+          "VariantForm renders ImageUploader instead of text input",
+          "image_alt field renders for accessibility",
+          "Image preview displays after upload",
+          "Toggle switches between upload and URL input modes",
+          "URL input accepts external URLs"
+        ],
+        "visual": [
+          "agent-browser: navigate to product with variant",
+          "agent-browser: click edit variant",
+          "agent-browser: screenshot ImageUploader in variant form",
+          "agent-browser: toggle to URL input mode",
+          "agent-browser: verify text input appears"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-34",
+      "category": "product-management",
+      "description": "Display product images on storefront product detail page",
+      "steps": [
+        "Open apps/storefront/src/pages/product/[id].astro",
+        "Display featured image prominently at top",
+        "Show variant images in gallery/selector",
+        "Use proper alt text for all images",
+        "Handle missing images gracefully with placeholder",
+        "Ensure images are responsive and optimized"
+      ],
+      "tests": {
+        "unit": [
+          "Product page displays featured image at top",
+          "Product page shows variant images in gallery",
+          "All images have proper alt attributes",
+          "Missing images show placeholder",
+          "Images use responsive srcset"
+        ],
+        "visual": [
+          "agent-browser: navigate to product detail page",
+          "agent-browser: screenshot main product image",
+          "agent-browser: screenshot variant image gallery",
+          "agent-browser: test responsive image at different viewports"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-35",
+      "category": "product-management",
+      "description": "Test complete product creation flow end-to-end",
+      "steps": [
+        "Start admin dev server",
+        "Navigate to /products/new",
+        "Fill in all fields: title, description, price, SKU, images",
+        "Submit form and verify product created with variant",
+        "Navigate to product edit page and verify all data displays",
+        "Edit product fields and verify changes save correctly",
+        "View product on storefront and verify images display"
+      ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: record start ./product-creation-e2e.webm",
+          "agent-browser: navigate to admin /products/new",
+          "agent-browser: fill title, description, price, SKU fields",
+          "agent-browser: upload featured image and variant image",
+          "agent-browser: submit form",
+          "agent-browser: verify redirect to edit page with all data",
+          "agent-browser: edit product title and save",
+          "agent-browser: navigate to storefront product page",
+          "agent-browser: verify product displays with images",
+          "agent-browser: record stop"
+        ],
+        "integration": [
+          "Full product creation flow from admin to storefront display"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-36",
+      "category": "product-management",
+      "description": "Add multiple variants support to ProductFormComplete",
+      "steps": [
+        "Change 'Default Variant' section to 'Variants' with array state",
+        "Display list of variant cards with SKU, title, price, image for each",
+        "Add 'Add Another Variant' button below variant list",
+        "Each variant card should be collapsible/expandable",
+        "Require at least one variant before form submission",
+        "Show variant count badge in section header"
+      ],
+      "tests": {
+        "unit": [
+          "Variants section uses array state",
+          "Variant cards display SKU, title, price, image",
+          "Add Another Variant button adds new variant to array",
+          "Variant cards are collapsible/expandable",
+          "Form validation requires at least one variant",
+          "Variant count badge shows correct count"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: screenshot Variants section with single variant",
+          "agent-browser: click Add Another Variant",
+          "agent-browser: verify second variant card appears",
+          "agent-browser: screenshot multiple variants",
+          "agent-browser: collapse/expand variant card"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-37",
+      "category": "product-management",
+      "description": "Create VariantCard component for inline variant editing",
+      "steps": [
+        "Create apps/admin/src/components/VariantCard.tsx",
+        "Display compact view: SKU, title, price, thumbnail",
+        "Expand to show full edit form on click",
+        "Include all variant fields: SKU, title, price, image upload, alt text",
+        "Add delete button with confirmation",
+        "Add drag handle for reordering (optional)"
+      ],
+      "tests": {
+        "unit": [
+          "VariantCard displays compact view with SKU, title, price, thumbnail",
+          "VariantCard expands to full edit form on click",
+          "VariantCard includes all variant fields when expanded",
+          "Delete button shows confirmation dialog",
+          "Delete confirmed removes variant from parent"
+        ],
+        "visual": [
+          "agent-browser: navigate to product with variants",
+          "agent-browser: screenshot compact variant card",
+          "agent-browser: click to expand variant card",
+          "agent-browser: screenshot expanded edit form",
+          "agent-browser: click delete and screenshot confirmation dialog"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-38",
+      "category": "product-management",
+      "description": "Implement add/remove variant in ProductFormComplete",
+      "steps": [
+        "Create addVariant function that appends empty variant to array",
+        "Create removeVariant function that removes by index",
+        "Prevent removing last variant (minimum 1 required)",
+        "Auto-focus SKU field when new variant is added",
+        "Show confirmation dialog before removing variant with data"
+      ],
+      "tests": {
+        "unit": [
+          "addVariant appends empty variant to array",
+          "removeVariant removes variant at specified index",
+          "removeVariant prevented when only 1 variant remains",
+          "SKU field auto-focuses after addVariant",
+          "Confirmation dialog shown before removing variant with data"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: click Add Variant",
+          "agent-browser: verify SKU field focused on new variant",
+          "agent-browser: fill variant data",
+          "agent-browser: click remove on variant with data",
+          "agent-browser: screenshot confirmation dialog"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-39",
+      "category": "product-management",
+      "description": "Validate all variants before product submission",
+      "steps": [
+        "Validate each variant has required fields: SKU, title, price",
+        "Check for duplicate SKUs across variants",
+        "Highlight specific variant with validation error",
+        "Show summary of errors at top of form",
+        "Prevent submission until all variants are valid"
+      ],
+      "tests": {
+        "unit": [
+          "Validation fails when variant missing SKU",
+          "Validation fails when variant missing title",
+          "Validation fails when variant missing price",
+          "Validation detects duplicate SKUs across variants",
+          "Variant with error is highlighted",
+          "Error summary displays at top of form",
+          "Submit button disabled when validation fails"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: add two variants with same SKU",
+          "agent-browser: attempt submit",
+          "agent-browser: screenshot error summary and highlighted variants",
+          "agent-browser: fix duplicate SKU",
+          "agent-browser: verify submit enabled"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-40",
+      "category": "product-management",
+      "description": "Update product creation API to accept multiple variants",
+      "steps": [
+        "Update apps/admin/src/pages/api/products/index.ts POST handler",
+        "Change variant fields to variants array in request body",
+        "Loop through variants array and create each variant",
+        "Use database transaction to ensure all-or-nothing creation",
+        "Return product with all created variants in response"
+      ],
+      "tests": {
+        "unit": [
+          "POST /api/products accepts variants array in body",
+          "POST creates all variants in the array",
+          "Transaction rolls back if any variant creation fails",
+          "Response includes all created variants",
+          "Variants have correct product_id foreign key"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: add 3 variants with different data",
+          "agent-browser: submit form",
+          "agent-browser: verify all 3 variants appear on edit page"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-41",
+      "category": "product-management",
+      "description": "Add variant templates for common patterns",
+      "steps": [
+        "Add 'Quick Add' dropdown with common variant patterns",
+        "Include templates: Sizes (XS-XL), Colors (common colors), Size+Color matrix",
+        "Template populates variant titles and auto-generates SKUs",
+        "User can edit generated variants before saving",
+        "Store custom templates in localStorage for reuse"
+      ],
+      "tests": {
+        "unit": [
+          "Quick Add dropdown shows template options",
+          "Sizes template creates XS, S, M, L, XL variants",
+          "Colors template creates common color variants",
+          "Size+Color matrix creates all combinations",
+          "Templates auto-generate SKUs from titles",
+          "Custom templates saved to localStorage",
+          "Custom templates load from localStorage"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: click Quick Add dropdown",
+          "agent-browser: screenshot template options",
+          "agent-browser: select Sizes template",
+          "agent-browser: screenshot generated size variants"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-42",
+      "category": "product-management",
+      "description": "Add bulk price update for variants",
+      "steps": [
+        "Add 'Set All Prices' button above variant list",
+        "Show modal/popover with single price input",
+        "Apply entered price to all variants on confirm",
+        "Optionally allow percentage adjustment (+10%, -5%)",
+        "Show preview of price changes before applying"
+      ],
+      "tests": {
+        "unit": [
+          "Set All Prices button opens modal",
+          "Modal shows single price input",
+          "Confirm applies price to all variants",
+          "Percentage adjustment calculates correctly (+10% on $10 = $11)",
+          "Preview shows before/after prices for each variant"
+        ],
+        "visual": [
+          "agent-browser: navigate to product with multiple variants",
+          "agent-browser: click Set All Prices",
+          "agent-browser: screenshot modal with price input",
+          "agent-browser: enter $25.00 and screenshot preview",
+          "agent-browser: confirm and verify all variants updated"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "pm-43",
+      "category": "product-management",
+      "description": "Test multiple variants creation flow",
+      "steps": [
+        "Create product with 3+ variants of different prices",
+        "Verify all variants saved with correct data",
+        "Edit product and add more variants",
+        "Remove a variant and verify deletion",
+        "Check storefront displays all variants correctly",
+        "Test variant selection on product detail page"
+      ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: record start ./multi-variant-e2e.webm",
+          "agent-browser: navigate to /products/new",
+          "agent-browser: create product with 3 variants at different prices",
+          "agent-browser: submit and verify all variants on edit page",
+          "agent-browser: add 2 more variants and save",
+          "agent-browser: delete one variant and verify removal",
+          "agent-browser: navigate to storefront product page",
+          "agent-browser: verify variant selector shows all variants",
+          "agent-browser: select different variants and verify price changes",
+          "agent-browser: record stop"
+        ],
+        "integration": [
+          "Full multi-variant product lifecycle from creation to storefront"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-8",
+      "category": "admin",
+      "description": "Add export to CSV for inventory",
+      "steps": [
+        "Create exportToCSV utility function",
+        "Add 'Export' button to inventory page",
+        "Generate CSV with all inventory columns",
+        "Trigger browser download",
+        "Include date in filename"
+      ],
+      "tests": {
+        "unit": [
+          "exportToCSV generates valid CSV string",
+          "CSV includes all inventory columns",
+          "Filename includes current date"
+        ],
+        "visual": [
+          "agent-browser: navigate to inventory page",
+          "agent-browser: click Export button",
+          "agent-browser: verify download initiated"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "lookbook-admin-1",
+      "category": "lookbook-admin",
+      "description": "Create lookbook admin listing page",
+      "steps": [
+        "Create apps/admin/src/pages/lookbook/index.astro",
+        "Add 'Lookbook' item to admin sidebar navigation",
+        "Fetch and display list of existing lookbooks",
+        "Show title, date, image count, draft status for each",
+        "Add 'Create Lookbook' button linking to /lookbook/new"
+      ],
+      "tests": {
+        "unit": [
+          "Lookbook listing page fetches lookbooks from API",
+          "Listing shows title, date, image count for each",
+          "Draft status badge displays correctly",
+          "Create Lookbook button links to /lookbook/new"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /lookbook",
+          "agent-browser: verify Lookbook item in sidebar",
+          "agent-browser: screenshot lookbook listing",
+          "agent-browser: verify Create Lookbook button visible"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "lookbook-admin-2",
+      "category": "lookbook-admin",
+      "description": "Create lookbook form component",
+      "steps": [
+        "Create apps/admin/src/components/LookbookForm.tsx",
+        "Add fields: title, description, date, draft toggle",
+        "Add associated drop selector (optional)",
+        "Include ImageUploader for cover image",
+        "Support both create and edit modes"
+      ],
+      "tests": {
+        "unit": [
+          "LookbookForm renders title, description, date fields",
+          "LookbookForm includes draft toggle",
+          "LookbookForm includes drop selector (optional)",
+          "LookbookForm includes ImageUploader for cover",
+          "LookbookForm supports create mode (empty fields)",
+          "LookbookForm supports edit mode (pre-filled fields)"
+        ],
+        "visual": [
+          "agent-browser: navigate to /lookbook/new",
+          "agent-browser: screenshot lookbook form",
+          "agent-browser: verify all fields present",
+          "agent-browser: toggle draft switch and verify state change"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "lookbook-admin-3",
+      "category": "lookbook-admin",
+      "description": "Create lookbook gallery manager component",
+      "steps": [
+        "Create apps/admin/src/components/LookbookGallery.tsx",
+        "Display flat grid of uploaded images",
+        "Add ImageUploader for adding new images to gallery",
+        "Support drag-to-reorder images",
+        "Add delete button for each image",
+        "Show image count and upload progress"
+      ],
+      "tests": {
+        "unit": [
+          "LookbookGallery displays images in grid layout",
+          "LookbookGallery shows image count",
+          "ImageUploader adds new images to gallery",
+          "Drag-to-reorder updates image order in state",
+          "Delete button removes image from gallery",
+          "Upload progress indicator displays during upload"
+        ],
+        "visual": [
+          "agent-browser: navigate to lookbook editor with images",
+          "agent-browser: screenshot gallery grid",
+          "agent-browser: drag image to reorder",
+          "agent-browser: verify order changed",
+          "agent-browser: click delete on image",
+          "agent-browser: verify image removed"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "lookbook-admin-4",
+      "category": "lookbook-admin",
+      "description": "Create lookbook editor page",
+      "steps": [
+        "Create apps/admin/src/pages/lookbook/new.astro",
+        "Create apps/admin/src/pages/lookbook/[slug].astro for editing",
+        "Combine LookbookForm and LookbookGallery components",
+        "Wire up save/publish functionality",
+        "Handle navigation and success/error states"
+      ],
+      "tests": {
+        "unit": [
+          "New lookbook page renders LookbookForm and LookbookGallery",
+          "Edit lookbook page loads existing data",
+          "Save button triggers API call",
+          "Publish toggles draft status",
+          "Success redirects to lookbook listing",
+          "Error displays error message"
+        ],
+        "visual": [
+          "agent-browser: navigate to /lookbook/new",
+          "agent-browser: screenshot new lookbook page",
+          "agent-browser: fill form and add images",
+          "agent-browser: click save",
+          "agent-browser: verify redirect to listing or edit page"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "lookbook-admin-5",
+      "category": "lookbook-admin",
+      "description": "Create lookbook API endpoints",
+      "steps": [
+        "Create apps/admin/src/pages/api/lookbook/index.ts (GET list, POST create)",
+        "Create apps/admin/src/pages/api/lookbook/[slug].ts (GET, PATCH, DELETE)",
+        "Store lookbook data as MDX files in apps/storefront/src/content/lookbook/",
+        "Generate MDX frontmatter with title, date, images array, draft status",
+        "Handle image array updates (add/remove/reorder)"
+      ],
+      "tests": {
+        "unit": [
+          "GET /api/lookbook returns list of lookbooks",
+          "POST /api/lookbook creates new MDX file",
+          "GET /api/lookbook/[slug] returns lookbook data",
+          "PATCH /api/lookbook/[slug] updates MDX file",
+          "DELETE /api/lookbook/[slug] removes MDX file",
+          "MDX frontmatter includes title, date, images array, draft",
+          "Image array updates preserve order"
+        ],
+        "visual": [],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "lookbook-admin-6",
+      "category": "lookbook-admin",
+      "description": "Test lookbook admin workflow",
+      "steps": [
+        "Create new lookbook via admin UI",
+        "Upload multiple images to gallery",
+        "Reorder images and verify order persists",
+        "Edit lookbook details and save",
+        "Verify lookbook appears correctly on storefront /lookbook page"
+      ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: record start ./lookbook-admin-e2e.webm",
+          "agent-browser: navigate to admin /lookbook/new",
+          "agent-browser: fill lookbook form fields",
+          "agent-browser: upload 3 images to gallery",
+          "agent-browser: reorder images via drag",
+          "agent-browser: save lookbook",
+          "agent-browser: navigate to storefront /lookbook",
+          "agent-browser: verify new lookbook appears",
+          "agent-browser: click lookbook and verify images in order",
+          "agent-browser: record stop"
+        ],
+        "integration": [
+          "Full lookbook creation flow from admin to storefront display"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "initial-content-1",
+      "category": "initial-content",
+      "description": "Create 'The Debut' drop in database",
+      "steps": [
+        "Use admin panel or API to create new drop",
+        "Set name: 'The Debut'",
+        "Set description: 'Our inaugural collection of handcrafted luxury bags'",
+        "Set status to 'active'",
+        "Set start_date to current date",
+        "Note the drop_id for product assignment"
+      ],
+      "tests": {
+        "unit": [
+          "Drop created with name 'The Debut'",
+          "Drop has correct description",
+          "Drop status is 'active'",
+          "Drop start_date is set"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /drops",
+          "agent-browser: verify 'The Debut' appears in listing",
+          "agent-browser: click to view drop details",
+          "agent-browser: screenshot drop details page"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "initial-content-2",
+      "category": "initial-content",
+      "description": "Create product: The Colette",
+      "steps": [
+        "Create product via admin with title 'The Colette'",
+        "Use product image 1 as featured image (R2 URL)",
+        "Set price: $395",
+        "Generate SKU: COLETTE-001",
+        "Set description: 'A refined everyday companion. The Colette features clean lines and supple leather, designed for the woman who values understated elegance.'",
+        "Assign to 'The Debut' drop",
+        "Set status: active"
+      ],
+      "tests": {
+        "unit": [
+          "Product 'The Colette' exists in database",
+          "Product has SKU COLETTE-001",
+          "Product price is $395 (39500 cents)",
+          "Product assigned to 'The Debut' drop",
+          "Product featured_image_url is set"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /products",
+          "agent-browser: verify 'The Colette' in listing",
+          "agent-browser: click product and verify all fields correct"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "initial-content-3",
+      "category": "initial-content",
+      "description": "Create product: The Amélie",
+      "steps": [
+        "Create product via admin with title 'The Amélie'",
+        "Use product image 2 as featured image",
+        "Set price: $450",
+        "Generate SKU: AMELIE-001",
+        "Set description: 'Effortlessly chic with a touch of Parisian flair. The Amélie combines timeless silhouette with modern functionality.'",
+        "Assign to 'The Debut' drop",
+        "Set status: active"
+      ],
+      "tests": {
+        "unit": [
+          "Product 'The Amélie' exists in database",
+          "Product has SKU AMELIE-001",
+          "Product price is $450 (45000 cents)",
+          "Product assigned to 'The Debut' drop"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /products",
+          "agent-browser: verify 'The Amélie' in listing with correct price"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "initial-content-4",
+      "category": "initial-content",
+      "description": "Create product: The Giselle",
+      "steps": [
+        "Create product via admin with title 'The Giselle'",
+        "Use product image 3 as featured image",
+        "Set price: $525",
+        "Generate SKU: GISELLE-001",
+        "Set description: 'Graceful and sophisticated. The Giselle is crafted for those special moments when presence matters.'",
+        "Assign to 'The Debut' drop",
+        "Set status: active"
+      ],
+      "tests": {
+        "unit": [
+          "Product 'The Giselle' exists in database",
+          "Product has SKU GISELLE-001",
+          "Product price is $525 (52500 cents)",
+          "Product assigned to 'The Debut' drop"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /products",
+          "agent-browser: verify 'The Giselle' in listing with correct price"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "initial-content-5",
+      "category": "initial-content",
+      "description": "Create product: The Margot",
+      "steps": [
+        "Create product via admin with title 'The Margot'",
+        "Use product image 4 as featured image",
+        "Set price: $475",
+        "Generate SKU: MARGOT-001",
+        "Set description: 'Our namesake piece. The Margot embodies everything Dear Margeaux stands for—timeless beauty, exceptional craftsmanship, and quiet luxury.'",
+        "Assign to 'The Debut' drop",
+        "Set status: active"
+      ],
+      "tests": {
+        "unit": [
+          "Product 'The Margot' exists in database",
+          "Product has SKU MARGOT-001",
+          "Product price is $475 (47500 cents)",
+          "Product assigned to 'The Debut' drop"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /products",
+          "agent-browser: verify 'The Margot' in listing with correct price"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "initial-content-6",
+      "category": "initial-content",
+      "description": "Create product: The Vivienne",
+      "steps": [
+        "Create product via admin with title 'The Vivienne'",
+        "Use product image 5 as featured image",
+        "Set price: $595",
+        "Generate SKU: VIVIENNE-001",
+        "Set description: 'Bold yet refined. The Vivienne makes a statement without saying a word, perfect for the confident woman.'",
+        "Assign to 'The Debut' drop",
+        "Set status: active"
+      ],
+      "tests": {
+        "unit": [
+          "Product 'The Vivienne' exists in database",
+          "Product has SKU VIVIENNE-001",
+          "Product price is $595 (59500 cents)",
+          "Product assigned to 'The Debut' drop"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /products",
+          "agent-browser: verify 'The Vivienne' in listing with correct price"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "initial-content-7",
+      "category": "initial-content",
+      "description": "Create product: The Eloise",
+      "steps": [
+        "Create product via admin with title 'The Eloise'",
+        "Use product image 6 as featured image",
+        "Set price: $345",
+        "Generate SKU: ELOISE-001",
+        "Set description: 'Delicate and dreamy. The Eloise is a petite treasure for evenings out and intimate gatherings.'",
+        "Assign to 'The Debut' drop",
+        "Set status: active"
+      ],
+      "tests": {
+        "unit": [
+          "Product 'The Eloise' exists in database",
+          "Product has SKU ELOISE-001",
+          "Product price is $345 (34500 cents)",
+          "Product assigned to 'The Debut' drop"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /products",
+          "agent-browser: verify 'The Eloise' in listing with correct price"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "initial-content-8",
+      "category": "initial-content",
+      "description": "Create product: The Céline",
+      "steps": [
+        "Create product via admin with title 'The Céline'",
+        "Use product image 7 as featured image",
+        "Set price: $425",
+        "Generate SKU: CELINE-001",
+        "Set description: 'Structured sophistication meets everyday practicality. The Céline transitions seamlessly from day to evening.'",
+        "Assign to 'The Debut' drop",
+        "Set status: active"
+      ],
+      "tests": {
+        "unit": [
+          "Product 'The Céline' exists in database",
+          "Product has SKU CELINE-001",
+          "Product price is $425 (42500 cents)",
+          "Product assigned to 'The Debut' drop"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /products",
+          "agent-browser: verify 'The Céline' in listing with correct price"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "initial-content-9",
+      "category": "initial-content",
+      "description": "Set initial inventory for all products",
+      "steps": [
+        "Set inventory for each product variant via admin inventory page",
+        "Set on_hand quantity: 10-25 units per product (limited drop feel)",
+        "The Colette: 20 units",
+        "The Amélie: 15 units",
+        "The Giselle: 12 units",
+        "The Margot: 18 units (namesake, slightly more)",
+        "The Vivienne: 10 units (premium, more exclusive)",
+        "The Eloise: 25 units (entry price point)",
+        "The Céline: 15 units"
+      ],
+      "tests": {
+        "unit": [
+          "The Colette inventory is 20 units",
+          "The Amélie inventory is 15 units",
+          "The Giselle inventory is 12 units",
+          "The Margot inventory is 18 units",
+          "The Vivienne inventory is 10 units",
+          "The Eloise inventory is 25 units",
+          "The Céline inventory is 15 units"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /inventory",
+          "agent-browser: verify all 7 products listed with correct quantities",
+          "agent-browser: screenshot inventory listing"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "initial-content-10",
+      "category": "initial-content",
+      "description": "Create 'About Dear Margeaux' blog post",
+      "steps": [
+        "Navigate to admin /blog/new",
+        "Set title: 'About Dear Margeaux'",
+        "Set slug: 'about-dear-margeaux'",
+        "Set pinned: true (feature post)",
+        "Use blog-about.webp as featured image",
+        "Write brand story content: founding vision, craftsmanship ethos, French-inspired aesthetic",
+        "Set draft: false to publish",
+        "Verify post appears first on /blog page"
+      ],
+      "tests": {
+        "unit": [
+          "Blog post 'About Dear Margeaux' exists",
+          "Blog post slug is 'about-dear-margeaux'",
+          "Blog post is pinned",
+          "Blog post has featured image",
+          "Blog post is not draft"
+        ],
+        "visual": [
+          "agent-browser: navigate to storefront /blog",
+          "agent-browser: verify 'About Dear Margeaux' appears first (pinned)",
+          "agent-browser: screenshot blog listing",
+          "agent-browser: click post and verify content loads"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "initial-content-11",
+      "category": "initial-content",
+      "description": "Create 'The Debut' lookbook",
+      "steps": [
+        "Navigate to admin /lookbook/new",
+        "Set title: 'The Debut'",
+        "Set description: 'A visual journey through our inaugural collection'",
+        "Set date to current date",
+        "Upload lookbook images: lookbook-1.webp, lookbook-2.webp, branding-hero.webp",
+        "Set draft: false to publish",
+        "Verify lookbook appears on /lookbook page"
+      ],
+      "tests": {
+        "unit": [
+          "Lookbook 'The Debut' exists",
+          "Lookbook has 3 images",
+          "Lookbook is not draft"
+        ],
+        "visual": [
+          "agent-browser: navigate to storefront /lookbook",
+          "agent-browser: verify 'The Debut' lookbook appears",
+          "agent-browser: click lookbook",
+          "agent-browser: verify all 3 images display",
+          "agent-browser: screenshot lookbook gallery"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "initial-content-12",
+      "category": "initial-content",
+      "description": "Verify homepage displays products correctly",
+      "steps": [
+        "Navigate to storefront homepage",
+        "Verify 'Featured Products' section shows products from 'The Debut' drop",
+        "Verify product images load from Cloudflare R2",
+        "Verify product names (The Colette, The Amélie, etc.) display correctly",
+        "Verify prices display correctly",
+        "Click 'Shop Now' and verify it navigates to /shop"
+      ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: navigate to storefront homepage",
+          "agent-browser: scroll to Featured Products section",
+          "agent-browser: screenshot product cards",
+          "agent-browser: verify product images load (no broken images)",
+          "agent-browser: verify product names visible",
+          "agent-browser: verify prices visible",
+          "agent-browser: click Shop Now",
+          "agent-browser: verify navigation to /shop"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "initial-content-13",
+      "category": "initial-content",
+      "description": "Verify shop page displays all products",
+      "steps": [
+        "Navigate to /shop",
+        "Verify all 7 products from 'The Debut' are displayed",
+        "Verify product cards show images, names, and prices",
+        "Verify drop filter shows 'The Debut' option",
+        "Click on a product to view detail page",
+        "Verify product detail page shows full description and image"
+      ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: navigate to /shop",
+          "agent-browser: count product cards (should be 7)",
+          "agent-browser: screenshot shop page",
+          "agent-browser: verify drop filter shows 'The Debut'",
+          "agent-browser: click on The Colette product",
+          "agent-browser: verify product detail page loads",
+          "agent-browser: screenshot product detail page"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "initial-content-15",
+      "category": "initial-content",
+      "description": "Final visual QA across site",
+      "steps": [
+        "Verify logo image displays in header (logo-main.webp)",
+        "Verify logo displays in footer (logo-light.webp)",
+        "Verify favicon appears in browser tab",
+        "Verify all navigation links work (Shop, Drops, Lookbook, Journal)",
+        "Verify 'About' link redirects to /blog/about-dear-margeaux",
+        "Verify 'Our Story' section has branding image",
+        "Verify blog page shows 'About Dear Margeaux' post as pinned first",
+        "Verify lookbook page shows 'The Debut' lookbook with images",
+        "Test on mobile viewport for responsive layout",
+        "Verify consistent 'Journal' naming across header and footer"
+      ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: record start ./final-qa.webm",
+          "agent-browser: navigate to homepage",
+          "agent-browser: screenshot header with logo",
+          "agent-browser: scroll to footer and screenshot footer with logo",
+          "agent-browser: click Shop link and verify /shop",
+          "agent-browser: click Drops link and verify /drops",
+          "agent-browser: click Lookbook link and verify /lookbook",
+          "agent-browser: click Journal link and verify /blog",
+          "agent-browser: navigate to homepage",
+          "agent-browser: scroll to Our Story section",
+          "agent-browser: verify branding image loads",
+          "agent-browser: navigate to /blog",
+          "agent-browser: verify About Dear Margeaux is first post",
+          "agent-browser: navigate to /lookbook",
+          "agent-browser: verify The Debut lookbook appears with images",
+          "agent-browser: set viewport 375 812 (mobile)",
+          "agent-browser: screenshot homepage mobile",
+          "agent-browser: screenshot navigation mobile",
+          "agent-browser: verify Journal naming in header and footer consistent",
+          "agent-browser: record stop"
+        ],
+        "integration": [
+          "Complete site QA verifying all content and navigation"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "admin-10",
+      "category": "admin",
+      "description": "Add partial refund amount input",
+      "steps": [
+        "Add amount input to refund dialog",
+        "Validate amount <= order total",
+        "Update refund API to accept partial amount",
+        "Pass amount to Stripe refund API",
+        "Show partial refund in order history"
+      ],
+      "tests": {
+        "unit": [
+          "Refund dialog shows amount input",
+          "Amount validation rejects values over order total",
+          "API accepts and processes partial amount",
+          "Stripe refund called with correct amount",
+          "Order history shows partial refund"
+        ],
+        "visual": [
+          "agent-browser: navigate to order detail",
+          "agent-browser: click refund button",
+          "agent-browser: screenshot refund dialog with amount input",
+          "agent-browser: enter partial amount",
+          "agent-browser: submit and verify success"
+        ],
+        "manual": []
+      },
+      "passes": false
+    }
+  ]
+}
