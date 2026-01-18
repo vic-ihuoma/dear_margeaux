@@ -1,6 +1,7 @@
 ---
 import CartIcon from './CartIcon';
 import AccountIcon from './AccountIcon';
+import ThemeToggle from './ThemeToggle';
 
 interface Props {
   class?: string;
@@ -70,6 +71,7 @@ const logoUrl = imagesUrl ? `${imagesUrl}/branding/logo-main.webp` : null;
 
     <!-- User actions -->
     <div class="flex items-center gap-2">
+      <ThemeToggle client:load size="sm" />
       <AccountIcon client:load />
       <CartIcon client:load />
 

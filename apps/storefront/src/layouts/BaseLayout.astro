@@ -120,6 +120,25 @@ const canonicalUrl = new URL(
       )
     }
 
+    <!-- Theme: Apply dark mode early to prevent flash -->
+    <script is:inline>
+      (function () {
+        const theme = localStorage.getItem('dear-margeaux-theme');
+        const prefersDark = window.matchMedia(
+          '(prefers-color-scheme: dark)'
+        ).matches;
+        const shouldBeDark =
+          theme === 'dark' ||
+          (theme === 'system' && prefersDark) ||
+          (!theme && prefersDark);
+
+        if (shouldBeDark) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
+
     <!-- Performance: Hint the browser about the critical rendering path -->
     <style>
       /* Critical CSS for above-the-fold content - prevents FOUC */
@@ -131,6 +150,9 @@ const canonicalUrl = new URL(
           sans-serif;
         background-color: #fafafa;
         margin: 0;
+      }
+      html.dark body {
+        background-color: #1a1a1a;
       }
     </style>
   </head>
