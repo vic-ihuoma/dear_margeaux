@@ -1102,3 +1102,96 @@ Additional test coverage:
 - api-6: Add email rate limiting per store
 - Consider adding admin endpoints to view queue stats and dead letter entries
 - The migration requires `wrangler d1 execute` to apply in production
+
+## 2026-01-18: api-6 - Add email rate limiting per store
+
+### Task Completed
+Implemented per-store email rate limiting with hourly tracking, warning thresholds, and admin visibility endpoint.
+
+### Key Decisions
+- Created D1 tables `email_usage` and `email_rate_limit_events` for tracking
+- Default limit: 1000 emails per hour per store (configurable via RateLimitConfig)
+- Hourly sliding window with automatic window rotation
+- Warning threshold at 80% of limit logs an event (for alerting)
+- Rate limit check integrated into `sendEmailViaResend` before sending
+- Usage increment happens after successful send only
+- Admin endpoint GET /v1/email-usage returns comprehensive statistics
+- Cleanup function removes usage records older than 7 days, events older than 30 days
+
+### Files Created
+- `merchant/migrations/012-email-rate-limit.sql` - Database migration with email_usage and email_rate_limit_events tables
+- `merchant/src/lib/email-rate-limiter.ts` - Core rate limiter module (~310 lines)
+- `merchant/src/routes/email-usage.ts` - Admin endpoint for viewing usage statistics
+- `merchant/tests/lib/email-rate-limiter.test.ts` - 35 unit tests for rate limiter
+
+### Files Changed
+- `merchant/src/lib/notifications.ts`:
+  - Added import for email-rate-limiter module
+  - Updated `sendEmailViaResend` to check rate limit before sending
+  - Added usage increment after successful send
+- `merchant/src/index.ts`:
+  - Added import and route registration for email-usage endpoint
+- `merchant/tests/lib/notifications.test.ts`:
+  - Added mock for email-rate-limiter to allow tests to pass
+- `prd.json` - Set passes: true for api-6
+
+### Test Results
+- Merchant Tests: PASSED (247 tests - 35 new rate limiter + 212 existing)
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors, pre-existing warnings only)
+
+### Test Coverage Summary
+All PRD unit tests implemented:
+- Rate limiter allows emails under limit ✓
+- Rate limiter blocks emails when limit exceeded ✓
+- Rate limiter resets after time window ✓
+- Rate limiter tracks per-store usage ✓
+- Rate limit events are logged ✓
+- GET /v1/email-usage returns current usage ✓
+
+Additional test coverage:
+- getCurrentWindowStart and getCurrentWindowEnd utilities
+- checkRateLimit with custom config
+- incrementUsage with INSERT OR REPLACE pattern
+- logRateLimitEvent for limit_exceeded and warning_threshold
+- checkAndLogRateLimit with warning at 80% threshold
+- getEmailUsageStats with current window, 24-hour history, and events
+- cleanupOldUsageRecords with 7-day and 30-day retention
+- DEFAULT_CONFIG values (1000/hour, 80% warning)
+
+### Email Rate Limiting Flow
+1. Email send request hits `sendEmailViaResend`
+2. If `queueOnFailure.storeId` is provided, rate limit is checked
+3. Rate limit check queries `email_usage` for current hourly window
+4. If count >= limit, send is blocked with error message
+5. If count == 80% threshold, warning event is logged
+6. On successful send, usage counter is incremented
+7. Admin can view current usage via GET /v1/email-usage
+
+### Admin Statistics Endpoint
+GET /v1/email-usage returns:
+```json
+{
+  "storeId": "store-123",
+  "currentWindow": {
+    "start": "2026-01-18T12:00:00.000Z",
+    "end": "2026-01-18T13:00:00.000Z",
+    "count": 250,
+    "limit": 1000,
+    "remaining": 750
+  },
+  "last24Hours": {
+    "total": 5000,
+    "byHour": [...]
+  },
+  "rateLimitEvents": {
+    "last24Hours": 2,
+    "recent": [...]
+  }
+}
+```
+
+### Next Steps
+- Consider adding configurable limits per store (currently fixed at 1000/hour)
+- Consider adding cleanup of old records to cron job
+- The migration requires `wrangler d1 execute` to apply in production

@@ -14,6 +14,7 @@ import { drops } from './routes/drops';
 import { waitlist } from './routes/waitlist';
 import { customerAuth } from './routes/customer-auth';
 import { counts } from './routes/counts';
+import { emailUsage } from './routes/email-usage';
 import { handleCron } from './cron';
 import { rateLimitMiddleware } from './middleware/rate-limit';
 import { securityHeaders } from './middleware/security-headers';
@@ -76,6 +77,7 @@ app.route('/v1/drops', drops);
 app.route('/v1/waitlist', waitlist);
 app.route('/v1/customers/auth', customerAuth);
 app.route('/v1/counts', counts);
+app.route('/v1/email-usage', emailUsage);
 
 export default {
   fetch: app.fetch,

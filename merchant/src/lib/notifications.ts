@@ -24,6 +24,7 @@
 import { getDb } from '../db';
 import { now, type Env } from '../types';
 import { queueFailedEmail, type EmailType } from './email-queue';
+import { checkAndLogRateLimit, incrementUsage } from './email-rate-limiter';
 
 // ============================================================
 // TYPES
@@ -418,6 +419,28 @@ async function sendEmailViaResend(
     });
   }
 
+  const db = getDb(env);
+  const recipient = Array.isArray(options.to) ? options.to[0] : options.to;
+
+  // Check rate limit before sending (only if storeId is available)
+  if (options.queueOnFailure?.storeId) {
+    const rateLimitResult = await checkAndLogRateLimit(
+      db,
+      options.queueOnFailure.storeId,
+      options.queueOnFailure.emailType,
+      recipient
+    );
+
+    if (!rateLimitResult.allowed) {
+      // eslint-disable-next-line no-console
+      console.error(`[EMAIL] Rate limit exceeded for store ${options.queueOnFailure.storeId}`);
+      return {
+        success: false,
+        error: rateLimitResult.error,
+      };
+    }
+  }
+
   let result: NotificationResult;
 
   try {
@@ -446,6 +469,10 @@ async function sendEmailViaResend(
         error: data.error?.message || 'Unknown Resend error',
       };
     } else {
+      // Increment usage counter after successful send
+      if (options.queueOnFailure?.storeId) {
+        await incrementUsage(db, options.queueOnFailure.storeId);
+      }
       return {
         success: true,
         messageId: data.id,
@@ -459,8 +486,6 @@ async function sendEmailViaResend(
 
   // Queue failed email for retry if options provided
   if (!result.success && options.queueOnFailure) {
-    const db = getDb(env);
-    const recipient = Array.isArray(options.to) ? options.to[0] : options.to;
     await queueFailedEmail(db, {
       storeId: options.queueOnFailure.storeId,
       emailType: options.queueOnFailure.emailType,

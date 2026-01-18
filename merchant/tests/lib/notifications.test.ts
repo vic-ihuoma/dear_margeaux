@@ -33,6 +33,18 @@ vi.mock('../../src/types', async () => {
   };
 });
 
+// Mock email rate limiter to always allow emails in tests
+vi.mock('../../src/lib/email-rate-limiter', () => ({
+  checkAndLogRateLimit: vi.fn().mockResolvedValue({
+    allowed: true,
+    currentCount: 0,
+    limit: 1000,
+    remainingInWindow: 1000,
+    windowResetAt: '2026-01-18T13:00:00.000Z',
+  }),
+  incrementUsage: vi.fn().mockResolvedValue({ newCount: 1 }),
+}));
+
 // Import after mocks are set up
 import {
   sendOrderConfirmationEmail,
