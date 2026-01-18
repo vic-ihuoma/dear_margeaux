@@ -208,6 +208,120 @@ newsletterRoutes.get('/unsubscribe', async (c) => {
   });
 });
 
+// GET /v1/newsletter/subscribers - List subscribers with pagination, filtering, and search (admin only)
+newsletterRoutes.get('/subscribers', adminOnly, async (c) => {
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+
+  // Parse query parameters
+  const cursor = c.req.query('cursor');
+  const limit = Math.min(parseInt(c.req.query('limit') || '50', 10), 100); // Default 50, max 100
+  const status = c.req.query('status'); // 'verified', 'unverified', 'unsubscribed', or undefined for all
+  const search = c.req.query('search')?.trim().toLowerCase();
+
+  // Build WHERE conditions
+  const conditions: string[] = ['store_id = ?'];
+  const params: (string | number)[] = [store.id];
+
+  // Apply status filter
+  if (status === 'verified') {
+    conditions.push('verified = 1');
+    conditions.push('unsubscribed_at IS NULL');
+  } else if (status === 'unverified') {
+    conditions.push('verified = 0');
+    conditions.push('unsubscribed_at IS NULL');
+  } else if (status === 'unsubscribed') {
+    conditions.push('unsubscribed_at IS NOT NULL');
+  }
+
+  // Apply search filter (search by email)
+  if (search) {
+    conditions.push('email LIKE ?');
+    params.push(`%${search}%`);
+  }
+
+  // Apply cursor-based pagination (cursor is the ID of the last item from previous page)
+  if (cursor) {
+    // Get the subscribed_at of the cursor subscriber to use for ordering
+    const [cursorSub] = await db.query<{ subscribed_at: string }>(
+      `SELECT subscribed_at FROM newsletter_subscribers WHERE id = ? AND store_id = ?`,
+      [cursor, store.id]
+    );
+
+    if (cursorSub) {
+      // Get subscribers after the cursor position (ordered by subscribed_at DESC, then id DESC)
+      conditions.push('(subscribed_at < ? OR (subscribed_at = ? AND id < ?))');
+      params.push(cursorSub.subscribed_at, cursorSub.subscribed_at, cursor);
+    }
+  }
+
+  const whereClause = conditions.join(' AND ');
+
+  // For count, we need to use the same conditions WITHOUT cursor pagination
+  const countConditions: string[] = ['store_id = ?'];
+  const countParams: (string | number)[] = [store.id];
+
+  if (status === 'verified') {
+    countConditions.push('verified = 1');
+    countConditions.push('unsubscribed_at IS NULL');
+  } else if (status === 'unverified') {
+    countConditions.push('verified = 0');
+    countConditions.push('unsubscribed_at IS NULL');
+  } else if (status === 'unsubscribed') {
+    countConditions.push('unsubscribed_at IS NOT NULL');
+  }
+
+  if (search) {
+    countConditions.push('email LIKE ?');
+    countParams.push(`%${search}%`);
+  }
+
+  const [totalCount] = await db.query<{ count: number }>(
+    `SELECT COUNT(*) as count FROM newsletter_subscribers WHERE ${countConditions.join(' AND ')}`,
+    countParams
+  );
+
+  // Fetch subscribers with pagination
+  const subscribers = await db.query<{
+    id: string;
+    email: string;
+    verified: number;
+    subscribed_at: string;
+    verified_at: string | null;
+    unsubscribed_at: string | null;
+    source: string;
+  }>(
+    `SELECT id, email, verified, subscribed_at, verified_at, unsubscribed_at, source
+     FROM newsletter_subscribers
+     WHERE ${whereClause}
+     ORDER BY subscribed_at DESC, id DESC
+     LIMIT ?`,
+    [...params, limit + 1] // Fetch one extra to determine if there's a next page
+  );
+
+  // Check if there's a next page and get the next cursor
+  const hasMore = subscribers.length > limit;
+  const items = hasMore ? subscribers.slice(0, limit) : subscribers;
+  const nextCursor = hasMore && items.length > 0 ? items[items.length - 1].id : null;
+
+  // Format response
+  return c.json({
+    subscribers: items.map((sub) => ({
+      id: sub.id,
+      email: sub.email,
+      verified: sub.verified === 1,
+      subscribed_at: sub.subscribed_at,
+      verified_at: sub.verified_at,
+      unsubscribed_at: sub.unsubscribed_at,
+      source: sub.source,
+      status: sub.unsubscribed_at ? 'unsubscribed' : sub.verified === 1 ? 'verified' : 'unverified',
+    })),
+    count: totalCount?.count ?? 0,
+    next_cursor: nextCursor,
+    has_more: hasMore,
+  });
+});
+
 // GET /v1/newsletter/subscribers/count - Get active subscriber count (admin only)
 newsletterRoutes.get('/subscribers/count', adminOnly, async (c) => {
   const { store } = c.get('auth');

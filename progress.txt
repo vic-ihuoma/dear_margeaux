@@ -2469,3 +2469,18 @@ Implemented IP-based rate limiting for the newsletter subscribe endpoint with pe
 - newsletter-15: Add invisible reCAPTCHA to subscribe forms
 - newsletter-16: Create admin Subscribers page
 - newsletter-17: Add subscriber list API endpoint
+
+## 2026-01-18: newsletter-17 - Add subscriber list API endpoint
+- Implemented GET /v1/newsletter/subscribers (admin only)
+- Features:
+  - Cursor-based pagination with configurable limit (default 50, max 100)
+  - Status filtering: verified, unverified, unsubscribed
+  - Email search with LIKE query
+  - Returns total count alongside paginated results
+  - Derived status field for each subscriber
+- Files changed:
+  - merchant/src/routes/newsletter.ts - Added new endpoint
+  - merchant/tests/routes/newsletter.test.ts - Added 14 unit tests
+- All 449 tests passing
+- Type check: PASSED
+- Lint: Only pre-existing warnings

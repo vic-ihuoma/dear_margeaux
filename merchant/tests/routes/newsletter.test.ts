@@ -806,6 +806,476 @@ describe('Newsletter Routes', () => {
     });
   });
 
+  describe('GET /v1/newsletter/subscribers - List subscribers', () => {
+    it('returns 403 for non-admin users', async () => {
+      setAuthContext('public');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('returns list of subscribers for admin', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 2 }]);
+
+      // Mock: subscribers query
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-1',
+          email: 'user1@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-18T10:00:00.000Z',
+          verified_at: '2026-01-18T10:01:00.000Z',
+          unsubscribed_at: null,
+          source: 'footer',
+        },
+        {
+          id: 'sub-2',
+          email: 'user2@example.com',
+          verified: 0,
+          subscribed_at: '2026-01-17T10:00:00.000Z',
+          verified_at: null,
+          unsubscribed_at: null,
+          source: 'blog',
+        },
+      ]);
+
+      const res = await app.request('/v1/newsletter/subscribers', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.subscribers).toHaveLength(2);
+      expect(body.count).toBe(2);
+      expect(body.subscribers[0].email).toBe('user1@example.com');
+      expect(body.subscribers[0].status).toBe('verified');
+      expect(body.subscribers[1].status).toBe('unverified');
+    });
+
+    it('supports pagination with cursor', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: cursor lookup
+      mockDbQuery.mockResolvedValueOnce([{ subscribed_at: '2026-01-17T10:00:00.000Z' }]);
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 10 }]);
+
+      // Mock: subscribers query with 3 results (2 + 1 extra to detect has_more)
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-3',
+          email: 'user3@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-16T10:00:00.000Z',
+          verified_at: '2026-01-16T10:01:00.000Z',
+          unsubscribed_at: null,
+          source: 'footer',
+        },
+        {
+          id: 'sub-4',
+          email: 'user4@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-15T10:00:00.000Z',
+          verified_at: '2026-01-15T10:01:00.000Z',
+          unsubscribed_at: null,
+          source: 'footer',
+        },
+        {
+          id: 'sub-5',
+          email: 'user5@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-14T10:00:00.000Z',
+          verified_at: '2026-01-14T10:01:00.000Z',
+          unsubscribed_at: null,
+          source: 'footer',
+        },
+      ]);
+
+      const res = await app.request('/v1/newsletter/subscribers?cursor=sub-2&limit=2', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.subscribers).toHaveLength(2);
+      expect(body.has_more).toBe(true);
+      expect(body.next_cursor).toBe('sub-4');
+    });
+
+    it('filters by verified status', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 5 }]);
+
+      // Mock: subscribers query
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-1',
+          email: 'verified@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-18T10:00:00.000Z',
+          verified_at: '2026-01-18T10:01:00.000Z',
+          unsubscribed_at: null,
+          source: 'footer',
+        },
+      ]);
+
+      const res = await app.request('/v1/newsletter/subscribers?status=verified', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.subscribers).toHaveLength(1);
+      expect(body.subscribers[0].verified).toBe(true);
+
+      // Verify query includes verified = 1 condition
+      expect(mockDbQuery).toHaveBeenCalledWith(
+        expect.stringContaining('verified = 1'),
+        expect.anything()
+      );
+    });
+
+    it('filters by unverified status', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 3 }]);
+
+      // Mock: subscribers query
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-1',
+          email: 'unverified@example.com',
+          verified: 0,
+          subscribed_at: '2026-01-18T10:00:00.000Z',
+          verified_at: null,
+          unsubscribed_at: null,
+          source: 'footer',
+        },
+      ]);
+
+      const res = await app.request('/v1/newsletter/subscribers?status=unverified', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.subscribers).toHaveLength(1);
+      expect(body.subscribers[0].verified).toBe(false);
+
+      // Verify query includes verified = 0 condition
+      expect(mockDbQuery).toHaveBeenCalledWith(
+        expect.stringContaining('verified = 0'),
+        expect.anything()
+      );
+    });
+
+    it('filters by unsubscribed status', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 2 }]);
+
+      // Mock: subscribers query
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-1',
+          email: 'unsub@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-18T10:00:00.000Z',
+          verified_at: '2026-01-18T10:01:00.000Z',
+          unsubscribed_at: '2026-01-18T12:00:00.000Z',
+          source: 'footer',
+        },
+      ]);
+
+      const res = await app.request('/v1/newsletter/subscribers?status=unsubscribed', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.subscribers).toHaveLength(1);
+      expect(body.subscribers[0].status).toBe('unsubscribed');
+
+      // Verify query includes unsubscribed_at IS NOT NULL condition
+      expect(mockDbQuery).toHaveBeenCalledWith(
+        expect.stringContaining('unsubscribed_at IS NOT NULL'),
+        expect.anything()
+      );
+    });
+
+    it('searches by email', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 1 }]);
+
+      // Mock: subscribers query
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-1',
+          email: 'john.doe@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-18T10:00:00.000Z',
+          verified_at: '2026-01-18T10:01:00.000Z',
+          unsubscribed_at: null,
+          source: 'footer',
+        },
+      ]);
+
+      const res = await app.request('/v1/newsletter/subscribers?search=john', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.subscribers).toHaveLength(1);
+      expect(body.subscribers[0].email).toBe('john.doe@example.com');
+
+      // Verify query includes LIKE search
+      expect(mockDbQuery).toHaveBeenCalledWith(
+        expect.stringContaining('email LIKE ?'),
+        expect.arrayContaining(['%john%'])
+      );
+    });
+
+    it('returns count in response', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 42 }]);
+
+      // Mock: subscribers query
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const res = await app.request('/v1/newsletter/subscribers', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.count).toBe(42);
+    });
+
+    it('respects limit parameter', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 100 }]);
+
+      // Mock: subscribers query returning limit + 1 items
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-1',
+          email: 'user1@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-18T10:00:00.000Z',
+          verified_at: '2026-01-18T10:01:00.000Z',
+          unsubscribed_at: null,
+          source: 'footer',
+        },
+        {
+          id: 'sub-2',
+          email: 'user2@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-17T10:00:00.000Z',
+          verified_at: '2026-01-17T10:01:00.000Z',
+          unsubscribed_at: null,
+          source: 'footer',
+        },
+        {
+          id: 'sub-3',
+          email: 'user3@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-16T10:00:00.000Z',
+          verified_at: '2026-01-16T10:01:00.000Z',
+          unsubscribed_at: null,
+          source: 'footer',
+        },
+      ]);
+
+      const res = await app.request('/v1/newsletter/subscribers?limit=2', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.subscribers).toHaveLength(2); // Only returns 2, not 3
+      expect(body.has_more).toBe(true);
+    });
+
+    it('enforces maximum limit of 100', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 0 }]);
+
+      // Mock: subscribers query
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      await app.request('/v1/newsletter/subscribers?limit=500', {
+        method: 'GET',
+      });
+
+      // Verify query uses LIMIT 101 (max 100 + 1 for has_more check)
+      expect(mockDbQuery).toHaveBeenLastCalledWith(
+        expect.stringContaining('LIMIT ?'),
+        expect.arrayContaining([101])
+      );
+    });
+
+    it('returns subscriber with derived status field', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 3 }]);
+
+      // Mock: subscribers query with different statuses
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-1',
+          email: 'verified@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-18T10:00:00.000Z',
+          verified_at: '2026-01-18T10:01:00.000Z',
+          unsubscribed_at: null,
+          source: 'footer',
+        },
+        {
+          id: 'sub-2',
+          email: 'unverified@example.com',
+          verified: 0,
+          subscribed_at: '2026-01-17T10:00:00.000Z',
+          verified_at: null,
+          unsubscribed_at: null,
+          source: 'footer',
+        },
+        {
+          id: 'sub-3',
+          email: 'unsubscribed@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-16T10:00:00.000Z',
+          verified_at: '2026-01-16T10:01:00.000Z',
+          unsubscribed_at: '2026-01-18T12:00:00.000Z',
+          source: 'footer',
+        },
+      ]);
+
+      const res = await app.request('/v1/newsletter/subscribers', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.subscribers[0].status).toBe('verified');
+      expect(body.subscribers[1].status).toBe('unverified');
+      expect(body.subscribers[2].status).toBe('unsubscribed');
+    });
+
+    it('returns empty list when no subscribers', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 0 }]);
+
+      // Mock: subscribers query
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const res = await app.request('/v1/newsletter/subscribers', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.subscribers).toHaveLength(0);
+      expect(body.count).toBe(0);
+      expect(body.has_more).toBe(false);
+      expect(body.next_cursor).toBe(null);
+    });
+
+    it('filters by store_id', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 0 }]);
+
+      // Mock: subscribers query
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      await app.request('/v1/newsletter/subscribers', {
+        method: 'GET',
+      });
+
+      // Verify both queries include store_id filter
+      expect(mockDbQuery).toHaveBeenCalledWith(
+        expect.stringContaining('store_id = ?'),
+        expect.arrayContaining(['store-1'])
+      );
+    });
+  });
+
   describe('GET /v1/newsletter/subscribers/count - Get subscriber count', () => {
     it('returns 403 for non-admin users', async () => {
       setAuthContext('public');

@@ -1859,3 +1859,37 @@ All unit tests implemented:
 - Consider adding newsletter attempt cleanup to the existing cron job (cron.ts)
 - newsletter-15: Add invisible reCAPTCHA to subscribe forms (for additional spam protection)
 - Monitor rate limit hits in production to tune thresholds if needed
+
+## [newsletter-17]: Add subscriber list API endpoint
+**Status:** PASSED
+**Tests Written:**
+- GET /v1/newsletter/subscribers returns 403 for non-admin users
+- Returns list of subscribers for admin
+- Supports pagination with cursor
+- Filters by verified status
+- Filters by unverified status
+- Filters by unsubscribed status
+- Searches by email
+- Returns count in response
+- Respects limit parameter
+- Enforces maximum limit of 100
+- Returns subscriber with derived status field
+- Returns empty list when no subscribers
+- Filters by store_id
+
+**Test Results:** 449/449 tests passing (56 newsletter tests specifically)
+**Type Check:** PASSED
+**Lint:** PASSED (no new warnings)
+**Browser Tests:** N/A (no tests.visual for this task)
+
+**Findings:**
+- Implemented cursor-based pagination for efficient large list handling
+- The cursor is the subscriber ID, using subscribed_at + id ordering for stable pagination
+- Status filter properly handles the three states: verified, unverified, unsubscribed
+- Search is case-insensitive using LIKE query on email field
+- Response includes both paginated results and total count for the filtered query
+- Each subscriber includes a derived "status" field for convenience
+
+**Recommendations:**
+- Consider adding export functionality (CSV) for subscriber lists in a future task
+- May want to add created_at/updated_at filtering for admin analytics
