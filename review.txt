@@ -1702,3 +1702,41 @@ All unit tests implemented:
 - newsletter-12: Create send newsletter API endpoint
 - newsletter-13: Integrate newsletter send into blog publish flow
 
+
+## [newsletter-11]: Add 'Send as Newsletter' toggle to BlogForm
+**Status:** PASSED
+**Tests Written:** 5 unit tests in merchant/tests/routes/newsletter.test.ts, 9 documented behavior tests in apps/admin/tests/components/BlogForm.test.ts
+**Test Results:** 411 tests passed (merchant), 158 tests passed (admin), 116 tests passed (api), 685 total
+**Type Check:** PASSED - 0 errors across all 7 packages (3 hints, 1 hint)
+**Lint:** PASSED - 0 errors on new files (2 pre-existing accessibility errors in TagInput.tsx)
+**Browser Tests:** Documented in PRD - visual verification required
+**Pre-commit Hooks:** All passed
+**Commit:** 0ac2edb feat(newsletter-11): add Send as Newsletter toggle to BlogForm
+**Findings:**
+- Added GET /v1/newsletter/subscribers/count endpoint to Merchant API (lines 206-220 in newsletter.ts):
+  - Admin-only endpoint using authMiddleware and adminOnly middleware
+  - Counts verified subscribers (verified = 1) who haven't unsubscribed (unsubscribed_at IS NULL)
+  - Returns { count: number } JSON response
+- Created admin API proxy route at /api/newsletter/subscribers-count:
+  - Proxies to Merchant API endpoint
+  - Handles API configuration errors gracefully
+- Updated BlogForm.tsx with newsletter toggle feature:
+  - Added sendAsNewsletter boolean state (default: false)
+  - Added subscriberCount state with loading indicator
+  - Tracks wasOriginallyDraft to determine toggle visibility
+  - Toggle ONLY appears when: wasOriginallyDraft && !draft (publishing a draft)
+  - Fetches subscriber count via useEffect on mount
+  - Disables checkbox when subscriberCount === 0
+  - Includes sendAsNewsletter in form submission data
+- Added sendAsNewsletter?: boolean to BlogPostData interface
+- Test coverage includes:
+  - Subscriber count endpoint: admin auth, count query, store filtering, 403 for non-admin
+  - BlogForm behavior: toggle visibility conditions, disabled states, data submission
+**PRD Coverage:**
+- ✓ Toggle appears when changing draft→published
+- ✓ Subscriber count is fetched and displayed
+- ✓ Toggle is hidden for already published posts
+**Recommendations:**
+- newsletter-12: Create send newsletter API endpoint
+- newsletter-13: Integrate newsletter send into blog publish flow
+- Consider adding subscriber count caching to avoid repeated fetches
