@@ -122,7 +122,8 @@
 **Type Check:** PASSED - 0 errors, 3 hints across all packages
 **Lint:** PASSED - 0 errors (1 pre-existing warning in CartDrawer.tsx)
 **Browser Tests:** SKIPPED - visual changes require manual verification
-**Pre-commit Hooks:** Pending commit
+**Pre-commit Hooks:** All passed
+**Commit:** 3c488bd feat(nav-6): update header with logo, Journal, and Lookbook links
 **Findings:**
 - Added PUBLIC_IMAGES_URL environment variable support for R2 CDN
 - Logo conditionally renders: `<img>` from R2 if configured, text fallback otherwise
@@ -136,3 +137,23 @@
 - Complete assets-1 through assets-7 to upload logo and configure PUBLIC_IMAGES_URL
 - nav-5 should update footer navigation for consistency with header (About→Journal)
 - Consider adding active state styling for current page links
+
+## [nav-5]: Update footer navigation links
+**Status:** PASSED
+**Tests Written:** N/A (HTML link change, no logic change)
+**Test Results:** 18 tests passed (2 files)
+**Type Check:** PASSED (via Turbo build)
+**Lint:** PASSED - 0 errors (pre-existing warnings only)
+**Browser Tests:** SKIPPED - simple link text and URL change
+**Pre-commit Hooks:** All passed
+**Commit:** 942ac64 feat(nav-5): update footer navigation links for consistency with header
+**Findings:**
+- Changed 'About' link to 'Journal' linking to /blog (line 87 of Footer.astro)
+- Footer now matches header navigation terminology established in nav-6
+- /drops link already points to /drops (future index page from nav-1)
+- /drops/archive link already points to /drops/archive (future archive page from nav-4)
+- Build completes successfully with 28 pages generated
+**Recommendations:**
+- nav-1 through nav-4 should create the /drops and /drops/archive pages to make those links functional
+- nav-14 should handle the legacy /about route (redirect or remove)
+- Consider adding 'Lookbook' link to footer to match header (currently not in footer)

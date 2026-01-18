@@ -168,3 +168,28 @@ Updated the storefront header with logo image support, added Journal and Lookboo
 - nav-5: Update footer navigation links for consistency with header
 - nav-9 through nav-12: Add 'pinned' field to blog system
 - nav-1 through nav-4: Create /drops index page with countdown timer and waitlist
+
+## 2026-01-18: nav-5 - Update footer navigation links
+
+### Task Completed
+Updated the footer navigation to be consistent with the header changes made in nav-6.
+
+### Key Decisions
+- Changed 'About' link to 'Journal' linking to /blog (matching header navigation)
+- Verified /drops and /drops/archive links are already correctly configured
+- Footer now has consistent terminology with header ('Journal' instead of 'About')
+
+### Files Changed
+- `apps/storefront/src/components/Footer.astro` - Changed About link to Journal link (line 87)
+- `prd.json` - Set passes: true for nav-5
+
+### Test Results
+- Lint: PASSED (0 errors, pre-existing warnings only)
+- Unit Tests: PASSED (18 tests in 2 files)
+- Build: PASSED (28 pages built successfully)
+
+### Next Steps
+- nav-9 through nav-12: Add 'pinned' field to blog system
+- nav-1 through nav-4: Create /drops index page with countdown timer and waitlist
+- nav-14: Remove or redirect legacy /about route
+- assets-1 through assets-7: Upload brand images to R2

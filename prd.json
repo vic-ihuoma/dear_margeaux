@@ -1630,7 +1630,7 @@
         "Verify /drops/archive link points to new archive page",
         "Test all footer links work correctly"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "nav-6",
