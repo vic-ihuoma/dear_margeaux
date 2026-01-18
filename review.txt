@@ -94,3 +94,23 @@
 **Recommendations:**
 - Consider nav-8 next: Update 'Our Story' section link to point to /blog/about-dear-margeaux
 - Navigation tasks nav-1 through nav-6 create the /drops index page with countdown timers
+
+## [nav-8]: Update 'Our Story' section link to specific blog post
+**Status:** PASSED
+**Tests Written:** N/A (HTML link update, no logic change)
+**Test Results:** 18 tests passed (2 files)
+**Type Check:** PASSED - 0 errors, 3 hints across all packages
+**Lint:** PASSED - 0 errors (165 pre-existing warnings)
+**Browser Tests:** SKIPPED - simple link URL change
+**Pre-commit Hooks:** All passed
+**Commit:** edbbbcc feat(nav-8): update Our Story section link to blog post
+**Findings:**
+- Updated 'Our Story' section href from `/about` to `/blog/about-dear-margeaux` (line 282)
+- Changed link text from 'Learn More' to 'Read Our Story' for better context
+- Link will work once the pinned About post is created (initial-content-10)
+- Build completes successfully with 28 pages generated
+**Recommendations:**
+- nav-9 through nav-12: Implement 'pinned' field in blog content schema and admin
+- nav-14: Remove or redirect legacy /about route
+- initial-content-10: Create the 'About Dear Margeaux' blog post to make this link functional
+- Consider nav-1 through nav-6 for /drops index page creation
