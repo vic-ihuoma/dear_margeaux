@@ -462,6 +462,10 @@ export interface ListInventoryParams extends PaginationParams {
 export interface ListOrdersParams extends PaginationParams {
   status?: OrderStatus;
   email?: string;
+  /** ISO 8601 date string to filter orders created on or after this date */
+  start_date?: ISODateString;
+  /** ISO 8601 date string to filter orders created on or before this date */
+  end_date?: ISODateString;
 }
 
 /** Parameters for listing customers */

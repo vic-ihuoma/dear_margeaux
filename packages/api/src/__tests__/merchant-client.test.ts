@@ -635,6 +635,76 @@ describe('MerchantClient', () => {
       );
     });
 
+    it('fetches orders with start_date filter', async () => {
+      mockFetch.mockResolvedValue(
+        createMockResponse({
+          items: [],
+          pagination: { has_more: false, next_cursor: null },
+        })
+      );
+
+      await client.getOrders({ start_date: '2026-01-01' });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('start_date=2026-01-01'),
+        expect.any(Object)
+      );
+    });
+
+    it('fetches orders with end_date filter', async () => {
+      mockFetch.mockResolvedValue(
+        createMockResponse({
+          items: [],
+          pagination: { has_more: false, next_cursor: null },
+        })
+      );
+
+      await client.getOrders({ end_date: '2026-01-31' });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('end_date=2026-01-31'),
+        expect.any(Object)
+      );
+    });
+
+    it('fetches orders with both start_date and end_date filters', async () => {
+      mockFetch.mockResolvedValue(
+        createMockResponse({
+          items: [],
+          pagination: { has_more: false, next_cursor: null },
+        })
+      );
+
+      await client.getOrders({
+        start_date: '2026-01-01',
+        end_date: '2026-01-31',
+      });
+
+      const callUrl = mockFetch.mock.calls[0][0];
+      expect(callUrl).toContain('start_date=2026-01-01');
+      expect(callUrl).toContain('end_date=2026-01-31');
+    });
+
+    it('fetches orders with combined status and date range filters', async () => {
+      mockFetch.mockResolvedValue(
+        createMockResponse({
+          items: [],
+          pagination: { has_more: false, next_cursor: null },
+        })
+      );
+
+      await client.getOrders({
+        status: 'shipped',
+        start_date: '2026-01-01',
+        end_date: '2026-01-31',
+      });
+
+      const callUrl = mockFetch.mock.calls[0][0];
+      expect(callUrl).toContain('status=shipped');
+      expect(callUrl).toContain('start_date=2026-01-01');
+      expect(callUrl).toContain('end_date=2026-01-31');
+    });
+
     it('fetches single order', async () => {
       const mockOrder = {
         id: 'ord_123',

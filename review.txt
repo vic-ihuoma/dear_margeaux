@@ -556,3 +556,52 @@ All unit tests implemented:
 - sec-3: Implement password reset flow
 - Consider adding admin endpoint to manually unlock accounts
 - The migration requires `wrangler d1 execute` to apply in production
+
+## [api-2]: Add date range params to getOrders API
+**Status:** PASSED
+**Tests Written:** 13 unit tests in merchant/tests/routes/orders.test.ts, 5 unit tests in packages/api/src/__tests__/merchant-client.test.ts
+**Test Results:** 147 tests passed (merchant - 13 new), 78 tests passed (api - 5 new), 357 total
+**Type Check:** PASSED - 0 errors across all packages
+**Lint:** PASSED - 0 errors (pre-existing warnings only)
+**Browser Tests:** N/A - backend API implementation, no UI changes
+**Pre-commit Hooks:** Pending (commit in progress)
+**Findings:**
+- Created shared validation utility `merchant/src/lib/validation.ts`:
+  - `isValidISODate()` function validates ISO 8601 date formats
+  - Accepts both date-only (YYYY-MM-DD) and full datetime formats
+  - Extracted from counts.ts to avoid code duplication
+- Updated `packages/api/src/types.ts`:
+  - Added `start_date?: ISODateString` to ListOrdersParams
+  - Added `end_date?: ISODateString` to ListOrdersParams
+  - Uses existing ISODateString type alias for consistency
+- Updated `merchant/src/routes/orders.ts`:
+  - Added date filtering logic to GET /v1/orders endpoint
+  - Validates dates with `isValidISODate()` before applying filters
+  - Returns 400 with descriptive error for invalid date formats
+  - Also added status validation (was previously missing)
+- Refactored `merchant/src/routes/counts.ts`:
+  - Now imports `isValidISODate` from shared validation utility
+  - Removed duplicate local implementation
+- Created comprehensive test suite `merchant/tests/routes/orders.test.ts`:
+  - Tests filtering by start_date, end_date, and both
+  - Tests invalid date format handling (non-ISO, slash-formatted)
+  - Tests full ISO 8601 datetime format acceptance
+  - Tests combining date filters with status and email filters
+  - Tests pagination preservation with date filtering
+  - Tests empty result handling
+- Added MerchantClient tests for date range params:
+  - Tests fetching orders with start_date filter
+  - Tests fetching orders with end_date filter
+  - Tests fetching orders with combined date filters
+  - Tests combining status and date range filters
+**PRD Coverage:**
+All unit tests implemented:
+- GET /v1/orders accepts start_date query parameter ✓
+- GET /v1/orders accepts end_date query parameter ✓
+- GET /v1/orders filters by date range correctly ✓
+- GET /v1/orders returns 400 for invalid date format ✓
+- MerchantClient.getOrders passes date params correctly ✓
+**Recommendations:**
+- api-3: Add webhook event for order status changes
+- api-4: Add bulk product update endpoint
+- Consider adding date range filtering to other list endpoints (customers, products)

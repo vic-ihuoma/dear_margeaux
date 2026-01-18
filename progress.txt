@@ -849,3 +849,54 @@ Additional test coverage:
 - sec-2: Add email verification for customer accounts
 - sec-3: Implement password reset flow
 - Other security enhancements (sec-4 through sec-6)
+
+## 2026-01-18: api-2 - Add date range params to getOrders API
+
+### Task Completed
+Added `start_date` and `end_date` query parameters to the GET /v1/orders endpoint for filtering orders by date range, with full ISO 8601 date validation.
+
+### Key Decisions
+- Created a shared utility file `merchant/src/lib/validation.ts` for the `isValidISODate` function to avoid code duplication between orders.ts and counts.ts
+- Date validation supports both YYYY-MM-DD format and full ISO 8601 datetime format (e.g., 2026-01-01T00:00:00Z)
+- Added status validation to orders listing (was missing in the original implementation)
+- Date filters use >= for start_date and <= for end_date (inclusive range)
+
+### Files Created
+- `merchant/src/lib/validation.ts` - Shared ISO 8601 date validation utility
+- `merchant/tests/routes/orders.test.ts` - 13 unit tests for orders date filtering
+
+### Files Changed
+- `packages/api/src/types.ts` - Added `start_date` and `end_date` fields to `ListOrdersParams` interface
+- `merchant/src/routes/orders.ts` - Added date filtering to GET /v1/orders, imported validation utility
+- `merchant/src/routes/counts.ts` - Refactored to use shared validation utility
+- `packages/api/src/__tests__/merchant-client.test.ts` - Added 5 tests for MerchantClient date range params
+- `prd.json` - Set passes: true for api-2
+
+### Test Results
+- Merchant Tests: PASSED (147 tests - 13 new orders tests + 134 existing)
+- API Client Tests: PASSED (78 tests - 5 new date range tests + 73 existing)
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors, pre-existing warnings only)
+
+### Test Coverage Summary
+All PRD unit tests implemented:
+- GET /v1/orders filters by start_date ✓
+- GET /v1/orders filters by end_date ✓
+- GET /v1/orders filters by both start_date and end_date ✓
+- GET /v1/orders validates ISO 8601 date format ✓
+- GET /v1/orders returns 400 for invalid date format ✓
+- MerchantClient.getOrders accepts date range params ✓
+
+Additional test coverage:
+- Returns orders without date filter
+- Accepts full ISO 8601 datetime format for start_date and end_date
+- Combines date filter with status filter
+- Combines date filter with email filter
+- Returns empty list when no orders match date range
+- Returns 400 for invalid status parameter
+- Date filtering preserves pagination behavior
+
+### Next Steps
+- api-3: Add retry logic for transient failures
+- api-4: Add request/response logging
+- Other API enhancement tasks (api-5 through api-6)

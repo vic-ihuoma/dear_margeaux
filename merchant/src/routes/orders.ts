@@ -6,6 +6,7 @@ import { ApiError, uuid, now, generateOrderNumber, type Env, type AuthContext } 
 import { validateDiscount, calculateDiscount, type Discount } from './discounts';
 import { dispatchWebhooks, type WebhookEventType } from '../lib/webhooks';
 import { sendShippingUpdateEmail } from '../lib/notifications';
+import { isValidISODate } from '../lib/validation';
 
 // ============================================================
 // DATABASE ROW TYPES
@@ -104,12 +105,26 @@ ordersRoutes.get('/', async (c) => {
   const cursor = c.req.query('cursor');
   const status = c.req.query('status'); // Filter by status
   const email = c.req.query('email'); // Filter by customer email
+  const startDate = c.req.query('start_date'); // Filter by start date (inclusive)
+  const endDate = c.req.query('end_date'); // Filter by end date (inclusive)
 
   // Build query
   let query = `SELECT * FROM orders WHERE store_id = ?`;
   const params: unknown[] = [store.id];
 
   if (status) {
+    const validStatuses = [
+      'pending',
+      'paid',
+      'processing',
+      'shipped',
+      'delivered',
+      'refunded',
+      'canceled',
+    ];
+    if (!validStatuses.includes(status)) {
+      throw ApiError.invalidRequest(`status must be one of: ${validStatuses.join(', ')}`);
+    }
     query += ` AND status = ?`;
     params.push(status);
   }
@@ -117,6 +132,23 @@ ordersRoutes.get('/', async (c) => {
   if (email) {
     query += ` AND customer_email = ?`;
     params.push(email);
+  }
+
+  // Validate and apply date filters
+  if (startDate) {
+    if (!isValidISODate(startDate)) {
+      throw ApiError.invalidRequest('start_date must be a valid ISO 8601 date');
+    }
+    query += ` AND created_at >= ?`;
+    params.push(startDate);
+  }
+
+  if (endDate) {
+    if (!isValidISODate(endDate)) {
+      throw ApiError.invalidRequest('end_date must be a valid ISO 8601 date');
+    }
+    query += ` AND created_at <= ?`;
+    params.push(endDate);
   }
 
   if (cursor) {
