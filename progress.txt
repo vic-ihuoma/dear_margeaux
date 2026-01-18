@@ -439,3 +439,67 @@ Additional test coverage:
 - test-3: Add integration tests for admin API routes
 - test-4: Add E2E tests with Playwright
 - Other testing tasks (test-5 through test-7)
+
+## 2026-01-18: test-3 - Add integration tests for admin API routes
+
+### Task Completed
+Created comprehensive integration tests for the admin API routes using Vitest. Added 79 tests covering products, orders, inventory, drops, and blog API endpoints.
+
+### Key Decisions
+- Used `define` option in vitest.config.ts to inject `import.meta.env` variables at compile time (required for Astro)
+- Mocked MerchantClient for isolated API route testing
+- Mocked `node:fs/promises` for blog API tests (file-based MDX storage)
+- Created helper function `createMockContext` to simulate Astro API context
+- Used `parseResponse` helper for consistent response handling
+
+### Files Created
+- `apps/admin/vitest.config.ts` - Vitest configuration with env variable injection
+- `apps/admin/tests/api/products.test.ts` - 13 tests for products CRUD
+- `apps/admin/tests/api/orders.test.ts` - 14 tests for order status and refunds
+- `apps/admin/tests/api/inventory.test.ts` - 10 tests for inventory adjustments
+- `apps/admin/tests/api/drops.test.ts` - 20 tests for drops CRUD and product assignment
+- `apps/admin/tests/api/blog.test.ts` - 22 tests for blog posts CRUD
+
+### Files Changed
+- `apps/admin/package.json` - Added vitest, @vitest/coverage-v8 dev dependencies, added test scripts
+- `prd.json` - Set passes: true for test-3
+
+### Test Results
+- Admin Tests: PASSED (79 tests)
+- API Client Tests: PASSED (65 tests)
+- Storefront Tests: PASSED (53 tests)
+- Merchant Tests: PASSED (18 tests)
+- Total: 215 tests passing
+- Typecheck: PASSED (0 errors, only warnings/hints)
+- Lint: PASSED (0 errors, pre-existing warnings only)
+
+### Test Coverage Summary
+Tests cover all PRD requirements:
+- GET /api/products returns product list ✓
+- POST /api/products creates new product ✓
+- PATCH /api/products/:id updates product ✓
+- DELETE /api/products/:id deletes product ✓
+- GET /api/orders tests via order update tests ✓
+- PATCH /api/orders/:id updates order status ✓
+- POST /api/orders/:id/refund processes refunds ✓
+- GET /api/inventory tests via inventory adjust tests ✓
+- POST /api/inventory/:sku/adjust updates inventory ✓
+- GET /api/drops returns drops list ✓
+- POST /api/drops creates new drop ✓
+- PUT /api/drops/:id/products assigns products ✓
+- GET /api/blog returns blog posts ✓
+- POST /api/blog creates new blog post ✓
+- All routes validate required parameters ✓
+- All routes handle errors gracefully ✓
+
+Additional test coverage:
+- Products: list filtering by status, pagination, validation errors
+- Orders: tracking info updates, status validation, partial refunds
+- Inventory: all adjustment reasons (restock, correction, damaged, return)
+- Drops: status filtering, product assignment/removal
+- Blog: draft/published filtering, search, pinned field, slug conflict handling
+
+### Next Steps
+- test-4: Add E2E tests with Playwright
+- test-5: Add visual regression tests
+- Other testing tasks (test-6 through test-7)
