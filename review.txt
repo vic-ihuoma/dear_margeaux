@@ -1532,3 +1532,41 @@ Created apps/admin/tests/components/VariantForm.test.ts with 40 documented tests
 - newsletter-6: Create verification confirmation endpoint to handle token validation
 - newsletter-7: Create storefront verification success page
 - newsletter-8: Create one-click unsubscribe endpoint
+
+## [newsletter-6]: Create verification confirmation endpoint
+**Status:** PASSED
+**Tests Written:** 9 unit tests in merchant/tests/routes/newsletter.test.ts
+**Test Results:** 381 tests passed (merchant - 9 new + 372 existing)
+**Type Check:** PASSED - 0 errors across all 7 packages
+**Lint:** PASSED - 0 errors (234 pre-existing warnings for `any` types and console usage)
+**Browser Tests:** N/A - no visual tests in PRD for this task
+**Pre-commit Hooks:** Pending (commit in progress)
+**Findings:**
+- Created GET /v1/newsletter/verify endpoint in merchant/src/routes/newsletter.ts (lines 81-129)
+- Endpoint validates token query parameter and returns 400 if missing
+- Looks up subscriber by verification_token AND store_id for security
+- Returns 404 for invalid or expired tokens
+- Updates subscriber on successful verification:
+  - Sets verified = 1 (true in SQLite)
+  - Sets verified_at timestamp
+  - Clears verification_token (sets to NULL)
+  - Updates updated_at timestamp
+- Handles already-verified subscribers gracefully (returns success without updating)
+- Logs successful verifications for monitoring
+- Returns JSON response with success flag, message, and subscriber email
+**PRD Coverage:**
+All unit tests implemented:
+- GET /v1/newsletter/verify?token=valid returns success ✓
+- Subscriber verified=true after verification ✓
+- verified_at timestamp is set ✓
+- Verification token is cleared ✓
+- Invalid token returns 404 ✓
+Additional test coverage:
+- Returns 400 when token query param is missing
+- Handles already verified subscriber gracefully
+- Does not update when subscriber not found
+- Returns subscriber email in response
+**Recommendations:**
+- newsletter-7: Create storefront verification success page
+- newsletter-8: Create one-click unsubscribe endpoint
+- newsletter-9: Create storefront unsubscribe confirmation page

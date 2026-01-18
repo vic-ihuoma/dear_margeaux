@@ -333,4 +333,214 @@ describe('Newsletter Routes', () => {
       expect(res.status).toBe(400);
     });
   });
+
+  describe('GET /v1/newsletter/verify - Verify subscription', () => {
+    it('returns success for valid token', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: subscriber found with matching token
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-123',
+          email: 'test@example.com',
+          verified: 0,
+          verification_token: 'valid-token-123',
+        },
+      ]);
+
+      const res = await app.request('/v1/newsletter/verify?token=valid-token-123', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+      expect(body.message).toContain('verified');
+      expect(body.email).toBe('test@example.com');
+    });
+
+    it('sets verified=true after verification', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: subscriber found
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-123',
+          email: 'test@example.com',
+          verified: 0,
+          verification_token: 'valid-token-123',
+        },
+      ]);
+
+      await app.request('/v1/newsletter/verify?token=valid-token-123', {
+        method: 'GET',
+      });
+
+      // Check that UPDATE sets verified = 1 (literal value in SQL, not a parameter)
+      expect(mockDbRun).toHaveBeenCalledWith(
+        expect.stringContaining('SET verified = 1'),
+        expect.any(Array)
+      );
+    });
+
+    it('sets verified_at timestamp', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: subscriber found
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-123',
+          email: 'test@example.com',
+          verified: 0,
+          verification_token: 'valid-token-123',
+        },
+      ]);
+
+      await app.request('/v1/newsletter/verify?token=valid-token-123', {
+        method: 'GET',
+      });
+
+      // Check that UPDATE was called with verified_at timestamp
+      expect(mockDbRun).toHaveBeenCalledWith(
+        expect.stringContaining('SET verified = 1, verified_at = ?'),
+        expect.arrayContaining(['2026-01-18T12:00:00.000Z']) // The mocked now()
+      );
+    });
+
+    it('clears verification token after use', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: subscriber found
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-123',
+          email: 'test@example.com',
+          verified: 0,
+          verification_token: 'valid-token-123',
+        },
+      ]);
+
+      await app.request('/v1/newsletter/verify?token=valid-token-123', {
+        method: 'GET',
+      });
+
+      // Check that UPDATE sets verification_token = NULL
+      expect(mockDbRun).toHaveBeenCalledWith(
+        expect.stringContaining('verification_token = NULL'),
+        expect.any(Array)
+      );
+    });
+
+    it('returns 404 for invalid token', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: no subscriber found
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const res = await app.request('/v1/newsletter/verify?token=invalid-token', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(404);
+      const body = await res.json();
+      expect(body.error).toBe('not_found');
+      expect(body.message).toContain('Invalid');
+    });
+
+    it('returns 400 when token query param is missing', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/verify', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('invalid_request');
+      expect(body.message).toContain('token');
+    });
+
+    it('handles already verified subscriber gracefully', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: already verified subscriber
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-123',
+          email: 'test@example.com',
+          verified: 1,
+          verification_token: 'some-token',
+        },
+      ]);
+
+      const res = await app.request('/v1/newsletter/verify?token=some-token', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+      expect(body.message).toContain('already verified');
+
+      // Should NOT call UPDATE since already verified
+      expect(mockDbRun).not.toHaveBeenCalled();
+    });
+
+    it('does not update when subscriber not found', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: no subscriber found
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      await app.request('/v1/newsletter/verify?token=invalid-token', {
+        method: 'GET',
+      });
+
+      // Should NOT call UPDATE
+      expect(mockDbRun).not.toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE newsletter_subscribers'),
+        expect.any(Array)
+      );
+    });
+
+    it('returns subscriber email in response', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: subscriber found
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-123',
+          email: 'verified@example.com',
+          verified: 0,
+          verification_token: 'valid-token',
+        },
+      ]);
+
+      const res = await app.request('/v1/newsletter/verify?token=valid-token', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.email).toBe('verified@example.com');
+    });
+  });
 });

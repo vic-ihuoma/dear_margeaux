@@ -78,4 +78,54 @@ newsletterRoutes.post('/subscribe', async (c) => {
   });
 });
 
+// GET /v1/newsletter/verify - Verify newsletter subscription with token
+newsletterRoutes.get('/verify', async (c) => {
+  const token = c.req.query('token');
+
+  if (!token) {
+    throw ApiError.invalidRequest('Verification token is required');
+  }
+
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+
+  // Look up subscriber by verification_token
+  const [subscriber] = await db.query<any>(
+    `SELECT id, email, verified, verification_token FROM newsletter_subscribers
+     WHERE verification_token = ? AND store_id = ?`,
+    [token, store.id]
+  );
+
+  if (!subscriber) {
+    throw ApiError.notFound('Invalid or expired verification token');
+  }
+
+  // Check if already verified
+  if (subscriber.verified === 1) {
+    return c.json({
+      success: true,
+      message: 'Email already verified',
+      email: subscriber.email,
+    });
+  }
+
+  const timestamp = now();
+
+  // Update subscriber: set verified=true, verified_at, clear verification_token
+  await db.run(
+    `UPDATE newsletter_subscribers
+     SET verified = 1, verified_at = ?, verification_token = NULL, updated_at = ?
+     WHERE id = ?`,
+    [timestamp, timestamp, subscriber.id]
+  );
+
+  console.log(`[NEWSLETTER] Email verified: ${subscriber.email}`);
+
+  return c.json({
+    success: true,
+    message: 'Email verified successfully',
+    email: subscriber.email,
+  });
+});
+
 export { newsletterRoutes as newsletter };

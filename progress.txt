@@ -2163,3 +2163,52 @@ Additional test coverage:
 
 ### Next Steps
 - newsletter-6: Create verification endpoint to handle token validation and mark subscribers as verified
+
+## 2026-01-18: newsletter-6 - Create verification confirmation endpoint
+
+### Task Completed
+Created the GET /v1/newsletter/verify endpoint for completing the double opt-in verification flow. The endpoint validates the verification token, updates the subscriber's verified status, clears the token, and returns a success response.
+
+### Key Decisions
+- Token validation is done via query parameter (?token=xxx) rather than path parameter for simpler frontend integration
+- Subscriber lookup uses both verification_token AND store_id for multi-tenant security
+- Already-verified subscribers are handled gracefully (return success without re-updating)
+- Verification token is cleared after use to prevent reuse (security best practice)
+- JSON response format includes success flag, message, and subscriber email for flexible frontend handling
+
+### Files Changed
+- `merchant/src/routes/newsletter.ts` - Added GET /verify endpoint (lines 81-129)
+- `merchant/tests/routes/newsletter.test.ts` - Added 9 unit tests for verification endpoint
+- `prd.json` - Set passes: true for newsletter-6
+
+### Test Results
+- Merchant Tests: PASSED (381 tests - 9 new verification + 372 existing)
+- Type Check: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors, 234 pre-existing warnings)
+
+### Test Coverage Summary
+All PRD unit tests implemented:
+- GET /v1/newsletter/verify?token=valid returns success ✓
+- Subscriber verified=true after verification ✓
+- verified_at timestamp is set ✓
+- Verification token is cleared ✓
+- Invalid token returns 404 ✓
+
+Additional test coverage:
+- Returns 400 when token query param is missing
+- Handles already verified subscriber gracefully
+- Does not update when subscriber not found
+- Returns subscriber email in response
+
+### Verification Flow (Complete)
+1. User subscribes via POST /v1/newsletter/subscribe
+2. Subscriber record created with verified=0 and verification_token
+3. Verification email sent with link containing token
+4. User clicks link → GET /v1/newsletter/verify?token=xxx
+5. Endpoint validates token, updates verified=1, clears token
+6. Frontend can redirect to success page (/newsletter/verified)
+
+### Next Steps
+- newsletter-7: Create storefront verification success page (/newsletter/verified.astro)
+- newsletter-8: Create one-click unsubscribe endpoint
+- newsletter-9: Create storefront unsubscribe confirmation page
