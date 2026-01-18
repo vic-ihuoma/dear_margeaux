@@ -919,3 +919,40 @@ All unit tests implemented:
 - In pm-8, implement the tag sync pattern: DELETE existing + INSERT new tags on update
 - Consider adding tag validation in API layer (max length, allowed characters, max tags per product)
 - The migration requires `wrangler d1 migrations apply merchant-db --remote` for production deployment
+
+## [pm-8]: Update Merchant API to handle product tags
+**Status:** PASSED
+**Tests Written:** 14 unit tests in merchant/tests/routes/catalog.test.ts (287 total tests now)
+**Test Results:** 287 tests passed (merchant)
+**Type Check:** PASSED - 0 errors across all 7 packages
+**Lint:** PASSED - 0 errors (228 pre-existing warnings for `any` types)
+**Browser Tests:** N/A - no visual tests in PRD for this task
+**Pre-commit Hooks:** Pending (commit in progress)
+**Findings:**
+- Created `normalizeTags()` helper function for tag processing:
+  - Trims whitespace from tags
+  - Converts to lowercase for consistency
+  - Removes duplicate tags using Set
+  - Filters out empty strings
+- Updated POST /v1/products to accept `tags: string[]`:
+  - Normalizes tags before insertion
+  - Inserts each tag into product_tags table with unique id
+  - Returns normalized tags in response
+- Updated GET /v1/products (list) to include tags:
+  - Batch-fetches all tags for products in a single query (avoids N+1)
+  - Groups tags by product_id using Record<string, string[]>
+  - Includes tags array in each product item response
+- Updated GET /v1/products/:id to include tags:
+  - Fetches tags for the specific product
+  - Returns tags array in response
+- Updated PATCH /v1/products/:id to handle tag updates:
+  - Only updates tags when `tags` field is explicitly provided (undefined = preserve)
+  - Uses sync pattern: DELETE existing tags, then INSERT new tags
+  - Normalizes incoming tags before insertion
+  - Returns updated tags in response
+- Updated existing catalog tests to include mock for new tags query
+- All database operations use consistent timestamp from `now()` function
+**Recommendations:**
+- pm-9: Create TagInput component for admin UI
+- pm-10: Integrate TagInput into ProductForm
+- Consider adding tag validation (max length, max count per product) in future iteration

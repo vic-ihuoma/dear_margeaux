@@ -1361,3 +1361,61 @@ wrangler d1 migrations apply merchant-db --remote
 - pm-8: Update Merchant API to handle product tags in CRUD operations
 - pm-9: Create TagInput component for admin
 - pm-10: Integrate TagInput into ProductForm
+
+## 2026-01-18: pm-8 - Update Merchant API to handle product tags
+
+### Task Completed
+Updated the catalog routes (merchant/src/routes/catalog.ts) to handle tags in all CRUD operations for products.
+
+### Key Decisions
+- Created `normalizeTags()` helper function that trims whitespace, converts to lowercase, and removes duplicates
+- POST /v1/products now accepts `tags` array and inserts into `product_tags` table
+- GET /v1/products batch-fetches tags for all products (avoids N+1 query) and includes `tags: string[]` in response
+- GET /v1/products/:id fetches tags for the specific product and includes in response
+- PATCH /v1/products/:id syncs tags using delete+insert pattern when `tags` field is explicitly provided
+- Tags are only updated when the `tags` field is explicitly provided in PATCH (undefined = preserve existing)
+- Tags are automatically cascaded on product deletion (via ON DELETE CASCADE foreign key)
+
+### Files Created
+- None (extended existing test file)
+
+### Files Changed
+- `merchant/src/routes/catalog.ts`:
+  - Added `normalizeTags()` helper function (lines 10-17)
+  - Updated GET /v1/products to batch-fetch and include tags (lines 79-103)
+  - Updated GET /v1/products/:id to fetch and include tags (lines 142-156)
+  - Updated POST /v1/products to accept and insert tags (lines 171, 195-212)
+  - Updated PATCH /v1/products/:id to sync tags when provided (lines 223, 269-296)
+- `merchant/tests/routes/catalog.test.ts`:
+  - Added 14 new tests for product tags CRUD operations
+  - Updated existing tests to include mock for tags query
+- `prd.json` - Set passes: true for pm-8
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors, pre-existing warnings only)
+- Merchant Tests: PASSED (287 tests - 14 new tags + 273 existing)
+
+### Test Coverage Summary
+All PRD unit tests implemented:
+- createProduct inserts tags correctly ✓
+- updateProduct syncs tags correctly ✓
+- getProduct returns tags array ✓
+- listProducts includes tags ✓
+
+Additional test coverage:
+- Creates product without tags (empty array default)
+- Creates product with empty tags array
+- Normalizes tags to lowercase and trims whitespace
+- Removes duplicate tags
+- Returns empty tags array for products without tags
+- Updates tags (syncs by delete+insert)
+- Clears all tags with empty array
+- Updates tags along with other fields
+- Preserves existing tags when tags field not provided
+- Deletes product with tags (cascaded automatically)
+
+### Next Steps
+- pm-9: Create TagInput component for admin
+- pm-10: Integrate TagInput into ProductForm
+- pm-11 onwards: Add drop_id field and related features

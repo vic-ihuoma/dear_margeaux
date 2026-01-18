@@ -7,6 +7,15 @@ import { ApiError, uuid, now, type Env, type AuthContext } from '../types';
 // CATALOG ROUTES (Products & Variants)
 // ============================================================
 
+/**
+ * Normalize tags: trim whitespace, convert to lowercase, and remove duplicates
+ */
+function normalizeTags(tags: string[] | undefined): string[] {
+  if (!tags || !Array.isArray(tags)) return [];
+  const normalized = tags.map((tag) => tag.trim().toLowerCase()).filter((tag) => tag.length > 0);
+  return [...new Set(normalized)]; // Remove duplicates
+}
+
 const catalogRoutes = new Hono<{
   Bindings: Env;
   Variables: { auth: AuthContext };
@@ -50,6 +59,7 @@ catalogRoutes.get('/', async (c) => {
   // Batch fetch all variants for these products (avoids N+1 query)
   const productIds = products.map((p) => p.id);
   const variantsByProduct: Record<string, any[]> = {};
+  const tagsByProduct: Record<string, string[]> = {};
 
   if (productIds.length > 0) {
     const placeholders = productIds.map(() => '?').join(',');
@@ -65,6 +75,20 @@ catalogRoutes.get('/', async (c) => {
       }
       variantsByProduct[v.product_id].push(v);
     }
+
+    // Batch fetch all tags for these products
+    const allTags = await db.query<{ product_id: string; tag: string }>(
+      `SELECT product_id, tag FROM product_tags WHERE product_id IN (${placeholders}) ORDER BY created_at ASC`,
+      productIds
+    );
+
+    // Group tags by product_id
+    for (const t of allTags) {
+      if (!tagsByProduct[t.product_id]) {
+        tagsByProduct[t.product_id] = [];
+      }
+      tagsByProduct[t.product_id].push(t.tag);
+    }
   }
 
   const items = products.map((p) => ({
@@ -75,6 +99,7 @@ catalogRoutes.get('/', async (c) => {
     featured_image_alt: p.featured_image_alt,
     status: p.status,
     created_at: p.created_at,
+    tags: tagsByProduct[p.id] || [],
     variants: (variantsByProduct[p.id] || []).map((v) => ({
       id: v.id,
       sku: v.sku,
@@ -114,6 +139,12 @@ catalogRoutes.get('/:id', async (c) => {
     [id]
   );
 
+  // Fetch tags for this product
+  const tags = await db.query<{ tag: string }>(
+    `SELECT tag FROM product_tags WHERE product_id = ? ORDER BY created_at ASC`,
+    [id]
+  );
+
   return c.json({
     id: product.id,
     title: product.title,
@@ -122,6 +153,7 @@ catalogRoutes.get('/:id', async (c) => {
     featured_image_alt: product.featured_image_alt,
     status: product.status,
     created_at: product.created_at,
+    tags: tags.map((t) => t.tag),
     variants: variants.map((v) => ({
       id: v.id,
       sku: v.sku,
@@ -136,7 +168,7 @@ catalogRoutes.get('/:id', async (c) => {
 // POST /v1/products (admin only)
 catalogRoutes.post('/', adminOnly, async (c) => {
   const body = await c.req.json();
-  const { title, description, featured_image_url, featured_image_alt } = body;
+  const { title, description, featured_image_url, featured_image_alt, tags } = body;
 
   if (!title) throw ApiError.invalidRequest('title is required');
 
@@ -160,6 +192,17 @@ catalogRoutes.post('/', adminOnly, async (c) => {
     ]
   );
 
+  // Insert tags if provided
+  const normalizedTags = normalizeTags(tags);
+  for (const tag of normalizedTags) {
+    await db.run(`INSERT INTO product_tags (id, product_id, tag, created_at) VALUES (?, ?, ?, ?)`, [
+      uuid(),
+      id,
+      tag,
+      timestamp,
+    ]);
+  }
+
   return c.json(
     {
       id,
@@ -168,6 +211,7 @@ catalogRoutes.post('/', adminOnly, async (c) => {
       featured_image_url: featured_image_url || null,
       featured_image_alt: featured_image_alt || null,
       status: 'active',
+      tags: normalizedTags,
       variants: [],
     },
     201
@@ -178,7 +222,7 @@ catalogRoutes.post('/', adminOnly, async (c) => {
 catalogRoutes.patch('/:id', adminOnly, async (c) => {
   const id = c.req.param('id');
   const body = await c.req.json();
-  const { title, description, status, featured_image_url, featured_image_alt } = body;
+  const { title, description, status, featured_image_url, featured_image_alt, tags } = body;
 
   const { store } = c.get('auth');
   const db = getDb(c.env);
@@ -224,12 +268,34 @@ catalogRoutes.patch('/:id', adminOnly, async (c) => {
     await db.run(`UPDATE products SET ${updates.join(', ')} WHERE id = ? AND store_id = ?`, params);
   }
 
+  // Handle tags update (only if tags field is explicitly provided)
+  if (tags !== undefined) {
+    const timestamp = now();
+    // Delete existing tags first
+    await db.run(`DELETE FROM product_tags WHERE product_id = ?`, [id]);
+
+    // Insert new tags
+    const normalizedTags = normalizeTags(tags);
+    for (const tag of normalizedTags) {
+      await db.run(
+        `INSERT INTO product_tags (id, product_id, tag, created_at) VALUES (?, ?, ?, ?)`,
+        [uuid(), id, tag, timestamp]
+      );
+    }
+  }
+
   const [product] = await db.query<any>(`SELECT * FROM products WHERE id = ? AND store_id = ?`, [
     id,
     store.id,
   ]);
 
   const variants = await db.query<any>(`SELECT * FROM variants WHERE product_id = ?`, [id]);
+
+  // Fetch updated tags
+  const productTags = await db.query<{ tag: string }>(
+    `SELECT tag FROM product_tags WHERE product_id = ? ORDER BY created_at ASC`,
+    [id]
+  );
 
   return c.json({
     id: product.id,
@@ -238,6 +304,7 @@ catalogRoutes.patch('/:id', adminOnly, async (c) => {
     featured_image_url: product.featured_image_url,
     featured_image_alt: product.featured_image_alt,
     status: product.status,
+    tags: productTags.map((t) => t.tag),
     variants: variants.map((v) => ({
       id: v.id,
       sku: v.sku,
