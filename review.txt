@@ -82,7 +82,8 @@
 **Type Check:** PASSED (via Turbo build)
 **Lint:** PASSED - 0 errors in storefront
 **Browser Tests:** SKIPPED - simple HTML removal
-**Pre-commit Hooks:** Pending commit
+**Pre-commit Hooks:** All passed
+**Commit:** ea99d81 feat(nav-7): remove duplicate newsletter section from homepage
 **Findings:**
 - Removed duplicate newsletter signup section from homepage (lines 292-318)
 - Section included: h2 heading "Stay in the Know", description paragraph, and email signup form
