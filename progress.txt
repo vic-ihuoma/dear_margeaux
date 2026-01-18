@@ -503,3 +503,60 @@ Additional test coverage:
 - test-4: Add E2E tests with Playwright
 - test-5: Add visual regression tests
 - Other testing tasks (test-6 through test-7)
+
+## 2026-01-18: test-6 - Add unit tests for waitlist routes
+
+### Task Completed
+Created comprehensive unit tests for the waitlist routes in the merchant API. Added 26 tests covering all waitlist endpoint functionality.
+
+### Key Decisions
+- Created test file at `merchant/tests/routes/waitlist.test.ts` (following existing test directory structure)
+- Mocked database (`getDb`) and auth middleware (`authMiddleware`, `adminOnly`) for isolated route testing
+- Used module-level mock variable (`mockAuthRole`) to switch between admin and public roles in tests
+- Mocked `uuid` and `now` functions for deterministic test values
+- Tests cover all PRD requirements plus additional edge cases
+
+### Files Created
+- `merchant/tests/routes/waitlist.test.ts` - 26 unit tests for waitlist routes
+
+### Files Changed
+- `prd.json` - Set passes: true for test-6
+
+### Test Results
+- Merchant Tests: PASSED (44 tests - 26 new waitlist + 18 existing)
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, pre-existing warnings only)
+
+### Test Coverage Summary
+Tests cover all PRD requirements:
+- POST /v1/waitlist creates subscription for valid email ✓
+- POST /v1/waitlist returns 400 for invalid email format ✓
+- POST /v1/waitlist returns 400 for missing drop_id ✓
+- POST /v1/waitlist returns 400 for missing email ✓
+- POST /v1/waitlist returns 409 for duplicate email on same drop ✓
+- POST /v1/waitlist normalizes email to lowercase ✓
+- POST /v1/waitlist returns 404 for non-existent drop ✓
+- POST /v1/waitlist returns 400 for ended drop ✓
+- POST /v1/waitlist resubscribes previously unsubscribed email ✓
+- DELETE /v1/waitlist/:id removes subscription ✓
+- DELETE /v1/waitlist/:id returns 404 for non-existent subscription ✓
+- DELETE /v1/waitlist/:id returns 400 if already unsubscribed ✓
+- POST /v1/waitlist/unsubscribe unsubscribes by email ✓
+- POST /v1/waitlist/unsubscribe filters by drop_id ✓
+- POST /v1/waitlist/unsubscribe returns success for non-existent email (privacy) ✓
+- POST /v1/waitlist/unsubscribe returns 400 for missing email ✓
+- GET /v1/waitlist returns subscribers (admin only) ✓
+- GET /v1/waitlist returns 403 without admin role ✓
+- GET /v1/waitlist supports pagination ✓
+- GET /v1/waitlist filters by drop_id ✓
+- GET /v1/waitlist supports cursor-based pagination ✓
+- GET /v1/waitlist filters unsubscribed by default ✓
+- GET /v1/waitlist can include unsubscribed entries ✓
+- GET /v1/waitlist/:id returns single entry (admin only) ✓
+- GET /v1/waitlist/:id returns 404 for non-existent entry ✓
+- GET /v1/waitlist/:id returns 403 without admin role ✓
+
+### Next Steps
+- test-4: Add E2E tests with Playwright
+- test-5: Add visual regression tests
+- test-7: Add integration tests for email sending

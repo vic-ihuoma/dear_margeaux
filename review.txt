@@ -333,3 +333,66 @@
 - test-4: Add E2E tests with Playwright
 - Consider adding test:coverage to CI pipeline for code coverage reports
 - Future: Add mutation testing to improve test quality
+
+## [test-3]: Add integration tests for admin API routes
+**Status:** PASSED
+**Tests Written:** 79 integration tests across 5 test files in apps/admin/tests/api/
+**Test Results:** 79 tests passed (admin), 65 tests passed (api), 53 tests passed (storefront), 18 tests passed (merchant), 215 total
+**Type Check:** PASSED - 0 errors, 1 hint in admin
+**Lint:** PASSED - 0 errors (85 pre-existing warnings for `any` types in test mocks)
+**Browser Tests:** N/A - integration tests only, no UI changes
+**Pre-commit Hooks:** All passed
+**Commit:** a45f7f0 feat(test-3): add integration tests for admin API routes
+**Findings:**
+- Created Vitest configuration for admin app (vitest.config.ts) with special handling for Astro:
+  - Used `define` option to inject `import.meta.env` variables at compile time
+  - This is required because Vitest cannot mock `import.meta.env` directly
+  - Injected MERCHANT_API_URL and MERCHANT_ADMIN_KEY for MerchantClient initialization
+- Created reusable test helpers:
+  - `createMockContext()` - Creates mock Astro APIContext with request, params, cookies
+  - `parseResponse()` - Safely parses JSON responses with fallback to text
+- Test file breakdown:
+  - **products.test.ts (13 tests):** GET list with pagination/status, POST create, PATCH update, DELETE with errors
+  - **orders.test.ts (14 tests):** PATCH status/tracking updates, POST refund (full/partial), validation errors
+  - **inventory.test.ts (10 tests):** POST adjust with all reasons (restock/correction/damaged/return), validation
+  - **drops.test.ts (20 tests):** Full CRUD, status filtering, product assignment/removal, validation
+  - **blog.test.ts (22 tests):** Full CRUD with MDX frontmatter, search/filter, draft/published status, pinned field
+- Mocking approach:
+  - MerchantClient mocked via vi.mock() for isolated route testing
+  - node:fs/promises mocked for blog API (file-based MDX storage)
+  - All mock functions created with vi.fn() for call tracking
+- Type corrections made during implementation:
+  - Updated sample data to match actual API types (Product, Order, InventoryItem, Drop)
+  - Changed `ListProductsResponse` to `PaginatedResponse<ProductListItem>` to match actual type
+  - Updated field names (quantity → on_hand, etc.) to match API types
+**Recommendations:**
+- test-4: Add E2E tests with Playwright for full user flow testing
+- test-5: Add visual regression tests for admin UI components
+- Consider reducing `any` type usage in test mocks by creating proper type aliases
+- Future: Add test coverage reporting to track coverage trends
+
+## [test-6]: Add unit tests for waitlist routes
+**Status:** PASSED
+**Tests Written:** 26 unit tests in merchant/tests/routes/waitlist.test.ts
+**Test Results:** 44 tests passed (merchant - 26 new + 18 existing)
+**Type Check:** PASSED - 0 errors across all packages
+**Lint:** PASSED - 0 errors (pre-existing warnings for `any` types)
+**Browser Tests:** N/A - unit tests only, no visual tests in PRD
+**Pre-commit Hooks:** Pending (commit in progress)
+**Findings:**
+- Created test file at `merchant/tests/routes/waitlist.test.ts`
+- Used vi.mock() to mock database module (`getDb`) and auth middleware (`authMiddleware`, `adminOnly`)
+- Implemented module-level `mockAuthRole` variable to switch between admin/public roles in tests
+- Mocked `uuid()` and `now()` for deterministic test values
+- Test file structure:
+  - **POST /v1/waitlist - Subscribe (9 tests):** Valid subscription, invalid email, missing fields, duplicate, email normalization, non-existent drop, ended drop, resubscribe
+  - **DELETE /v1/waitlist/:id - Unsubscribe by ID (3 tests):** Success, not found, already unsubscribed
+  - **POST /v1/waitlist/unsubscribe - Unsubscribe by email (4 tests):** By email, by email+drop_id, privacy-preserving response, missing email
+  - **GET /v1/waitlist - List subscribers (7 tests):** Admin only, 403 for public, pagination, drop_id filter, cursor pagination, unsubscribed filter, include_unsubscribed
+  - **GET /v1/waitlist/:id - Get single entry (3 tests):** Admin only, not found, 403 for public
+- All PRD-specified tests implemented plus additional edge cases for complete coverage
+**Recommendations:**
+- test-4: Add E2E tests with Playwright
+- test-5: Add visual regression tests
+- test-7: Add integration tests for email sending
+- Consider adding test coverage reporting to merchant package
