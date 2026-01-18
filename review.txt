@@ -605,3 +605,49 @@ All unit tests implemented:
 - api-3: Add webhook event for order status changes
 - api-4: Add bulk product update endpoint
 - Consider adding date range filtering to other list endpoints (customers, products)
+
+## [api-3]: Add retry logic for transient failures
+**Status:** PASSED
+**Tests Written:** 38 unit tests in packages/api/src/__tests__/retry.test.ts
+**Test Results:** 116 tests passed (api - 38 new retry + 78 existing)
+**Type Check:** PASSED - 0 errors across all packages
+**Lint:** PASSED - 0 errors (pre-existing warnings only)
+**Browser Tests:** N/A - utility library, no UI changes
+**Pre-commit Hooks:** Pending (commit in progress)
+**Findings:**
+- Created `packages/api/src/retry.ts` with complete retry implementation:
+  - `withRetry<T>(fn, options?)` - main retry wrapper function
+  - `isRetryableError(error)` - determines if error should trigger retry
+  - `calculateBackoff(attempt, options)` - computes delay with exponential backoff and jitter
+  - `RetryOptions` interface for configuration
+- Retry configuration defaults:
+  - `maxRetries: 3` - up to 3 retry attempts after initial failure
+  - `baseDelayMs: 1000` - 1 second base delay
+  - `maxDelayMs: 30000` - 30 second maximum delay cap
+  - `retry: true` - retries enabled by default
+- Error classification:
+  - NetworkError: Always retryable (network timeouts, DNS failures, etc.)
+  - MerchantApiError with status 500-599: Retryable (server errors)
+  - MerchantApiError with status 400-499: NOT retryable (client errors - bad request, auth, etc.)
+- Backoff algorithm: `delay = min(baseDelay * 2^attempt, maxDelay) * random(0.5, 1.5)`
+- Uses Vitest fake timers for testing delays without actual waiting
+- Tests use `.catch()` pattern to handle promise rejections properly (avoids unhandled rejection warnings)
+**PRD Coverage:**
+All unit tests implemented:
+- withRetry returns result on first success ✓
+- withRetry retries on NetworkError ✓
+- withRetry retries on 5xx MerchantApiError ✓
+- withRetry does not retry on 4xx errors ✓
+- withRetry respects max retry limit (default 3) ✓
+- withRetry uses exponential backoff ✓
+- withRetry calls onRetry callback on each retry ✓
+- isRetryableError returns true for NetworkError ✓
+- isRetryableError returns true for 5xx errors ✓
+- isRetryableError returns false for 4xx errors ✓
+- calculateBackoff returns exponential delay with jitter ✓
+- calculateBackoff respects maxDelayMs cap ✓
+**Recommendations:**
+- api-4: Add request/response logging
+- api-5: Add email queue for failed emails
+- Consider integrating withRetry into MerchantClient fetch calls for automatic retry
+- Could add configurable retry conditions via predicate function in future

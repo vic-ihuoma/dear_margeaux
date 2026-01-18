@@ -900,3 +900,60 @@ Additional test coverage:
 - api-3: Add retry logic for transient failures
 - api-4: Add request/response logging
 - Other API enhancement tasks (api-5 through api-6)
+
+## 2026-01-18: api-3 - Add retry logic for transient failures
+
+### Task Completed
+Created a retry utility with exponential backoff and jitter for handling transient API failures like network errors and 5xx server errors.
+
+### Key Decisions
+- Created new utility file `packages/api/src/retry.ts` with all retry logic
+- Implemented exponential backoff algorithm: `baseDelay * 2^attempt` with random jitter (0.5-1.5x)
+- Default configuration: 3 max retries, 1000ms base delay, 30000ms max delay
+- Only retry on NetworkError and 5xx MerchantApiError (not 4xx client errors)
+- Added `onRetry` callback option for logging/monitoring retry attempts
+- Added `retry` boolean option to completely disable retries when needed
+- Uses async/await sleep pattern for non-blocking delays
+
+### Files Created
+- `packages/api/src/retry.ts` - Core retry utility (80 lines)
+- `packages/api/src/__tests__/retry.test.ts` - 38 comprehensive unit tests
+
+### Test Results
+- API Client Tests: PASSED (116 tests - 38 new retry + 78 existing)
+- All Merchant Tests: PASSED (147 tests)
+- All Admin Tests: PASSED (79 tests)
+- All Storefront Tests: PASSED (53 tests)
+- Total: 395 unit tests passing
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors, pre-existing warnings only)
+
+### Test Coverage Summary
+All PRD unit tests implemented:
+- withRetry returns result on first success ✓
+- withRetry retries on NetworkError ✓
+- withRetry retries on 5xx MerchantApiError ✓
+- withRetry does not retry on 4xx errors ✓
+- withRetry respects max retry limit (default 3) ✓
+- withRetry uses exponential backoff ✓
+- withRetry calls onRetry callback on each retry ✓
+- isRetryableError returns true for NetworkError ✓
+- isRetryableError returns true for 5xx errors ✓
+- isRetryableError returns false for 4xx errors ✓
+- calculateBackoff returns exponential delay with jitter ✓
+- calculateBackoff respects maxDelayMs cap ✓
+
+Additional test coverage:
+- Preserves function arguments through retries
+- Returns synchronous values correctly
+- Handles non-Error exceptions (converts to Error)
+- Skips retry when retry option is false
+- Skips retry when maxRetries is 0
+- Returns immediately on non-retryable error
+- Uses default options when none provided
+- Handles edge case of jitter calculation
+
+### Next Steps
+- api-4: Add request/response logging
+- api-5: Add email queue for failed emails
+- Consider integrating withRetry into MerchantClient for automatic retry behavior
