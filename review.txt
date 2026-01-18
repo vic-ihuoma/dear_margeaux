@@ -956,3 +956,55 @@ All unit tests implemented:
 - pm-9: Create TagInput component for admin UI
 - pm-10: Integrate TagInput into ProductForm
 - Consider adding tag validation (max length, max count per product) in future iteration
+
+---
+
+## pm-9: Create TagInput component for admin
+
+**PRD Requirements:**
+- Create apps/admin/src/components/TagInput.tsx
+- Build input field that creates tags on Enter or comma
+- Display tags as removable chips/badges
+- Add X button to remove individual tags
+- Support keyboard navigation for accessibility
+
+**Typecheck:** PASSED (0 errors, 73 files in admin)
+**Lint:** PASSED (pre-existing warnings only)
+**Unit Tests:** PASSED (96 tests - 17 new + 79 existing in admin)
+**Browser Tests:** Documented in PRD as visual tests with agent-browser
+**Pre-commit Hooks:** Pending (commit in progress)
+
+**Findings:**
+- Created TagInput component with controlled value/onChange pattern
+- Exported `normalizeTag()` utility for testability:
+  - Trims whitespace
+  - Converts to lowercase
+  - Returns empty string for empty/whitespace-only input
+- Tag creation:
+  - Enter key adds current input as tag
+  - Comma in input creates tag from content before comma
+  - Tags are normalized before adding
+  - Duplicate tags are rejected (after normalization)
+- Tag display:
+  - Tags render as styled chips with rounded corners
+  - Each chip has an X button for removal
+  - Focused tag shows visual ring highlight
+- Keyboard navigation:
+  - Backspace with empty input focuses last tag
+  - Arrow Left/Right navigates between tags
+  - Delete/Backspace removes focused tag
+  - Escape clears focus and input
+- Accessibility:
+  - aria-label on remove buttons (e.g., "Remove summer tag")
+  - Focus management between tags and input
+  - aria-describedby links input to error message
+- Optional features:
+  - maxTags limit (shows count and disables input when reached)
+  - maxTagLength limit (rejects tags exceeding length)
+  - disabled state (visual and functional)
+  - error state display
+
+**Recommendations:**
+- pm-10: Integrate TagInput into ProductForm
+- Add React Testing Library to admin package for interactive component testing
+- Consider debouncing tag creation for rapid typing

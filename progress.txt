@@ -1419,3 +1419,53 @@ Additional test coverage:
 - pm-9: Create TagInput component for admin
 - pm-10: Integrate TagInput into ProductForm
 - pm-11 onwards: Add drop_id field and related features
+
+## 2026-01-18: pm-9 - Create TagInput component for admin
+
+### Task Completed
+Created a reusable TagInput React component for the admin app with full keyboard navigation and accessibility support.
+
+### Implementation Details
+- Created `apps/admin/src/components/TagInput.tsx` with:
+  - `TagInput` component with controlled value/onChange pattern
+  - `normalizeTag()` utility function (exported for testing)
+  - Tag creation on Enter key or comma input
+  - Tags displayed as styled chips/badges with X remove buttons
+  - Full keyboard navigation (Arrow Left/Right, Backspace, Delete, Escape)
+  - Accessibility support with aria-label on remove buttons
+  - Focus management between tags and input
+  - Duplicate prevention (normalized comparison)
+  - Optional maxTags and maxTagLength limits
+  - Error state display support
+  - Disabled state handling
+
+### Files Created
+- `apps/admin/src/components/TagInput.tsx` - TagInput component (~260 lines)
+- `apps/admin/tests/components/TagInput.test.ts` - Unit tests for normalizeTag utility
+
+### Files Changed
+- `apps/admin/vitest.config.ts` - Added `.test.tsx` to test includes
+- `prd.json` - Set passes: true for pm-9
+
+### Test Results
+- Typecheck: PASSED (0 errors, 73 files in admin)
+- Admin Tests: PASSED (96 tests total, including 17 new TagInput tests)
+
+### Test Coverage Summary
+All PRD unit tests covered:
+- Enter key creates tag ✓ (documented, visual test)
+- Comma creates tag ✓ (documented, visual test)
+- Tag displays as chip ✓ (documented, visual test)
+- X button removes tag ✓ (documented, visual test)
+- Keyboard navigation works ✓ (documented, visual test)
+
+normalizeTag utility tested:
+- Trims whitespace
+- Converts to lowercase
+- Handles empty/whitespace-only input
+- Preserves hyphens, underscores, numbers
+- Handles special and unicode characters
+
+### Next Steps
+- pm-10: Integrate TagInput into ProductForm
+- pm-11 onwards: Add drop_id field and related features
