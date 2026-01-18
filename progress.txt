@@ -2835,3 +2835,60 @@ NOTES:
 - Related posts are computed at build time (SSG) for optimal performance
 - The component gracefully handles edge cases like single blog post or no matching tags
 - Posts without images get a placeholder icon instead of broken image
+
+================================================================================
+ITERATION: 2026-01-18
+TASK: newsletter-21 - Add newsletter send history page
+================================================================================
+
+COMPLETED WORK:
+- Created GET /v1/newsletter/sends endpoint in merchant/src/routes/newsletter.ts
+  - Admin-only endpoint (requires adminOnly middleware)
+  - Fetches newsletter_sends records for authenticated store
+  - Returns sends with id, blog_slug, subject, sent_at, recipient_count, created_at
+  - Supports pagination via limit and offset parameters (default 50, max 100)
+  - Orders by sent_at DESC (most recent first)
+  - Filters by store_id for multi-tenant support
+
+- Created admin API proxy route at apps/admin/src/pages/api/newsletter/sends.ts
+  - Forwards GET request to Merchant API with authentication
+  - Passes limit and offset parameters
+
+- Created admin history page at apps/admin/src/pages/subscribers/history.astro
+  - Displays table with Subject, Blog Post, Recipients, Sent columns
+  - Blog post slug links to admin blog edit page
+  - Recipient count with icon
+  - Formatted date display
+  - Empty state message when no sends exist
+  - Pagination controls (Previous/Next, page indicator)
+  - Back to Subscribers link
+
+- Updated subscribers index page (apps/admin/src/pages/subscribers/index.astro)
+  - Added "Send History" button with clock icon in header
+  - Positioned after subscriber count, before Export CSV
+
+- Added 7 unit tests in merchant/tests/routes/newsletter.test.ts
+  - Returns 403 for non-admin users
+  - Returns empty array when no sends exist
+  - Returns newsletter sends with all fields
+  - Respects limit and offset parameters
+  - Enforces maximum limit of 100
+  - Filters sends by store_id
+  - Orders sends by sent_at DESC
+
+FILES CHANGED:
+- merchant/src/routes/newsletter.ts (added GET /sends endpoint)
+- merchant/tests/routes/newsletter.test.ts (added 7 tests)
+- apps/admin/src/pages/api/newsletter/sends.ts (new file)
+- apps/admin/src/pages/subscribers/history.astro (new file)
+- apps/admin/src/pages/subscribers/index.astro (added Send History link)
+- prd.json (marked newsletter-21 as passed)
+
+TEST RESULTS:
+- All 481 tests pass in merchant package (7 new tests for sends endpoint)
+- TypeScript type check: PASSED (0 errors)
+
+NOTES:
+- History page uses offset-based pagination (simpler than cursor for chronological data)
+- Blog post links go to /blog/{slug}/edit for easy editing
+- Empty state suggests publishing blog posts with newsletter option

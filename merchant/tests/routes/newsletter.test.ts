@@ -2187,4 +2187,192 @@ describe('Newsletter Routes', () => {
       );
     });
   });
+
+  describe('GET /v1/newsletter/sends - Get newsletter send history', () => {
+    it('returns 403 for non-admin users', async () => {
+      setAuthContext('public');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/sends', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(403);
+      const body = await res.json();
+      expect(body.error).toBe('forbidden');
+    });
+
+    it('returns empty array when no sends exist', async () => {
+      setAuthContext('admin');
+
+      // Mock: count query returns 0
+      mockDbQuery.mockResolvedValueOnce([{ count: 0 }]);
+      // Mock: sends query returns empty array
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/sends', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.sends).toEqual([]);
+      expect(body.count).toBe(0);
+    });
+
+    it('returns newsletter sends with all fields', async () => {
+      setAuthContext('admin');
+
+      const mockSends = [
+        {
+          id: 'ns_1234567890_abc123',
+          blog_slug: 'first-post',
+          subject: 'Welcome to our newsletter',
+          sent_at: '2026-01-18T12:00:00.000Z',
+          recipient_count: 150,
+          created_at: '2026-01-18T12:00:00.000Z',
+        },
+        {
+          id: 'ns_1234567891_def456',
+          blog_slug: 'second-post',
+          subject: 'New arrivals this week',
+          sent_at: '2026-01-17T12:00:00.000Z',
+          recipient_count: 145,
+          created_at: '2026-01-17T12:00:00.000Z',
+        },
+      ];
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 2 }]);
+      // Mock: sends query
+      mockDbQuery.mockResolvedValueOnce(mockSends);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/sends', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.sends).toHaveLength(2);
+      expect(body.count).toBe(2);
+      expect(body.sends[0]).toEqual({
+        id: 'ns_1234567890_abc123',
+        blog_slug: 'first-post',
+        subject: 'Welcome to our newsletter',
+        sent_at: '2026-01-18T12:00:00.000Z',
+        recipient_count: 150,
+        created_at: '2026-01-18T12:00:00.000Z',
+      });
+    });
+
+    it('respects limit and offset parameters', async () => {
+      setAuthContext('admin');
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 100 }]);
+      // Mock: sends query
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'ns_3',
+          blog_slug: 'third-post',
+          subject: 'Third newsletter',
+          sent_at: '2026-01-16T12:00:00.000Z',
+          recipient_count: 100,
+          created_at: '2026-01-16T12:00:00.000Z',
+        },
+      ]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/sends?limit=10&offset=20', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.limit).toBe(10);
+      expect(body.offset).toBe(20);
+      expect(body.count).toBe(100);
+    });
+
+    it('enforces maximum limit of 100', async () => {
+      setAuthContext('admin');
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 200 }]);
+      // Mock: sends query
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/sends?limit=200', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.limit).toBe(100);
+    });
+
+    it('filters sends by store_id', async () => {
+      setAuthContext('admin');
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 5 }]);
+      // Mock: sends query
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      await app.request('/v1/newsletter/sends', {
+        method: 'GET',
+      });
+
+      // Verify both queries filter by store_id
+      expect(mockDbQuery).toHaveBeenCalledWith(
+        expect.stringContaining('WHERE store_id = ?'),
+        expect.arrayContaining(['store-1'])
+      );
+    });
+
+    it('orders sends by sent_at DESC', async () => {
+      setAuthContext('admin');
+
+      // Mock: count query
+      mockDbQuery.mockResolvedValueOnce([{ count: 0 }]);
+      // Mock: sends query
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      await app.request('/v1/newsletter/sends', {
+        method: 'GET',
+      });
+
+      // Verify the query orders by sent_at DESC
+      expect(mockDbQuery).toHaveBeenCalledWith(
+        expect.stringContaining('ORDER BY sent_at DESC'),
+        expect.any(Array)
+      );
+    });
+  });
 });

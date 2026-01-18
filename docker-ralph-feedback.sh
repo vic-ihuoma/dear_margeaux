@@ -47,7 +47,7 @@ for ((i=1; i<=$1; i++)); do
   echo "Starting fresh Claude context..."
   echo ""
 
-  result=$(docker sandbox run -D claude --verbose --model opus --permission-mode acceptEdits -p "@prd.json @progress.txt @review.txt
+  result=$(docker sandbox run claude --model opus --permission-mode acceptEdits -p "@prd.json @progress.txt @review.txt
 
 ========================================
 QUALITY EXPECTATIONS
@@ -217,11 +217,7 @@ RULES
   3. Run ALL visual tests listed in the task's 'tests.visual' array
   4. Report PASSED or FAILED - NEVER report SKIPPED for visual tests
 
-If ALL tasks in prd.json have 'passes': true, output <promise>COMPLETE</promise>.") || exit_code=$?
-
-  if [ "${exit_code:-0}" -ne 0 ]; then
-    echo "Docker sandbox exited with code ${exit_code:-0} (continuing anyway)"
-  fi
+If ALL tasks in prd.json have 'passes': true, output <promise>COMPLETE</promise>.")
 
   echo "$result"
   echo ""

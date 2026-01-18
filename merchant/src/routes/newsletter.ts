@@ -585,6 +585,53 @@ function escapeCSVField(field: string): string {
   return field;
 }
 
+// GET /v1/newsletter/sends - Get newsletter send history (admin only)
+newsletterRoutes.get('/sends', adminOnly, async (c) => {
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+
+  // Parse query parameters
+  const limit = Math.min(parseInt(c.req.query('limit') || '50', 10), 100); // Default 50, max 100
+  const offset = parseInt(c.req.query('offset') || '0', 10);
+
+  // Get total count
+  const [totalCount] = await db.query<{ count: number }>(
+    `SELECT COUNT(*) as count FROM newsletter_sends WHERE store_id = ?`,
+    [store.id]
+  );
+
+  // Fetch sends with pagination, ordered by sent_at DESC (most recent first)
+  const sends = await db.query<{
+    id: string;
+    blog_slug: string;
+    subject: string;
+    sent_at: string;
+    recipient_count: number;
+    created_at: string;
+  }>(
+    `SELECT id, blog_slug, subject, sent_at, recipient_count, created_at
+     FROM newsletter_sends
+     WHERE store_id = ?
+     ORDER BY sent_at DESC
+     LIMIT ? OFFSET ?`,
+    [store.id, limit, offset]
+  );
+
+  return c.json({
+    sends: sends.map((send) => ({
+      id: send.id,
+      blog_slug: send.blog_slug,
+      subject: send.subject,
+      sent_at: send.sent_at,
+      recipient_count: send.recipient_count,
+      created_at: send.created_at,
+    })),
+    count: totalCount?.count ?? 0,
+    limit,
+    offset,
+  });
+});
+
 // POST /v1/newsletter/send - Send newsletter to all subscribers (admin only)
 newsletterRoutes.post('/send', adminOnly, async (c) => {
   const body = await c.req.json();
