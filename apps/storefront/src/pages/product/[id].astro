@@ -11,6 +11,7 @@ interface DisplayVariant {
   title: string;
   price_cents: number;
   image_url: string | null;
+  image_alt: string | null;
   available: boolean;
 }
 
@@ -18,6 +19,8 @@ interface DisplayProduct {
   id: string;
   title: string;
   description: string;
+  featured_image_url: string | null;
+  featured_image_alt: string | null;
   collection?: string;
   collectionSlug?: string;
   variants: DisplayVariant[];
@@ -130,6 +133,8 @@ if (apiUrl && apiKey && id) {
       id: apiProduct.id,
       title: apiProduct.title,
       description: apiProduct.description || 'No description available.',
+      featured_image_url: apiProduct.featured_image_url,
+      featured_image_alt: apiProduct.featured_image_alt,
       collection: productDrop?.name,
       collectionSlug: productDrop?.slug,
       variants: apiProduct.variants.map((v: Variant) => {
@@ -140,6 +145,7 @@ if (apiUrl && apiKey && id) {
           title: v.title,
           price_cents: v.price_cents,
           image_url: v.image_url,
+          image_alt: v.image_alt,
           available: inv ? inv.available > 0 : true,
         };
       }),
@@ -157,6 +163,12 @@ if (!product) {
 
 // Get the first variant as default
 const defaultVariant = product.variants[0];
+
+// Determine the main product image - prefer featured image, fallback to first variant
+const mainImageUrl =
+  product.featured_image_url ?? defaultVariant?.image_url ?? null;
+const mainImageAlt =
+  product.featured_image_alt ?? defaultVariant?.image_alt ?? product.title;
 
 // Check if all variants are sold out
 const allSoldOut = product.variants.every((v) => !v.available);
@@ -188,7 +200,7 @@ const productUrl = `https://dearmargeaux.com/product/${product.id}`;
 <BaseLayout
   title={product.title}
   description={product.description?.slice(0, 160)}
-  ogImage={defaultVariant?.image_url || undefined}
+  ogImage={mainImageUrl || undefined}
 >
   <!-- Structured Data for SEO -->
   <SEO
@@ -196,7 +208,7 @@ const productUrl = `https://dearmargeaux.com/product/${product.id}`;
     product={{
       name: product.title,
       description: product.description,
-      image: defaultVariant?.image_url || undefined,
+      image: mainImageUrl || undefined,
       sku: defaultVariant?.sku,
       price: (defaultVariant?.price_cents || 0) / 100,
       availability: productAvailability,
@@ -260,11 +272,12 @@ const productUrl = `https://dearmargeaux.com/product/${product.id}`;
             class="relative aspect-square overflow-hidden rounded-xl bg-secondary"
           >
             {
-              defaultVariant?.image_url ? (
+              mainImageUrl ? (
                 <img
                   id="main-product-image"
-                  src={defaultVariant.image_url}
-                  alt={product.title}
+                  src={mainImageUrl}
+                  alt={mainImageAlt}
+                  data-default-alt={mainImageAlt}
                   class="h-full w-full object-cover object-center"
                 />
               ) : (
@@ -305,28 +318,34 @@ const productUrl = `https://dearmargeaux.com/product/${product.id}`;
             product.variants.length > 1 &&
               product.variants.some((v) => v.image_url) && (
                 <div class="flex gap-2 overflow-x-auto pb-2">
-                  {product.variants.map((variant) => (
-                    <button
-                      type="button"
-                      class="shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 border-transparent hover:border-primary transition-colors duration-normal focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                      data-variant-id={variant.id}
-                      aria-label={`View ${variant.title} variant`}
-                    >
-                      {variant.image_url ? (
-                        <img
-                          src={variant.image_url}
-                          alt={`${product.title} - ${variant.title}`}
-                          class="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div class="h-full w-full bg-secondary flex items-center justify-center">
-                          <span class="text-xs text-text-muted">
-                            {variant.title}
-                          </span>
-                        </div>
-                      )}
-                    </button>
-                  ))}
+                  {product.variants.map((variant) => {
+                    const variantAlt =
+                      variant.image_alt ??
+                      `${product.title} - ${variant.title}`;
+                    return (
+                      <button
+                        type="button"
+                        class="shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 border-transparent hover:border-primary transition-colors duration-normal focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                        data-variant-id={variant.id}
+                        data-variant-alt={variantAlt}
+                        aria-label={`View ${variant.title} variant`}
+                      >
+                        {variant.image_url ? (
+                          <img
+                            src={variant.image_url}
+                            alt={variantAlt}
+                            class="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div class="h-full w-full bg-secondary flex items-center justify-center">
+                            <span class="text-xs text-text-muted">
+                              {variant.title}
+                            </span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               )
           }
@@ -540,6 +559,11 @@ const productUrl = `https://dearmargeaux.com/product/${product.id}`;
         const thumbImg = thumb.querySelector('img');
         if (thumbImg) {
           mainImage.src = thumbImg.src;
+          // Update alt text from variant data attribute
+          const variantAlt = thumb.getAttribute('data-variant-alt');
+          if (variantAlt) {
+            mainImage.alt = variantAlt;
+          }
         }
 
         // Update active state

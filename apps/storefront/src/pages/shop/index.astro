@@ -74,6 +74,7 @@ interface DisplayProduct {
   title: string;
   price: number;
   image?: string;
+  imageAlt?: string;
   collection?: string;
   soldOut: boolean;
 }
@@ -132,11 +133,22 @@ if (apiUrl && apiKey) {
               return inv ? inv.available <= 0 : false;
             });
 
+            // Prefer featured_image_url/alt, fallback to first variant image
+            const imageUrl =
+              product.featured_image_url ??
+              firstVariant?.image_url ??
+              undefined;
+            const imageAlt =
+              product.featured_image_alt ??
+              firstVariant?.image_alt ??
+              undefined;
+
             return {
               id: product.id,
               title: product.title,
               price: firstVariant?.price_cents ?? 0,
-              image: firstVariant?.image_url ?? undefined,
+              image: imageUrl,
+              imageAlt: imageAlt,
               collection: drop.name,
               soldOut: allVariantsSoldOut || isPastDrop,
             };
@@ -169,11 +181,22 @@ if (apiUrl && apiKey) {
               return inv ? inv.available <= 0 : false;
             });
 
+            // Prefer featured_image_url/alt, fallback to first variant image
+            const imageUrl =
+              product.featured_image_url ??
+              firstVariant?.image_url ??
+              undefined;
+            const imageAlt =
+              product.featured_image_alt ??
+              firstVariant?.image_alt ??
+              undefined;
+
             return {
               id: product.id,
               title: product.title,
               price: firstVariant?.price_cents ?? 0,
-              image: firstVariant?.image_url ?? undefined,
+              image: imageUrl,
+              imageAlt: imageAlt,
               collection: undefined,
               soldOut: allVariantsSoldOut,
             };
@@ -281,6 +304,7 @@ if (apiUrl && apiKey) {
                   title={product.title}
                   price={product.price}
                   image={product.image}
+                  imageAlt={product.imageAlt}
                   collection={product.collection}
                   soldOut={product.soldOut}
                 />

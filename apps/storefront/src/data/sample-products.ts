@@ -8,6 +8,7 @@ export interface SampleVariant {
   title: string;
   price_cents: number;
   image_url: string | null;
+  image_alt: string | null;
   available: boolean;
 }
 
@@ -16,6 +17,8 @@ export interface SampleProduct {
   title: string;
   description: string;
   collection: string;
+  featured_image_url: string | null;
+  featured_image_alt: string | null;
   variants: SampleVariant[];
 }
 
@@ -26,6 +29,8 @@ export const sampleProducts: SampleProduct[] = [
     description:
       'Our signature tote, handcrafted from the finest Italian leather. Features a spacious interior with organizational pockets, reinforced handles, and a detachable shoulder strap. The perfect companion for work or weekend adventures.',
     collection: 'Spring 2026',
+    featured_image_url: null,
+    featured_image_alt: null,
     variants: [
       {
         id: 'v1a',
@@ -33,6 +38,7 @@ export const sampleProducts: SampleProduct[] = [
         title: 'Tan',
         price_cents: 45000,
         image_url: null,
+        image_alt: null,
         available: true,
       },
       {
@@ -41,6 +47,7 @@ export const sampleProducts: SampleProduct[] = [
         title: 'Black',
         price_cents: 45000,
         image_url: null,
+        image_alt: null,
         available: true,
       },
       {
@@ -49,6 +56,7 @@ export const sampleProducts: SampleProduct[] = [
         title: 'Cognac',
         price_cents: 48000,
         image_url: null,
+        image_alt: null,
         available: false,
       },
     ],
@@ -59,6 +67,8 @@ export const sampleProducts: SampleProduct[] = [
     description:
       'Compact yet surprisingly spacious, our Mini Crossbody is perfect for those days when you want to travel light. Crafted from buttery-soft leather with an adjustable strap and secure magnetic closure.',
     collection: 'Spring 2026',
+    featured_image_url: null,
+    featured_image_alt: null,
     variants: [
       {
         id: 'v2a',
@@ -66,6 +76,7 @@ export const sampleProducts: SampleProduct[] = [
         title: 'Chestnut',
         price_cents: 28500,
         image_url: null,
+        image_alt: null,
         available: true,
       },
     ],
@@ -76,6 +87,8 @@ export const sampleProducts: SampleProduct[] = [
     description:
       'A timeless silhouette reimagined for the modern age. The Structured Satchel features a top handle, optional crossbody strap, and multiple compartments to keep you organized in style.',
     collection: 'Spring 2026',
+    featured_image_url: null,
+    featured_image_alt: null,
     variants: [
       {
         id: 'v3a',
@@ -83,6 +96,7 @@ export const sampleProducts: SampleProduct[] = [
         title: 'Black',
         price_cents: 52000,
         image_url: null,
+        image_alt: null,
         available: false,
       },
     ],
@@ -93,6 +107,8 @@ export const sampleProducts: SampleProduct[] = [
     description:
       'Your perfect travel companion. This roomy duffle is made from durable full-grain leather with brass hardware, a removable shoulder strap, and enough space for a weekend getaway or a trip to the gym.',
     collection: 'Spring 2026',
+    featured_image_url: null,
+    featured_image_alt: null,
     variants: [
       {
         id: 'v4a',
@@ -100,6 +116,7 @@ export const sampleProducts: SampleProduct[] = [
         title: 'Tan',
         price_cents: 68000,
         image_url: null,
+        image_alt: null,
         available: true,
       },
       {
@@ -108,6 +125,7 @@ export const sampleProducts: SampleProduct[] = [
         title: 'Olive',
         price_cents: 68000,
         image_url: null,
+        image_alt: null,
         available: true,
       },
     ],
@@ -118,6 +136,8 @@ export const sampleProducts: SampleProduct[] = [
     description:
       'Elevate your evening look with our slim leather clutch. Features a hidden magnetic closure, interior card slots, and a detachable chain strap for versatile styling.',
     collection: 'Winter 2025',
+    featured_image_url: null,
+    featured_image_alt: null,
     variants: [
       {
         id: 'v5a',
@@ -125,6 +145,7 @@ export const sampleProducts: SampleProduct[] = [
         title: 'Gold',
         price_cents: 32000,
         image_url: null,
+        image_alt: null,
         available: false,
       },
     ],
@@ -135,6 +156,8 @@ export const sampleProducts: SampleProduct[] = [
     description:
       'Effortlessly chic, our hobo bag drapes beautifully and offers generous room for all your daily essentials. Soft, slouchy leather with a comfortable shoulder strap.',
     collection: 'Winter 2025',
+    featured_image_url: null,
+    featured_image_alt: null,
     variants: [
       {
         id: 'v6a',
@@ -142,6 +165,7 @@ export const sampleProducts: SampleProduct[] = [
         title: 'Camel',
         price_cents: 48000,
         image_url: null,
+        image_alt: null,
         available: true,
       },
     ],
@@ -152,6 +176,8 @@ export const sampleProducts: SampleProduct[] = [
     description:
       'A modern take on a classic shape. Our bucket bag features a drawstring closure, interior pocket, and elegant proportions that work from day to night.',
     collection: 'Winter 2025',
+    featured_image_url: null,
+    featured_image_alt: null,
     variants: [
       {
         id: 'v7a',
@@ -159,6 +185,7 @@ export const sampleProducts: SampleProduct[] = [
         title: 'Burgundy',
         price_cents: 38000,
         image_url: null,
+        image_alt: null,
         available: true,
       },
     ],
@@ -169,6 +196,8 @@ export const sampleProducts: SampleProduct[] = [
     description:
       'Professional meets practical in our leather messenger bag. Features a padded laptop compartment, multiple organizational pockets, and a comfortable crossbody strap.',
     collection: 'Fall 2025',
+    featured_image_url: null,
+    featured_image_alt: null,
     variants: [
       {
         id: 'v8a',
@@ -176,6 +205,7 @@ export const sampleProducts: SampleProduct[] = [
         title: 'Navy',
         price_cents: 55000,
         image_url: null,
+        image_alt: null,
         available: true,
       },
     ],
