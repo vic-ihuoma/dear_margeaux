@@ -1235,3 +1235,57 @@ Added featured image fields to the Product interface and image_alt field to the 
 - pm-2: Update Merchant API to handle product and variant image fields in CRUD operations
 - pm-3 and beyond: Add tags support, drop assignment, and admin form updates
 - The migration requires `wrangler d1 migrations apply` to apply in production
+
+## 2026-01-18: pm-2 - Update Merchant API to handle product and variant image fields
+
+### Task Completed
+Updated the catalog routes (merchant/src/routes/catalog.ts) to handle featured_image_url, featured_image_alt for products and image_alt for variants in all CRUD operations.
+
+### Key Decisions
+- Updated POST /v1/products to accept and store featured_image_url and featured_image_alt
+- Updated PATCH /v1/products/:id to handle featured_image_url and featured_image_alt updates (including clearing with null)
+- Updated GET /v1/products to return featured_image_url, featured_image_alt for each product, and image_alt for variants
+- Updated GET /v1/products/:id to return all image fields
+- Updated POST /v1/products/:id/variants to accept and store image_alt
+- Updated PATCH /v1/products/:id/variants/:variantId to handle image_alt updates
+- All variant responses now include image_alt field
+
+### Files Created
+- `merchant/tests/routes/catalog.test.ts` - 13 unit tests for product/variant image field operations
+
+### Files Changed
+- `merchant/src/routes/catalog.ts`:
+  - POST /v1/products - Added featured_image_url, featured_image_alt to INSERT and response
+  - PATCH /v1/products/:id - Added featured_image_url, featured_image_alt to UPDATE and response
+  - GET /v1/products - Added featured_image_url, featured_image_alt to product mapping, image_alt to variant mapping
+  - GET /v1/products/:id - Added featured_image_url, featured_image_alt to product response, image_alt to variant mapping
+  - POST /v1/products/:id/variants - Added image_alt to INSERT and response
+  - PATCH /v1/products/:id/variants/:variantId - Added image_alt to UPDATE and response
+- `prd.json` - Set passes: true for pm-2
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors, 228 pre-existing warnings)
+- Merchant Tests: PASSED (260 tests - 13 new catalog + 247 existing)
+
+### Test Coverage Summary
+All PRD unit tests implemented:
+- createProduct stores featured_image_url ✓
+- createProduct stores featured_image_alt ✓
+- getProduct returns image fields ✓
+- listProducts returns image fields ✓
+- Variant endpoints handle image_alt ✓
+
+Additional test coverage:
+- Product without featured image fields (defaults to null)
+- Clearing featured_image_url with null
+- Clearing featured_image_alt with null
+- Variant creation with image_alt
+- Variant creation without image_alt (defaults to null)
+- Variant update with image_alt
+- Clearing variant image_alt with null
+
+### Next Steps
+- pm-6: Add tags field to Product schema
+- pm-7: Create product_tags table migration
+- Other product management tasks (pm-8 onwards)

@@ -832,3 +832,38 @@ All unit tests implemented:
 - pm-2: Update Merchant API to handle the new fields in CRUD operations
 - pm-3 onwards: Implement tags, drop assignment, and admin form updates
 - Migration requires `wrangler d1 migrations apply` to deploy to production
+
+## [pm-2]: Update Merchant API to handle product and variant image fields
+**Status:** PASSED
+**Tests Written:** 13 unit tests in merchant/tests/routes/catalog.test.ts
+**Test Results:** 260 tests passed (merchant - 13 new catalog + 247 existing)
+**Type Check:** PASSED - 0 errors across all 7 packages
+**Lint:** PASSED - 0 errors (228 pre-existing warnings for `any` types)
+**Browser Tests:** N/A - no visual tests in PRD for this task
+**Findings:**
+- Updated POST /v1/products to accept and store featured_image_url and featured_image_alt
+- Updated PATCH /v1/products/:id to handle featured_image_url and featured_image_alt updates
+- Updated GET /v1/products to return featured_image_url, featured_image_alt, and image_alt for variants
+- Updated GET /v1/products/:id to return all image fields
+- Updated POST /v1/products/:id/variants to accept and store image_alt
+- Updated PATCH /v1/products/:id/variants/:variantId to handle image_alt updates
+- All variant responses now include image_alt field
+- Created comprehensive test suite covering:
+  - Product creation with/without featured image fields
+  - Product update with featured image fields
+  - Clearing featured image fields with null
+  - Variant creation with/without image_alt
+  - Variant update with image_alt
+  - List products returns all image fields
+  - Get product returns all image fields
+**PRD Coverage:**
+All unit tests implemented:
+- createProduct stores featured_image_url ✓
+- createProduct stores featured_image_alt ✓
+- getProduct returns image fields ✓
+- listProducts returns image fields ✓
+- Variant endpoints handle image_alt ✓
+**Recommendations:**
+- pm-6: Add tags field to Product schema
+- pm-7: Create product_tags table migration
+- Continue with other product management tasks

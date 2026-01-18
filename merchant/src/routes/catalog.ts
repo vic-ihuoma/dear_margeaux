@@ -71,6 +71,8 @@ catalogRoutes.get('/', async (c) => {
     id: p.id,
     title: p.title,
     description: p.description,
+    featured_image_url: p.featured_image_url,
+    featured_image_alt: p.featured_image_alt,
     status: p.status,
     created_at: p.created_at,
     variants: (variantsByProduct[p.id] || []).map((v) => ({
@@ -79,6 +81,7 @@ catalogRoutes.get('/', async (c) => {
       title: v.title,
       price_cents: v.price_cents,
       image_url: v.image_url,
+      image_alt: v.image_alt,
     })),
   }));
 
@@ -115,6 +118,8 @@ catalogRoutes.get('/:id', async (c) => {
     id: product.id,
     title: product.title,
     description: product.description,
+    featured_image_url: product.featured_image_url,
+    featured_image_alt: product.featured_image_alt,
     status: product.status,
     created_at: product.created_at,
     variants: variants.map((v) => ({
@@ -123,6 +128,7 @@ catalogRoutes.get('/:id', async (c) => {
       title: v.title,
       price_cents: v.price_cents,
       image_url: v.image_url,
+      image_alt: v.image_alt,
     })),
   });
 });
@@ -130,7 +136,7 @@ catalogRoutes.get('/:id', async (c) => {
 // POST /v1/products (admin only)
 catalogRoutes.post('/', adminOnly, async (c) => {
   const body = await c.req.json();
-  const { title, description } = body;
+  const { title, description, featured_image_url, featured_image_alt } = body;
 
   if (!title) throw ApiError.invalidRequest('title is required');
 
@@ -141,13 +147,29 @@ catalogRoutes.post('/', adminOnly, async (c) => {
   const timestamp = now();
 
   await db.run(
-    `INSERT INTO products (id, store_id, title, description, status, created_at)
-     VALUES (?, ?, ?, ?, 'active', ?)`,
-    [id, store.id, title, description || null, timestamp]
+    `INSERT INTO products (id, store_id, title, description, featured_image_url, featured_image_alt, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, 'active', ?)`,
+    [
+      id,
+      store.id,
+      title,
+      description || null,
+      featured_image_url || null,
+      featured_image_alt || null,
+      timestamp,
+    ]
   );
 
   return c.json(
-    { id, title, description: description || null, status: 'active', variants: [] },
+    {
+      id,
+      title,
+      description: description || null,
+      featured_image_url: featured_image_url || null,
+      featured_image_alt: featured_image_alt || null,
+      status: 'active',
+      variants: [],
+    },
     201
   );
 });
@@ -156,7 +178,7 @@ catalogRoutes.post('/', adminOnly, async (c) => {
 catalogRoutes.patch('/:id', adminOnly, async (c) => {
   const id = c.req.param('id');
   const body = await c.req.json();
-  const { title, description, status } = body;
+  const { title, description, status, featured_image_url, featured_image_alt } = body;
 
   const { store } = c.get('auth');
   const db = getDb(c.env);
@@ -186,6 +208,14 @@ catalogRoutes.patch('/:id', adminOnly, async (c) => {
     updates.push('status = ?');
     params.push(status);
   }
+  if (featured_image_url !== undefined) {
+    updates.push('featured_image_url = ?');
+    params.push(featured_image_url);
+  }
+  if (featured_image_alt !== undefined) {
+    updates.push('featured_image_alt = ?');
+    params.push(featured_image_alt);
+  }
 
   if (updates.length > 0) {
     params.push(id);
@@ -205,6 +235,8 @@ catalogRoutes.patch('/:id', adminOnly, async (c) => {
     id: product.id,
     title: product.title,
     description: product.description,
+    featured_image_url: product.featured_image_url,
+    featured_image_alt: product.featured_image_alt,
     status: product.status,
     variants: variants.map((v) => ({
       id: v.id,
@@ -212,6 +244,7 @@ catalogRoutes.patch('/:id', adminOnly, async (c) => {
       title: v.title,
       price_cents: v.price_cents,
       image_url: v.image_url,
+      image_alt: v.image_alt,
     })),
   });
 });
@@ -220,7 +253,7 @@ catalogRoutes.patch('/:id', adminOnly, async (c) => {
 catalogRoutes.post('/:id/variants', adminOnly, async (c) => {
   const productId = c.req.param('id');
   const body = await c.req.json();
-  const { sku, title, price_cents, image_url } = body;
+  const { sku, title, price_cents, image_url, image_alt } = body;
 
   if (!sku) throw ApiError.invalidRequest('sku is required');
   if (!title) throw ApiError.invalidRequest('title is required');
@@ -250,9 +283,20 @@ catalogRoutes.post('/:id/variants', adminOnly, async (c) => {
 
   // Insert variant (with required fields)
   await db.run(
-    `INSERT INTO variants (id, product_id, store_id, sku, title, price_cents, weight_g, image_url, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, productId, store.id, sku, title, price_cents, 0, image_url || null, timestamp]
+    `INSERT INTO variants (id, product_id, store_id, sku, title, price_cents, weight_g, image_url, image_alt, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      productId,
+      store.id,
+      sku,
+      title,
+      price_cents,
+      0,
+      image_url || null,
+      image_alt || null,
+      timestamp,
+    ]
   );
 
   // Create inventory record
@@ -262,7 +306,10 @@ catalogRoutes.post('/:id/variants', adminOnly, async (c) => {
     [uuid(), store.id, sku, timestamp]
   );
 
-  return c.json({ id, sku, title, price_cents, image_url: image_url || null }, 201);
+  return c.json(
+    { id, sku, title, price_cents, image_url: image_url || null, image_alt: image_alt || null },
+    201
+  );
 });
 
 // PATCH /v1/products/:id/variants/:variantId (admin only)
@@ -270,7 +317,7 @@ catalogRoutes.patch('/:id/variants/:variantId', adminOnly, async (c) => {
   const productId = c.req.param('id');
   const variantId = c.req.param('variantId');
   const body = await c.req.json();
-  const { sku, title, price_cents, image_url } = body;
+  const { sku, title, price_cents, image_url, image_alt } = body;
 
   const { store } = c.get('auth');
   const db = getDb(c.env);
@@ -318,6 +365,10 @@ catalogRoutes.patch('/:id/variants/:variantId', adminOnly, async (c) => {
     updates.push('image_url = ?');
     params.push(image_url);
   }
+  if (image_alt !== undefined) {
+    updates.push('image_alt = ?');
+    params.push(image_alt);
+  }
 
   if (updates.length > 0) {
     params.push(variantId);
@@ -332,6 +383,7 @@ catalogRoutes.patch('/:id/variants/:variantId', adminOnly, async (c) => {
     title: variant.title,
     price_cents: variant.price_cents,
     image_url: variant.image_url,
+    image_alt: variant.image_alt,
   });
 });
 
