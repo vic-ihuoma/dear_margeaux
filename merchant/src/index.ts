@@ -13,6 +13,7 @@ import { discounts } from './routes/discounts';
 import { drops } from './routes/drops';
 import { waitlist } from './routes/waitlist';
 import { customerAuth } from './routes/customer-auth';
+import { counts } from './routes/counts';
 import { handleCron } from './cron';
 import { rateLimitMiddleware } from './middleware/rate-limit';
 import { securityHeaders } from './middleware/security-headers';
@@ -69,6 +70,7 @@ app.route('/v1/discounts', discounts);
 app.route('/v1/drops', drops);
 app.route('/v1/waitlist', waitlist);
 app.route('/v1/customers/auth', customerAuth);
+app.route('/v1/counts', counts);
 
 export default {
   fetch: app.fetch,

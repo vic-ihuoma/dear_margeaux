@@ -1462,4 +1462,133 @@ describe('MerchantClient', () => {
       );
     });
   });
+
+  // ============================================================================
+  // Counts Tests
+  // ============================================================================
+
+  describe('Counts', () => {
+    describe('getProductsCount', () => {
+      it('returns product count', async () => {
+        mockFetch.mockResolvedValue(createMockResponse({ count: 15 }));
+
+        const result = await client.getProductsCount();
+
+        expect(result).toEqual({ count: 15 });
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/v1/counts/products'),
+          expect.any(Object)
+        );
+      });
+
+      it('passes status filter', async () => {
+        mockFetch.mockResolvedValue(createMockResponse({ count: 8 }));
+
+        const result = await client.getProductsCount({ status: 'active' });
+
+        expect(result).toEqual({ count: 8 });
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('status=active'),
+          expect.any(Object)
+        );
+      });
+    });
+
+    describe('getOrdersCount', () => {
+      it('returns order count', async () => {
+        mockFetch.mockResolvedValue(createMockResponse({ count: 42 }));
+
+        const result = await client.getOrdersCount();
+
+        expect(result).toEqual({ count: 42 });
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/v1/counts/orders'),
+          expect.any(Object)
+        );
+      });
+
+      it('passes status filter', async () => {
+        mockFetch.mockResolvedValue(createMockResponse({ count: 12 }));
+
+        const result = await client.getOrdersCount({ status: 'paid' });
+
+        expect(result).toEqual({ count: 12 });
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('status=paid'),
+          expect.any(Object)
+        );
+      });
+
+      it('passes date range filters', async () => {
+        mockFetch.mockResolvedValue(createMockResponse({ count: 5 }));
+
+        const result = await client.getOrdersCount({
+          start_date: '2026-01-01',
+          end_date: '2026-01-31',
+        });
+
+        expect(result).toEqual({ count: 5 });
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('start_date=2026-01-01'),
+          expect.any(Object)
+        );
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('end_date=2026-01-31'),
+          expect.any(Object)
+        );
+      });
+
+      it('passes all filters together', async () => {
+        mockFetch.mockResolvedValue(createMockResponse({ count: 3 }));
+
+        const result = await client.getOrdersCount({
+          status: 'shipped',
+          start_date: '2026-01-01',
+          end_date: '2026-01-15',
+        });
+
+        expect(result).toEqual({ count: 3 });
+      });
+    });
+
+    describe('getCustomersCount', () => {
+      it('returns customer count', async () => {
+        mockFetch.mockResolvedValue(createMockResponse({ count: 100 }));
+
+        const result = await client.getCustomersCount();
+
+        expect(result).toEqual({ count: 100 });
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/v1/counts/customers'),
+          expect.any(Object)
+        );
+      });
+    });
+
+    describe('getInventoryCount', () => {
+      it('returns inventory count', async () => {
+        mockFetch.mockResolvedValue(createMockResponse({ count: 50 }));
+
+        const result = await client.getInventoryCount();
+
+        expect(result).toEqual({ count: 50 });
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/v1/counts/inventory'),
+          expect.any(Object)
+        );
+      });
+
+      it('passes low_stock filter', async () => {
+        mockFetch.mockResolvedValue(createMockResponse({ count: 5 }));
+
+        const result = await client.getInventoryCount({ low_stock: true });
+
+        expect(result).toEqual({ count: 5 });
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('low_stock=true'),
+          expect.any(Object)
+        );
+      });
+    });
+  });
 });

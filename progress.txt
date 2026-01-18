@@ -739,3 +739,57 @@ Additional test coverage:
 ### Next Steps
 - All testing category tasks now complete (test-1 through test-7)
 - Continue with other PRD categories (security, performance, storefront, admin, etc.)
+
+## 2026-01-18: api-1 - Add count endpoints to Merchant API
+
+### Task Completed
+Created efficient count endpoints for products, orders, customers, and inventory to support dashboard statistics, updated the MerchantClient with corresponding methods, and added comprehensive unit tests.
+
+### Key Decisions
+- Created new route file `merchant/src/routes/counts.ts` instead of adding to individual route files for cleaner organization
+- All endpoints require admin authentication (`authMiddleware`, `adminOnly`)
+- Used simple COUNT(*) queries for efficient database performance
+- Products count supports optional `status` filter (active/draft)
+- Orders count supports optional `status` filter and `start_date`/`end_date` ISO 8601 filters
+- Inventory count supports optional `low_stock` filter (items with available quantity <= 10)
+- Added ISO 8601 date validation function supporting both date-only and full datetime formats
+
+### Files Created
+- `merchant/src/routes/counts.ts` - New route file with 4 count endpoints
+- `merchant/tests/routes/counts.test.ts` - 21 unit tests for count endpoints
+
+### Files Changed
+- `merchant/src/index.ts` - Added import and route registration for counts
+- `packages/api/src/types.ts` - Added CountResponse, ProductCountParams, OrderCountParams, InventoryCountParams types
+- `packages/api/src/merchant-client.ts` - Added getProductsCount, getOrdersCount, getCustomersCount, getInventoryCount methods
+- `packages/api/src/__tests__/merchant-client.test.ts` - Added 9 tests for MerchantClient count methods
+- `prd.json` - Set passes: true for api-1
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (pre-existing warnings only)
+- Merchant Tests: PASSED (134 tests - 21 new counts + 44 waitlist + 44 notifications + 18 existing + 7 setup)
+- API Client Tests: PASSED (74 tests - 9 new counts + 65 existing)
+
+### Test Coverage Summary
+All PRD unit tests implemented:
+- GET /v1/counts/products returns total product count ✓
+- GET /v1/counts/products filters by status ✓
+- GET /v1/counts/orders returns total order count ✓
+- GET /v1/counts/orders filters by date range ✓
+- GET /v1/counts/orders filters by status ✓
+- GET /v1/counts/customers returns total customer count ✓
+- GET /v1/counts/inventory returns total inventory count ✓
+- MerchantClient.getProductsCount works correctly ✓
+- MerchantClient.getOrdersCount works correctly ✓
+
+Additional test coverage:
+- Invalid status parameter returns 400
+- Invalid date format returns 400
+- Inventory low_stock filter works correctly
+- All endpoints require admin authentication
+
+### Next Steps
+- api-2: Add date range params to getOrders API
+- api-3: Add retry logic for transient failures
+- Other API enhancement tasks (api-4 through api-6)

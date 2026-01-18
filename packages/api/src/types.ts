@@ -470,6 +470,32 @@ export interface ListCustomersParams extends PaginationParams {
 }
 
 // ============================================================================
+// Count Types
+// ============================================================================
+
+/** Count response */
+export interface CountResponse {
+  count: number;
+}
+
+/** Parameters for getting product count */
+export interface ProductCountParams {
+  status?: ProductStatus;
+}
+
+/** Parameters for getting order count */
+export interface OrderCountParams {
+  status?: OrderStatus;
+  start_date?: ISODateString;
+  end_date?: ISODateString;
+}
+
+/** Parameters for getting inventory count */
+export interface InventoryCountParams {
+  low_stock?: boolean;
+}
+
+// ============================================================================
 // Drop Types
 // ============================================================================
 

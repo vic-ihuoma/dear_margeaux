@@ -66,6 +66,11 @@ import type {
   RegisterCustomerParams,
   LoginCustomerParams,
   CustomerOrder,
+  // Counts
+  CountResponse,
+  ProductCountParams,
+  OrderCountParams,
+  InventoryCountParams,
 } from './types.js';
 
 // ============================================================================
@@ -922,5 +927,45 @@ export class MerchantClient {
     }
 
     return response.json();
+  }
+
+  // ==========================================================================
+  // Counts
+  // ==========================================================================
+
+  /**
+   * Get total product count with optional status filter (admin only)
+   */
+  async getProductsCount(params?: ProductCountParams): Promise<CountResponse> {
+    return this.request<CountResponse>('GET', '/counts/products', {
+      params: params ? { ...params } : undefined,
+    });
+  }
+
+  /**
+   * Get total order count with optional status and date filters (admin only)
+   */
+  async getOrdersCount(params?: OrderCountParams): Promise<CountResponse> {
+    return this.request<CountResponse>('GET', '/counts/orders', {
+      params: params ? { ...params } : undefined,
+    });
+  }
+
+  /**
+   * Get total customer count (admin only)
+   */
+  async getCustomersCount(): Promise<CountResponse> {
+    return this.request<CountResponse>('GET', '/counts/customers');
+  }
+
+  /**
+   * Get total inventory count with optional low stock filter (admin only)
+   */
+  async getInventoryCount(
+    params?: InventoryCountParams
+  ): Promise<CountResponse> {
+    return this.request<CountResponse>('GET', '/counts/inventory', {
+      params: params ? { ...params } : undefined,
+    });
   }
 }
