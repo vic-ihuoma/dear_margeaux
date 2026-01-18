@@ -17,6 +17,7 @@ export interface BlogPost {
   tags: string[];
   image?: string;
   draft: boolean;
+  pinned: boolean;
   content: string;
 }
 
@@ -29,6 +30,7 @@ export interface BlogPostListItem {
   tags: string[];
   image?: string;
   draft: boolean;
+  pinned: boolean;
 }
 
 /**
@@ -159,6 +161,7 @@ export const GET: APIRoute = async ({ url }) => {
         tags: (frontmatter.tags as string[]) || [],
         image: frontmatter.image as string | undefined,
         draft: (frontmatter.draft as boolean) ?? false,
+        pinned: (frontmatter.pinned as boolean) ?? false,
       });
     }
 
@@ -267,6 +270,7 @@ export const POST: APIRoute = async ({ request }) => {
       tags: data.tags || [],
       image: data.image || undefined,
       draft: data.draft ?? true,
+      pinned: data.pinned ?? false,
     });
 
     // Build content
@@ -287,6 +291,7 @@ export const POST: APIRoute = async ({ request }) => {
         tags: data.tags || [],
         image: data.image || undefined,
         draft: data.draft ?? true,
+        pinned: data.pinned ?? false,
       }),
       {
         status: 201,

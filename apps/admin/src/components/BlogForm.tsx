@@ -9,6 +9,7 @@ export interface BlogPostData {
   tags: string[];
   image?: string;
   draft: boolean;
+  pinned: boolean;
 }
 
 export interface BlogFormProps {
@@ -44,6 +45,7 @@ export function BlogForm({
   const [tags, setTags] = useState<string[]>(post?.tags || []);
   const [image, setImage] = useState(post?.image || '');
   const [draft, setDraft] = useState(post?.draft ?? true);
+  const [pinned, setPinned] = useState(post?.pinned ?? false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Auto-generate slug from title
@@ -145,6 +147,7 @@ export function BlogForm({
         tags,
         image: image.trim() || undefined,
         draft,
+        pinned,
       };
 
       await onSubmit(data);
@@ -158,6 +161,7 @@ export function BlogForm({
       tags,
       image,
       draft,
+      pinned,
       validate,
       onSubmit,
     ]
@@ -440,6 +444,31 @@ export function BlogForm({
           {draft
             ? 'This post is not visible to the public'
             : 'This post is visible to the public'}
+        </span>
+      </div>
+
+      {/* Pinned Toggle */}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={pinned}
+          onClick={() => setPinned(!pinned)}
+          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+            pinned ? 'bg-primary' : 'bg-background-tertiary'
+          }`}
+        >
+          <span
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+              pinned ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </button>
+        <span className="text-sm font-medium text-text-primary">
+          {pinned ? 'Pinned' : 'Not Pinned'}
+        </span>
+        <span className="text-xs text-text-muted">
+          Pinned posts appear first in the blog
         </span>
       </div>
 

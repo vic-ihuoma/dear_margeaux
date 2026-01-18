@@ -127,6 +127,7 @@ export const GET: APIRoute = async ({ params }) => {
         tags: (frontmatter.tags as string[]) || [],
         image: frontmatter.image as string | undefined,
         draft: (frontmatter.draft as boolean) ?? false,
+        pinned: (frontmatter.pinned as boolean) ?? false,
         content: body.trim(),
       }),
       {
@@ -188,6 +189,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       tags: data.tags ?? existingFrontmatter.tags,
       image: data.image ?? existingFrontmatter.image,
       draft: data.draft ?? existingFrontmatter.draft,
+      pinned: data.pinned ?? existingFrontmatter.pinned ?? false,
     };
 
     // Remove undefined image

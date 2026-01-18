@@ -3349,7 +3349,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "nav-12",
@@ -3371,7 +3371,7 @@
         "visual": [],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "nav-14",
