@@ -97,6 +97,7 @@ catalogRoutes.get('/', async (c) => {
     description: p.description,
     featured_image_url: p.featured_image_url,
     featured_image_alt: p.featured_image_alt,
+    drop_id: p.drop_id,
     status: p.status,
     created_at: p.created_at,
     tags: tagsByProduct[p.id] || [],
@@ -151,6 +152,7 @@ catalogRoutes.get('/:id', async (c) => {
     description: product.description,
     featured_image_url: product.featured_image_url,
     featured_image_alt: product.featured_image_alt,
+    drop_id: product.drop_id,
     status: product.status,
     created_at: product.created_at,
     tags: tags.map((t) => t.tag),
@@ -168,19 +170,28 @@ catalogRoutes.get('/:id', async (c) => {
 // POST /v1/products (admin only)
 catalogRoutes.post('/', adminOnly, async (c) => {
   const body = await c.req.json();
-  const { title, description, featured_image_url, featured_image_alt, tags } = body;
+  const { title, description, featured_image_url, featured_image_alt, tags, drop_id } = body;
 
   if (!title) throw ApiError.invalidRequest('title is required');
 
   const { store } = c.get('auth');
   const db = getDb(c.env);
 
+  // Validate drop_id if provided
+  if (drop_id) {
+    const [drop] = await db.query<{ id: string; store_id: string }>(
+      `SELECT id, store_id FROM drops WHERE id = ? AND store_id = ?`,
+      [drop_id, store.id]
+    );
+    if (!drop) throw ApiError.invalidRequest('Invalid drop_id: drop not found');
+  }
+
   const id = uuid();
   const timestamp = now();
 
   await db.run(
-    `INSERT INTO products (id, store_id, title, description, featured_image_url, featured_image_alt, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, 'active', ?)`,
+    `INSERT INTO products (id, store_id, title, description, featured_image_url, featured_image_alt, drop_id, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
     [
       id,
       store.id,
@@ -188,6 +199,7 @@ catalogRoutes.post('/', adminOnly, async (c) => {
       description || null,
       featured_image_url || null,
       featured_image_alt || null,
+      drop_id || null,
       timestamp,
     ]
   );
@@ -210,6 +222,7 @@ catalogRoutes.post('/', adminOnly, async (c) => {
       description: description || null,
       featured_image_url: featured_image_url || null,
       featured_image_alt: featured_image_alt || null,
+      drop_id: drop_id || null,
       status: 'active',
       tags: normalizedTags,
       variants: [],
@@ -222,7 +235,8 @@ catalogRoutes.post('/', adminOnly, async (c) => {
 catalogRoutes.patch('/:id', adminOnly, async (c) => {
   const id = c.req.param('id');
   const body = await c.req.json();
-  const { title, description, status, featured_image_url, featured_image_alt, tags } = body;
+  const { title, description, status, featured_image_url, featured_image_alt, tags, drop_id } =
+    body;
 
   const { store } = c.get('auth');
   const db = getDb(c.env);
@@ -259,6 +273,19 @@ catalogRoutes.patch('/:id', adminOnly, async (c) => {
   if (featured_image_alt !== undefined) {
     updates.push('featured_image_alt = ?');
     params.push(featured_image_alt);
+  }
+  // Handle drop_id update (can be set to a drop or cleared with null)
+  if (drop_id !== undefined) {
+    // Validate drop_id if it's being set (not cleared)
+    if (drop_id !== null) {
+      const [drop] = await db.query<{ id: string; store_id: string }>(
+        `SELECT id, store_id FROM drops WHERE id = ? AND store_id = ?`,
+        [drop_id, store.id]
+      );
+      if (!drop) throw ApiError.invalidRequest('Invalid drop_id: drop not found');
+    }
+    updates.push('drop_id = ?');
+    params.push(drop_id);
   }
 
   if (updates.length > 0) {
@@ -303,6 +330,7 @@ catalogRoutes.patch('/:id', adminOnly, async (c) => {
     description: product.description,
     featured_image_url: product.featured_image_url,
     featured_image_alt: product.featured_image_alt,
+    drop_id: product.drop_id,
     status: product.status,
     tags: productTags.map((t) => t.tag),
     variants: variants.map((v) => ({

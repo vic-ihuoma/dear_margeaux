@@ -1093,3 +1093,52 @@ All unit tests implemented:
 - pm-12: Update Merchant API to handle product drop assignment in CRUD operations
 - pm-13: Create DropSelector component for admin
 - pm-14: Integrate DropSelector into ProductForm
+
+---
+
+## pm-12: Update Merchant API to handle product drop assignment
+
+**PRD Requirements:**
+- Update createProduct to accept and store drop_id
+- Update updateProduct to handle drop_id changes
+- Validate drop_id exists in drops table before assigning
+- Return drop info in getProduct response
+
+**Typecheck:** PASSED (0 errors across all 7 packages)
+**Lint:** PASSED (0 errors on changed files, pre-existing warnings only)
+**Unit Tests:** PASSED (297 tests in merchant - 10 new + 287 existing)
+**Browser Tests:** N/A (no visual tests in PRD for this task)
+**Pre-commit Hooks:** Pending (commit in progress)
+
+**Findings:**
+- Updated POST /v1/products to accept and validate drop_id:
+  - Validates drop exists in drops table AND belongs to same store
+  - Stores drop_id in products table on creation
+  - Returns drop_id in response
+- Updated PATCH /v1/products/:id to handle drop_id changes:
+  - Validates drop exists if drop_id is being set (not cleared)
+  - Supports setting drop_id to null to unassign from drop
+  - Preserves drop_id if not included in update payload
+- Updated GET /v1/products (list) to return drop_id for all products
+- Updated GET /v1/products/:id to return drop_id
+
+**Test Coverage (10 new tests):**
+- createProduct with valid drop_id assigns product to drop ✓
+- createProduct without drop_id leaves drop_id null ✓
+- createProduct with invalid drop_id returns 400 ✓
+- listProducts returns drop_id for each product ✓
+- getProduct returns drop_id ✓
+- updateProduct can change drop_id to new valid drop ✓
+- updateProduct can clear drop_id with null ✓
+- updateProduct with invalid drop_id returns 400 ✓
+- updateProduct without drop_id preserves existing value ✓
+- drop validation checks store ownership ✓
+
+**Security Considerations:**
+- Drop validation checks both existence AND store ownership
+- Prevents cross-store drop assignment via store_id check in query
+
+**Recommendations:**
+- pm-13: Create DropSelector component for admin
+- pm-14: Integrate DropSelector into ProductForm
+- Consider adding drop info (name, status) to product responses in future iteration

@@ -542,6 +542,317 @@ describe('Catalog Routes - Variant Image Fields', () => {
   });
 });
 
+describe('Catalog Routes - Product Drop Assignment', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setAuthContext('admin');
+  });
+
+  describe('POST /v1/products - Create Product with Drop', () => {
+    it('creates product with valid drop_id', async () => {
+      // Mock: drop exists query
+      mockDbQuery.mockResolvedValueOnce([{ id: 'drop-1', store_id: 'store-1' }]);
+      // Mock: insert product
+      mockDbRun.mockResolvedValueOnce({ changes: 1 });
+
+      const catalogRoutes = await getCatalogRoutes();
+      const app = createTestApp();
+      app.route('/v1/products', catalogRoutes);
+
+      const res = await app.request('/v1/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Drop Product',
+          description: 'A product in a drop',
+          drop_id: 'drop-1',
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+      expect(body.drop_id).toBe('drop-1');
+    });
+
+    it('creates product without drop_id', async () => {
+      mockDbRun.mockResolvedValueOnce({ changes: 1 });
+
+      const catalogRoutes = await getCatalogRoutes();
+      const app = createTestApp();
+      app.route('/v1/products', catalogRoutes);
+
+      const res = await app.request('/v1/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'No Drop Product',
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+      expect(body.drop_id).toBe(null);
+    });
+
+    it('returns 400 for invalid drop_id', async () => {
+      // Mock: drop does not exist
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const catalogRoutes = await getCatalogRoutes();
+      const app = createTestApp();
+      app.route('/v1/products', catalogRoutes);
+
+      const res = await app.request('/v1/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Invalid Drop Product',
+          drop_id: 'nonexistent-drop',
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.message).toContain('Invalid drop_id');
+    });
+  });
+
+  describe('GET /v1/products - List Products with Drop', () => {
+    it('returns products with drop_id', async () => {
+      mockDbQuery
+        .mockResolvedValueOnce([
+          {
+            id: 'prod-1',
+            title: 'Product 1',
+            description: 'Description 1',
+            featured_image_url: null,
+            featured_image_alt: null,
+            drop_id: 'drop-1',
+            status: 'active',
+            created_at: '2026-01-18T10:00:00.000Z',
+          },
+          {
+            id: 'prod-2',
+            title: 'Product 2',
+            description: 'Description 2',
+            featured_image_url: null,
+            featured_image_alt: null,
+            drop_id: null,
+            status: 'active',
+            created_at: '2026-01-18T09:00:00.000Z',
+          },
+        ])
+        .mockResolvedValueOnce([]) // variants
+        .mockResolvedValueOnce([]); // tags
+
+      const catalogRoutes = await getCatalogRoutes();
+      const app = createTestApp();
+      app.route('/v1/products', catalogRoutes);
+
+      const res = await app.request('/v1/products');
+      expect(res.status).toBe(200);
+      const body = await res.json();
+
+      expect(body.items).toHaveLength(2);
+      expect(body.items[0].drop_id).toBe('drop-1');
+      expect(body.items[1].drop_id).toBe(null);
+    });
+  });
+
+  describe('GET /v1/products/:id - Get Product with Drop', () => {
+    it('returns product with drop_id', async () => {
+      mockDbQuery
+        .mockResolvedValueOnce([
+          {
+            id: 'prod-1',
+            title: 'Test Product',
+            description: 'A test product',
+            featured_image_url: null,
+            featured_image_alt: null,
+            drop_id: 'drop-1',
+            status: 'active',
+            created_at: '2026-01-18T10:00:00.000Z',
+          },
+        ])
+        .mockResolvedValueOnce([]) // variants
+        .mockResolvedValueOnce([]); // tags
+
+      const catalogRoutes = await getCatalogRoutes();
+      const app = createTestApp();
+      app.route('/v1/products', catalogRoutes);
+
+      const res = await app.request('/v1/products/prod-1');
+      expect(res.status).toBe(200);
+      const body = await res.json();
+
+      expect(body.drop_id).toBe('drop-1');
+    });
+
+    it('returns null drop_id for product not in drop', async () => {
+      mockDbQuery
+        .mockResolvedValueOnce([
+          {
+            id: 'prod-1',
+            title: 'Test Product',
+            description: 'A test product',
+            featured_image_url: null,
+            featured_image_alt: null,
+            drop_id: null,
+            status: 'active',
+            created_at: '2026-01-18T10:00:00.000Z',
+          },
+        ])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+
+      const catalogRoutes = await getCatalogRoutes();
+      const app = createTestApp();
+      app.route('/v1/products', catalogRoutes);
+
+      const res = await app.request('/v1/products/prod-1');
+      expect(res.status).toBe(200);
+      const body = await res.json();
+
+      expect(body.drop_id).toBe(null);
+    });
+  });
+
+  describe('PATCH /v1/products/:id - Update Product Drop', () => {
+    it('updates product drop_id to valid drop', async () => {
+      mockDbQuery
+        .mockResolvedValueOnce([{ id: 'prod-1', store_id: 'store-1' }]) // Product exists
+        .mockResolvedValueOnce([{ id: 'drop-2', store_id: 'store-1' }]) // Drop exists
+        .mockResolvedValueOnce([
+          {
+            id: 'prod-1',
+            title: 'Test Product',
+            description: 'A test',
+            featured_image_url: null,
+            featured_image_alt: null,
+            drop_id: 'drop-2',
+            status: 'active',
+          },
+        ])
+        .mockResolvedValueOnce([]) // variants
+        .mockResolvedValueOnce([]); // tags
+
+      mockDbRun.mockResolvedValueOnce({ changes: 1 });
+
+      const catalogRoutes = await getCatalogRoutes();
+      const app = createTestApp();
+      app.route('/v1/products', catalogRoutes);
+
+      const res = await app.request('/v1/products/prod-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          drop_id: 'drop-2',
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.drop_id).toBe('drop-2');
+    });
+
+    it('clears drop_id with null', async () => {
+      mockDbQuery
+        .mockResolvedValueOnce([{ id: 'prod-1', store_id: 'store-1' }]) // Product exists
+        // No drop validation needed for null
+        .mockResolvedValueOnce([
+          {
+            id: 'prod-1',
+            title: 'Test Product',
+            description: 'A test',
+            featured_image_url: null,
+            featured_image_alt: null,
+            drop_id: null,
+            status: 'active',
+          },
+        ])
+        .mockResolvedValueOnce([]) // variants
+        .mockResolvedValueOnce([]); // tags
+
+      mockDbRun.mockResolvedValueOnce({ changes: 1 });
+
+      const catalogRoutes = await getCatalogRoutes();
+      const app = createTestApp();
+      app.route('/v1/products', catalogRoutes);
+
+      const res = await app.request('/v1/products/prod-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          drop_id: null,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.drop_id).toBe(null);
+    });
+
+    it('returns 400 for invalid drop_id on update', async () => {
+      mockDbQuery
+        .mockResolvedValueOnce([{ id: 'prod-1', store_id: 'store-1' }]) // Product exists
+        .mockResolvedValueOnce([]); // Drop does not exist
+
+      const catalogRoutes = await getCatalogRoutes();
+      const app = createTestApp();
+      app.route('/v1/products', catalogRoutes);
+
+      const res = await app.request('/v1/products/prod-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          drop_id: 'nonexistent-drop',
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.message).toContain('Invalid drop_id');
+    });
+
+    it('preserves drop_id when not provided in update', async () => {
+      mockDbQuery
+        .mockResolvedValueOnce([{ id: 'prod-1', store_id: 'store-1' }]) // Product exists
+        .mockResolvedValueOnce([
+          {
+            id: 'prod-1',
+            title: 'Updated Title',
+            description: 'A test',
+            featured_image_url: null,
+            featured_image_alt: null,
+            drop_id: 'drop-1', // Original drop preserved
+            status: 'active',
+          },
+        ])
+        .mockResolvedValueOnce([]) // variants
+        .mockResolvedValueOnce([]); // tags
+
+      mockDbRun.mockResolvedValueOnce({ changes: 1 });
+
+      const catalogRoutes = await getCatalogRoutes();
+      const app = createTestApp();
+      app.route('/v1/products', catalogRoutes);
+
+      const res = await app.request('/v1/products/prod-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Updated Title',
+          // Note: no drop_id field
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.drop_id).toBe('drop-1');
+    });
+  });
+});
+
 describe('Catalog Routes - Product Tags', () => {
   beforeEach(() => {
     vi.clearAllMocks();

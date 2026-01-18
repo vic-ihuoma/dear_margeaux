@@ -1546,3 +1546,55 @@ Added `drop_id` field to Product-related interfaces in the API types to enable p
 - pm-12: Update Merchant API to handle product drop assignment in CRUD operations
 - pm-13: Create DropSelector component for admin
 - pm-14: Integrate DropSelector into ProductForm
+
+## 2026-01-18: pm-12 - Update Merchant API to handle product drop assignment
+
+### Task Completed
+Updated the catalog routes (merchant/src/routes/catalog.ts) to handle drop_id in all CRUD operations for products.
+
+### Key Decisions
+- **Validation**: drop_id is validated against the drops table before assignment (must exist and belong to same store)
+- **POST /v1/products**: Accepts optional drop_id, validates against drops table, stores in products table
+- **PATCH /v1/products/:id**: Handles drop_id updates including clearing with null, validates new drop_id if set
+- **GET /v1/products**: Returns drop_id for each product in list response
+- **GET /v1/products/:id**: Returns drop_id in single product response
+- Clearing drop assignment: Setting drop_id to null removes the product from any drop
+- Preserving assignment: Not providing drop_id in PATCH preserves existing assignment
+
+### Files Changed
+- `merchant/src/routes/catalog.ts`:
+  - POST /v1/products: Added drop_id extraction from body, validation, INSERT and response (lines 171-228)
+  - PATCH /v1/products/:id: Added drop_id handling in update logic (lines 275-287)
+  - PATCH response: Added drop_id field (line 331)
+  - GET /v1/products: Added drop_id to list item mapping (line 100)
+  - GET /v1/products/:id: Added drop_id to response (line 155)
+- `merchant/tests/routes/catalog.test.ts`:
+  - Added 10 new tests for product drop assignment CRUD operations
+- `prd.json` - Set passes: true for pm-12
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors, pre-existing warnings only)
+- Merchant Tests: PASSED (297 tests - 10 new drop_id tests + 287 existing)
+
+### Test Coverage Summary
+All PRD unit tests implemented:
+- createProduct stores drop_id ✓
+- updateProduct updates drop_id ✓
+- Invalid drop_id returns 400 error ✓
+- getProduct returns drop info ✓
+
+Additional test coverage:
+- Creates product without drop_id (null)
+- Returns 400 for invalid drop_id on create
+- Returns products with drop_id in list
+- Returns product with drop_id in single get
+- Returns null drop_id for product not in drop
+- Updates product drop_id to valid drop
+- Clears drop_id with null
+- Returns 400 for invalid drop_id on update
+- Preserves drop_id when not provided in update
+
+### Next Steps
+- pm-13: Create DropSelector component for admin
+- pm-14: Integrate DropSelector into ProductForm
