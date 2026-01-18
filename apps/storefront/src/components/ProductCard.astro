@@ -12,6 +12,8 @@ interface Props {
   disablePurchase?: boolean;
   href?: string;
   class?: string;
+  /** Product tags for filtering */
+  tags?: string[];
 }
 
 const {
@@ -26,6 +28,7 @@ const {
   disablePurchase = false,
   href,
   class: className,
+  tags = [],
 } = Astro.props;
 
 // Product is unavailable if sold out or from a past drop
@@ -110,4 +113,25 @@ const productUrl = href || `/product/${id}`;
       </p>
     </div>
   </a>
+
+  {/* Tag links - outside the main product link for proper click handling */}
+  {
+    tags.length > 0 && (
+      <div class="mt-2 flex flex-wrap gap-1">
+        {tags.slice(0, 3).map((tag) => (
+          <a
+            href={`/shop/tag/${encodeURIComponent(tag)}`}
+            class="px-2 py-0.5 text-xs rounded-full bg-secondary text-text-secondary hover:bg-background-secondary hover:text-text transition-colors duration-normal"
+          >
+            {tag}
+          </a>
+        ))}
+        {tags.length > 3 && (
+          <span class="px-2 py-0.5 text-xs text-text-muted">
+            +{tags.length - 3}
+          </span>
+        )}
+      </div>
+    )
+  }
 </article>

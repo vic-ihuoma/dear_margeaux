@@ -121,6 +121,17 @@ export interface UpdateVariantParams {
   image_alt?: string | null;
 }
 
+/** Tag with count of products */
+export interface TagInfo {
+  tag: string;
+  count: number;
+}
+
+/** Response for listing tags */
+export interface TagsResponse {
+  tags: TagInfo[];
+}
+
 // ============================================================================
 // Inventory Types
 // ============================================================================
@@ -469,6 +480,8 @@ export interface UpdateWebhookParams {
 /** Parameters for listing products */
 export interface ListProductsParams extends PaginationParams {
   status?: ProductStatus;
+  /** Filter products by tag (case-insensitive) */
+  tag?: string;
 }
 
 /** Parameters for listing inventory */

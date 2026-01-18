@@ -15,6 +15,7 @@ import type {
   UpdateVariantParams,
   ListProductsParams,
   Variant,
+  TagsResponse,
   // Inventory
   InventoryItem,
   AdjustInventoryParams,
@@ -301,6 +302,13 @@ export class MerchantClient {
       '/products',
       { params: params ? { ...params } : undefined }
     );
+  }
+
+  /**
+   * Get all unique tags with product counts
+   */
+  async getTags(): Promise<TagsResponse> {
+    return this.request<TagsResponse>('GET', '/products/tags');
   }
 
   /**

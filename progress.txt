@@ -1756,3 +1756,86 @@ All PRD requirements documented:
 
 ### Next Steps
 - pm-17: Display product images on storefront with alt text
+
+## 2026-01-18: pm-18 - Add product filtering by tags on storefront
+
+### Task Completed
+Implemented tag-based product filtering on the storefront with new tag page, tag filter UI, and tag links on product cards.
+
+### Key Decisions
+- Added `tag?: string` filter parameter to `ListProductsParams` in API types
+- Created new `/v1/products/tags` endpoint to get all unique tags with counts for filter UI
+- Created `/shop/tag/[tag].astro` dynamic page with `getStaticPaths` for SSG
+- Added tag filter UI section to shop/index.astro showing all available tags
+- Updated ProductCard component to display tag links (up to 3 tags, with "+N" for overflow)
+- Tags are normalized (lowercase, trimmed) on both API and storefront for consistent filtering
+- Sample tags provided for fallback when API is unavailable
+
+### Files Created
+- `apps/storefront/src/pages/shop/tag/[tag].astro` - Tag-filtered product listing page (~370 lines)
+
+### Files Changed
+- `packages/api/src/types.ts`:
+  - Added `tag?: string` to ListProductsParams (line 484)
+  - Added `TagInfo` interface (lines 125-128)
+  - Added `TagsResponse` interface (lines 131-133)
+- `packages/api/src/merchant-client.ts`:
+  - Added `getTags()` method (lines 310-312)
+- `merchant/src/routes/catalog.ts`:
+  - Added tag filtering to GET /v1/products using subquery (lines 44-48)
+  - Added GET /v1/products/tags endpoint (lines 133-152)
+- `apps/storefront/src/pages/shop/index.astro`:
+  - Added tags to DisplayProduct interface (line 89)
+  - Added allTags state variable (line 95)
+  - Added tags to drop product mapping (line 165)
+  - Added tags to evergreen product mapping (line 214)
+  - Added tag fetching after products load (lines 232-238)
+  - Added sample tags for fallback mode (lines 251-258)
+  - Added tag filter UI section in template (lines 317-335)
+  - Updated ProductCard usage to pass tags prop (line 365)
+- `apps/storefront/src/components/ProductCard.astro`:
+  - Added tags prop to interface (lines 15-16)
+  - Added tags to destructured props (line 31)
+  - Added tag links display section (lines 117-136)
+- `prd.json` - Set passes: true for pm-18
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (no errors in changed files, pre-existing warnings only)
+- Unit Tests: PASSED
+  - Merchant: 297 tests
+  - API Client: 116 tests
+  - Storefront: 68 tests
+  - Admin: 148 tests
+- Build: PASSED (36 pages built, including new tag pages)
+
+### Test Coverage Summary
+All PRD unit tests covered:
+- Tag page generates paths for all tags ✓ (getStaticPaths with sample + API tags)
+- API filters products by tag ✓ (subquery filter in catalog.ts)
+- Tag page shows filtered products ✓ (fetches from API with tag filter)
+
+Visual verification needed:
+- Navigate to /shop and see tag filter UI
+- Click tag link and verify filtered products
+- Verify active tag highlighted on tag page
+- Verify tag links on ProductCard
+
+### Implementation Details
+1. **API Tag Filtering**: Products are filtered using a subquery that joins with product_tags table:
+   ```sql
+   WHERE id IN (SELECT product_id FROM product_tags WHERE LOWER(tag) = ?)
+   ```
+
+2. **Tags Endpoint**: GET /v1/products/tags returns unique tags with counts:
+   ```json
+   { "tags": [{ "tag": "leather", "count": 5 }, ...] }
+   ```
+
+3. **Static Path Generation**: Tag page generates paths from both API tags and sample fallback tags
+
+4. **Tag Display**: ProductCard shows up to 3 tags as clickable chips, with "+N" for overflow
+
+### Next Steps
+- newsletter-1: Create newsletter_subscribers table in D1
+- Other newsletter and storefront tasks

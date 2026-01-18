@@ -32,6 +32,7 @@ catalogRoutes.get('/', async (c) => {
   const limit = Math.min(parseInt(c.req.query('limit') || '20'), 100);
   const cursor = c.req.query('cursor');
   const status = c.req.query('status'); // Filter by status
+  const tag = c.req.query('tag'); // Filter by tag (case-insensitive)
 
   // Build query
   let query = `SELECT * FROM products WHERE store_id = ?`;
@@ -40,6 +41,13 @@ catalogRoutes.get('/', async (c) => {
   if (status) {
     query += ` AND status = ?`;
     params.push(status);
+  }
+
+  // Filter by tag using a subquery
+  if (tag) {
+    const normalizedTag = tag.trim().toLowerCase();
+    query += ` AND id IN (SELECT product_id FROM product_tags WHERE LOWER(tag) = ?)`;
+    params.push(normalizedTag);
   }
 
   if (cursor) {
@@ -119,6 +127,27 @@ catalogRoutes.get('/', async (c) => {
       has_more: hasMore,
       next_cursor: nextCursor,
     },
+  });
+});
+
+// GET /v1/products/tags - Get all unique tags (for filter UI)
+catalogRoutes.get('/tags', async (c) => {
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+
+  // Get all unique tags from products belonging to this store
+  const tags = await db.query<{ tag: string; count: number }>(
+    `SELECT pt.tag, COUNT(*) as count
+     FROM product_tags pt
+     INNER JOIN products p ON pt.product_id = p.id
+     WHERE p.store_id = ?
+     GROUP BY pt.tag
+     ORDER BY pt.tag ASC`,
+    [store.id]
+  );
+
+  return c.json({
+    tags: tags.map((t) => ({ tag: t.tag, count: t.count })),
   });
 });
 

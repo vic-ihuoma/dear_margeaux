@@ -7,6 +7,7 @@ import type {
   Drop,
   Product,
   InventoryItem,
+  TagInfo,
 } from '@dear-margeaux/api';
 
 // Sample products for development/fallback when API is unavailable
@@ -17,6 +18,7 @@ const sampleProducts = [
     price: 45000,
     collection: 'Spring 2026',
     soldOut: false,
+    tags: ['leather', 'tote', 'everyday'],
   },
   {
     id: '2',
@@ -24,6 +26,7 @@ const sampleProducts = [
     price: 28500,
     collection: 'Spring 2026',
     soldOut: false,
+    tags: ['leather', 'crossbody', 'everyday'],
   },
   {
     id: '3',
@@ -31,6 +34,7 @@ const sampleProducts = [
     price: 52000,
     collection: 'Spring 2026',
     soldOut: true,
+    tags: ['leather', 'formal'],
   },
   {
     id: '4',
@@ -38,6 +42,7 @@ const sampleProducts = [
     price: 68000,
     collection: 'Spring 2026',
     soldOut: false,
+    tags: ['leather', 'travel'],
   },
   {
     id: '5',
@@ -45,6 +50,7 @@ const sampleProducts = [
     price: 32000,
     collection: 'Winter 2025',
     soldOut: true,
+    tags: ['leather', 'formal', 'evening'],
   },
   {
     id: '6',
@@ -52,6 +58,7 @@ const sampleProducts = [
     price: 48000,
     collection: 'Winter 2025',
     soldOut: false,
+    tags: ['leather', 'everyday', 'hobo'],
   },
   {
     id: '7',
@@ -59,6 +66,7 @@ const sampleProducts = [
     price: 38000,
     collection: 'Winter 2025',
     soldOut: false,
+    tags: ['leather', 'everyday'],
   },
   {
     id: '8',
@@ -66,6 +74,7 @@ const sampleProducts = [
     price: 55000,
     collection: 'Fall 2025',
     soldOut: false,
+    tags: ['leather', 'everyday', 'work'],
   },
 ];
 
@@ -77,11 +86,13 @@ interface DisplayProduct {
   imageAlt?: string;
   collection?: string;
   soldOut: boolean;
+  tags?: string[];
 }
 
 // Fetch products from the Merchant API
 let products: DisplayProduct[] = sampleProducts;
 let allDrops: Drop[] = [];
+let allTags: TagInfo[] = [];
 
 // Only try to fetch from API if environment variables are set
 const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
@@ -151,6 +162,7 @@ if (apiUrl && apiKey) {
               imageAlt: imageAlt,
               collection: drop.name,
               soldOut: allVariantsSoldOut || isPastDrop,
+              tags: product.tags,
             };
           }
         );
@@ -199,6 +211,7 @@ if (apiUrl && apiKey) {
               imageAlt: imageAlt,
               collection: undefined,
               soldOut: allVariantsSoldOut,
+              tags: product.tags,
             };
           } catch {
             return null;
@@ -215,6 +228,14 @@ if (apiUrl && apiKey) {
     if (allProducts.length > 0) {
       products = allProducts;
     }
+
+    // Fetch all tags for filter navigation
+    try {
+      const tagsResponse = await client.getTags();
+      allTags = tagsResponse.tags;
+    } catch {
+      // Tags fetch might fail, continue without it
+    }
   } catch (error) {
     // Log error but continue with sample data
     console.error('Failed to fetch products from API:', error);
@@ -226,6 +247,18 @@ if (apiUrl && apiKey) {
     { id: '2', name: 'Winter 2025', slug: 'winter-2025', status: 'ended' },
     { id: '3', name: 'Fall 2025', slug: 'fall-2025', status: 'ended' },
   ] as Drop[];
+
+  // Create sample tags from sample products for filter navigation
+  const tagCounts = new Map<string, number>();
+  for (const p of sampleProducts) {
+    for (const t of p.tags) {
+      tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
+    }
+  }
+  allTags = Array.from(tagCounts.entries()).map(([tag, count]) => ({
+    tag,
+    count,
+  }));
 }
 ---
 
@@ -248,36 +281,61 @@ if (apiUrl && apiKey) {
 
   <!-- Filters Section -->
   {
-    allDrops.length > 0 && (
+    (allDrops.length > 0 || allTags.length > 0) && (
       <section class="border-b border-border bg-background">
         <div class="container mx-auto px-4 max-w-6xl">
-          <div class="flex items-center gap-4 py-4 overflow-x-auto">
-            <span class="text-sm font-medium text-text-secondary shrink-0">
-              Filter by:
-            </span>
-            <div class="flex gap-2">
-              <a
-                href="/shop"
-                class="px-4 py-2 text-sm font-medium rounded-full bg-primary text-text-inverse transition-colors duration-normal"
-              >
-                All
-              </a>
-              {allDrops.map((drop) => {
-                const isEnded = drop.status === 'ended';
-                return (
+          <div class="flex flex-col gap-3 py-4">
+            {/* Drop filters */}
+            {allDrops.length > 0 && (
+              <div class="flex items-center gap-4 overflow-x-auto">
+                <span class="text-sm font-medium text-text-secondary shrink-0">
+                  Collection:
+                </span>
+                <div class="flex gap-2">
                   <a
-                    href={`/shop/${drop.slug}`}
-                    class:list={[
-                      'px-4 py-2 text-sm font-medium rounded-full border border-border text-text hover:bg-background-secondary transition-colors duration-normal',
-                      isEnded && 'opacity-70',
-                    ]}
+                    href="/shop"
+                    class="px-4 py-2 text-sm font-medium rounded-full bg-primary text-text-inverse transition-colors duration-normal"
                   >
-                    {drop.name}
-                    {isEnded && <span class="ml-1 text-xs">(Past)</span>}
+                    All
                   </a>
-                );
-              })}
-            </div>
+                  {allDrops.map((drop) => {
+                    const isEnded = drop.status === 'ended';
+                    return (
+                      <a
+                        href={`/shop/${drop.slug}`}
+                        class:list={[
+                          'px-4 py-2 text-sm font-medium rounded-full border border-border text-text hover:bg-background-secondary transition-colors duration-normal',
+                          isEnded && 'opacity-70',
+                        ]}
+                      >
+                        {drop.name}
+                        {isEnded && <span class="ml-1 text-xs">(Past)</span>}
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Tag filters */}
+            {allTags.length > 0 && (
+              <div class="flex items-center gap-4 overflow-x-auto">
+                <span class="text-sm font-medium text-text-secondary shrink-0">
+                  Tags:
+                </span>
+                <div class="flex gap-2 flex-wrap">
+                  {allTags.map((t) => (
+                    <a
+                      href={`/shop/tag/${encodeURIComponent(t.tag)}`}
+                      class="px-3 py-1.5 text-sm font-medium rounded-full border border-border text-text hover:bg-background-secondary transition-colors duration-normal"
+                    >
+                      {t.tag}
+                      <span class="ml-1 text-xs opacity-70">({t.count})</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -307,6 +365,7 @@ if (apiUrl && apiKey) {
                   imageAlt={product.imageAlt}
                   collection={product.collection}
                   soldOut={product.soldOut}
+                  tags={product.tags}
                 />
               ))}
             </ProductGrid>
