@@ -1,12 +1,14 @@
 import { useState, useCallback, type FormEvent } from 'react';
 import type { Product, ProductStatus } from '@dear-margeaux/api';
 import { TagInput } from './TagInput';
+import { DropSelector } from './DropSelector';
 
 export interface ProductFormData {
   title: string;
   description: string;
   status: ProductStatus;
   tags: string[];
+  drop_id: string | null;
 }
 
 /** The data shape that ProductForm submits */
@@ -15,6 +17,7 @@ export interface ProductFormSubmitData {
   description?: string;
   status: ProductStatus;
   tags?: string[];
+  drop_id?: string;
 }
 
 export interface ProductFormProps {
@@ -42,6 +45,7 @@ export function ProductForm({
     description: product?.description || '',
     status: product?.status || 'draft',
     tags: product?.tags || [],
+    drop_id: product?.drop_id || null,
   });
 
   const [formErrors, setFormErrors] = useState<
@@ -77,6 +81,7 @@ export function ProductForm({
       description: formData.description.trim() || undefined,
       status: formData.status,
       tags: formData.tags.length > 0 ? formData.tags : undefined,
+      drop_id: formData.drop_id || undefined,
     });
   };
 
@@ -175,6 +180,15 @@ export function ProductForm({
         placeholder="Add tags (press Enter or comma to add)"
         disabled={isSubmitting}
         maxTags={10}
+      />
+
+      {/* Drop Assignment */}
+      <DropSelector
+        id="drop_id"
+        label="Assign to Drop"
+        value={formData.drop_id}
+        onChange={(drop_id) => setFormData({ ...formData, drop_id })}
+        disabled={isSubmitting}
       />
 
       {/* Status */}

@@ -1648,3 +1648,42 @@ getStatusBadgeConfig tests:
 
 ### Next Steps
 - pm-14: Integrate DropSelector into ProductForm
+
+## 2026-01-18: pm-14 - Integrate DropSelector into ProductForm
+
+### Task Completed
+Confirmed that DropSelector is already integrated into ProductForm. The integration was done in a previous iteration.
+
+### Implementation Details
+The ProductForm component already has:
+- Import of DropSelector (line 4)
+- `drop_id: string | null` in ProductFormData interface (line 11)
+- `drop_id?: string` in ProductFormSubmitData interface (line 20)
+- Form state initialized with `drop_id: product?.drop_id || null` (line 48)
+- DropSelector rendered in form between Tags and Status sections (lines 185-192)
+- Submit handler includes drop_id in payload (line 84)
+
+### Key Decisions
+- DropSelector placed after TagInput and before Status for logical grouping
+- Uses controlled component pattern with value/onChange props
+- Passes `disabled={isSubmitting}` to match form behavior
+- drop_id is sent as undefined (not null) when unassigned to match API expectations
+
+### Files Changed
+- `prd.json` - Set passes: true for pm-14
+
+### Test Results
+- Typecheck: PASSED (0 errors, 0 warnings across all 7 packages)
+- Lint: PASSED (0 errors in ProductForm.tsx and DropSelector.tsx, 2 pre-existing accessibility warnings in TagInput.tsx)
+- Unit Tests: PASSED (114 tests in admin)
+
+### Test Coverage Summary
+PRD unit tests verified:
+- DropSelector renders in form ✓ (lines 185-192)
+- Selection updates form state ✓ (onChange handler, line 190)
+- Existing product shows current drop ✓ (initialized from product?.drop_id, line 48)
+
+### Next Steps
+- pm-15: Add alt text field to variant images
+- pm-16: Update VariantForm with image upload and alt text
+- pm-17: Display product images on storefront with alt text

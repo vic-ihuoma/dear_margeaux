@@ -1192,3 +1192,42 @@ All unit tests implemented:
 - pm-14: Integrate DropSelector into ProductForm
 - Consider adding drop filtering by status (e.g., only show active/scheduled)
 - Consider caching drops to avoid re-fetching on every mount
+
+---
+
+## pm-14: Integrate DropSelector into ProductForm
+
+**PRD Requirements:**
+- Open apps/admin/src/components/ProductForm.tsx
+- Import DropSelector component
+- Add drop assignment section in form
+- Wire up onChange handler to update form state
+- Pre-select current drop when editing existing product
+
+**Typecheck:** PASSED (0 errors across all 7 packages)
+**Lint:** PASSED (0 errors on ProductForm.tsx and DropSelector.tsx)
+**Unit Tests:** PASSED (114 tests in admin)
+**Browser Tests:** N/A (no visual tests required - was already implemented)
+**Pre-commit Hooks:** Pending (commit in progress)
+
+**Findings:**
+- Integration was already complete from a previous iteration
+- ProductForm.tsx already imports DropSelector (line 4)
+- ProductFormData interface already includes `drop_id: string | null` (line 11)
+- ProductFormSubmitData interface already includes `drop_id?: string` (line 20)
+- Form state initialized with `drop_id: product?.drop_id || null` (line 48)
+- DropSelector rendered in form between Tags and Status sections (lines 185-192)
+- Submit handler includes drop_id in payload (line 84)
+- Uses controlled component pattern (value/onChange)
+- Respects form disabled state during submission
+
+**PRD Requirements Verified:**
+- DropSelector renders in form ✓
+- Selection updates form state ✓
+- Existing product shows current drop ✓
+
+**Recommendations:**
+- pm-15: Add alt text field to variant images
+- pm-16: Update VariantForm with image upload and alt text
+- pm-17: Display product images on storefront with alt text
+
