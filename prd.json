@@ -1659,7 +1659,7 @@
         "Verify page layout still looks good without the section",
         "Test responsive behavior"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "nav-8",

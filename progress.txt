@@ -91,3 +91,26 @@ Updated the three main notification functions to use Resend API with HTML templa
 - Tasks email-1, email-2, email-11 require manual user action (Resend signup, API key setup, domain config)
 - Tasks email-12, email-13, email-14: End-to-end testing once Resend is configured
 - Consider other categories (testing, security, performance, etc.) for parallel work
+
+## 2026-01-18: nav-7 - Remove 'Stay in the Know' section from homepage
+
+### Task Completed
+Removed the duplicate newsletter signup section from the homepage. The footer's "Stay in the Loop" section remains as the primary newsletter signup location.
+
+### Key Decisions
+- Removed the entire newsletter section (lines 292-318) from index.astro
+- The footer newsletter signup form remains unchanged, providing consistent placement
+- Homepage now ends cleanly after the "Our Story" section
+
+### Files Changed
+- `apps/storefront/src/pages/index.astro` - Removed Newsletter Section (~27 lines removed)
+- `prd.json` - Set passes: true for nav-7
+
+### Test Results
+- Lint: PASSED (0 errors in storefront, 165 pre-existing warnings in other files)
+- Unit Tests: PASSED (18 tests in 2 files)
+- Build: PASSED (storefront builds successfully)
+
+### Next Steps
+- nav-8: Update 'Our Story' section link to specific blog post
+- Other navigation tasks (nav-1 through nav-6) for drops page and header updates

@@ -74,3 +74,22 @@
 - email-12, email-13, email-14 are end-to-end tests requiring Resend configuration
 - Consider adding unit tests for template builders (buildOrderConfirmationHtml, etc.)
 - Consider other PRD categories for parallel work while awaiting Resend setup
+
+## [nav-7]: Remove 'Stay in the Know' section from homepage
+**Status:** PASSED
+**Tests Written:** N/A (HTML removal, no logic change)
+**Test Results:** 18 tests passed (2 files)
+**Type Check:** PASSED (via Turbo build)
+**Lint:** PASSED - 0 errors in storefront
+**Browser Tests:** SKIPPED - simple HTML removal
+**Pre-commit Hooks:** Pending commit
+**Findings:**
+- Removed duplicate newsletter signup section from homepage (lines 292-318)
+- Section included: h2 heading "Stay in the Know", description paragraph, and email signup form
+- Footer "Stay in the Loop" section remains as the single newsletter signup location
+- Homepage now flows from "Our Story" section directly to footer
+- Removes ~27 lines of HTML from index.astro
+- Build completes successfully with all static pages generated
+**Recommendations:**
+- Consider nav-8 next: Update 'Our Story' section link to point to /blog/about-dear-margeaux
+- Navigation tasks nav-1 through nav-6 create the /drops index page with countdown timers
