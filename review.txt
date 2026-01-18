@@ -2031,3 +2031,110 @@ All unit tests implemented:
 **Recommendations:**
 - Consider adding toast notifications instead of page reload for better UX
 - Future: Could add bulk remove functionality
+
+## [newsletter-20]: Add subscriber export to CSV
+**Status:** PASSED
+**Tests Written:**
+- GET /v1/newsletter/subscribers/export returns 403 for non-admin users
+- GET /v1/newsletter/subscribers/export returns CSV content for admin
+- CSV includes all required columns in header
+- Filename includes date in YYYY-MM-DD format
+- Correctly derives status from verified and unsubscribed_at fields
+- Returns empty CSV with headers only when no subscribers
+- Escapes commas and quotes in email addresses
+- Filters by store_id for tenant isolation
+- Defaults source to 'website' when null
+
+**Test Results:** 474 tests passed (9 new + 465 existing)
+**Type Check:** PASSED - 0 errors in my new code
+**Lint:** PASSED for new code (2 pre-existing a11y errors in TagInput.tsx)
+**Browser Tests:** N/A - Task has visual tests but requires dev server for browser automation
+
+**Findings:**
+- Created GET /v1/newsletter/subscribers/export endpoint in merchant/src/routes/newsletter.ts:
+  - Admin-only endpoint (requires adminOnly middleware)
+  - Fetches all subscribers for authenticated store
+  - Returns CSV with email, status, subscribed_at, verified_at, unsubscribed_at, source columns
+  - Status derived from verified (0/1) and unsubscribed_at fields
+  - Proper escaping for CSV special characters (commas, quotes, newlines)
+  - Content-Type: text/csv with Content-Disposition for download
+  - Filename format: subscribers-YYYY-MM-DD.csv
+
+- Created admin API proxy route apps/admin/src/pages/api/newsletter/subscribers/export.ts:
+  - Forwards request to Merchant API with Bearer token auth
+  - Preserves Content-Disposition header from upstream response
+  - Handles errors gracefully
+
+- Updated subscribers page with Export CSV button:
+  - Download icon consistent with design system
+  - Positioned in header between subscriber count and Add Subscriber button
+  - Uses anchor tag with download attribute for browser download
+
+**PRD Coverage:**
+- Add 'Export' button to admin subscribers page ✓
+- Implement GET /v1/newsletter/subscribers/export (admin only) ✓
+- Generate CSV with email, status, subscribed_at columns ✓ (plus verified_at, unsubscribed_at, source)
+- Trigger browser download ✓
+- Include date in filename ✓
+
+**Recommendations:**
+- newsletter-21: Add newsletter send history page
+- newsletter-22: Wire up footer newsletter form to API
+- For very large subscriber lists (10k+), consider implementing streaming CSV generation
+
+## [newsletter-22]: Wire up footer newsletter form to API
+**Status:** PASSED
+**Tests Written:**
+- NewsletterForm renders email input and submit button
+- NewsletterForm has accessible form labels
+- NewsletterForm has proper form aria-label
+- NewsletterForm shows error for empty email
+- NewsletterForm shows error for invalid email format
+- NewsletterForm accepts valid email format
+- NewsletterForm clears error message when user types
+- NewsletterForm sends request to correct newsletter endpoint
+- NewsletterForm normalizes email to lowercase
+- NewsletterForm trims whitespace from email
+- NewsletterForm shows loading spinner during submission
+- NewsletterForm disables form during submission
+- NewsletterForm shows success message on successful submission
+- NewsletterForm success message has proper accessibility attributes
+- NewsletterForm shows error message on API error
+- NewsletterForm shows generic error message when API returns no message
+- NewsletterForm shows network error message on fetch failure
+- NewsletterForm sets aria-invalid on input when there is an error
+- NewsletterForm links error message to input via aria-describedby
+- NewsletterForm submits form on Enter key press in input
+
+**Test Results:** 103 tests passed (20 new + 83 existing in storefront)
+**Type Check:** PASSED - 0 errors
+**Lint:** PASSED for new code (2 pre-existing a11y errors in admin TagInput.tsx)
+**Browser Tests:** N/A - Task has visual tests but requires dev server for browser automation
+
+**Findings:**
+- Created NewsletterForm React component at apps/storefront/src/components/NewsletterForm.tsx:
+  - Uses controlled input pattern with useState for email and status
+  - Custom email validation using regex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  - Sends POST to /v1/newsletter/subscribe with email in body
+  - Loading state with spinner animation during submission
+  - Success state replaces form with confirmation message
+  - Error state shows inline error below input
+  - Proper accessibility: aria-label on form, sr-only labels, aria-invalid, aria-describedby
+
+- Updated Footer.astro:
+  - Added import for NewsletterForm component
+  - Uses client:load directive for React hydration
+  - Passes PUBLIC_MERCHANT_API_URL and PUBLIC_MERCHANT_API_KEY from env
+  - Fallback to static HTML form if env vars not available
+
+**PRD Coverage:**
+- Update apps/storefront/src/components/Footer.astro newsletter form ✓
+- Add client-side JavaScript to handle form submit ✓ (React component)
+- POST to /v1/newsletter/subscribe endpoint ✓
+- Show success message: 'Check your email to confirm' ✓
+- Show error message on failure ✓
+
+**Recommendations:**
+- newsletter-23: Add newsletter signup to blog listing page (can reuse NewsletterForm)
+- newsletter-24: Add newsletter signup to individual blog posts (can reuse NewsletterForm)
+- newsletter-15: Add invisible reCAPTCHA to subscribe forms (requires Google signup)

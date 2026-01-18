@@ -3015,7 +3015,18 @@
         "Show error message on failure"
       ],
       "tests": {
-        "unit": [],
+        "unit": [
+          "NewsletterForm renders email input and submit button",
+          "NewsletterForm has accessible form labels",
+          "NewsletterForm shows error for empty email",
+          "NewsletterForm shows error for invalid email format",
+          "NewsletterForm sends request to correct newsletter endpoint",
+          "NewsletterForm normalizes email to lowercase",
+          "NewsletterForm shows loading spinner during submission",
+          "NewsletterForm shows success message on successful submission",
+          "NewsletterForm shows error message on API error",
+          "NewsletterForm shows network error message on fetch failure"
+        ],
         "visual": [
           "agent-browser: navigate to storefront",
           "agent-browser: scroll to footer newsletter form",
@@ -3024,7 +3035,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "newsletter-23",

@@ -2628,3 +2628,100 @@ NOTES:
 - Followed existing patterns from newsletter-18 (add subscriber) for consistency
 - Used soft delete approach for compliance reasons (audit trail)
 - The confirmation dialog provides clear user feedback before destructive action
+
+================================================================================
+ITERATION: 2026-01-18
+TASK: newsletter-20 - Add subscriber export to CSV
+================================================================================
+
+COMPLETED WORK:
+- Implemented GET /v1/newsletter/subscribers/export endpoint in merchant/src/routes/newsletter.ts
+  - Fetches all subscribers for the authenticated store (no pagination for export)
+  - Returns CSV with columns: email, status, subscribed_at, verified_at, unsubscribed_at, source
+  - Derives status from verified and unsubscribed_at fields
+  - Proper CSV escaping for special characters (commas, quotes, newlines)
+  - Filename includes current date: subscribers-YYYY-MM-DD.csv
+  - Content-Type: text/csv with Content-Disposition header for download
+  - Admin-only access via adminOnly middleware
+  - Filters by store_id for multi-tenant support
+
+- Created admin API proxy route at apps/admin/src/pages/api/newsletter/subscribers/export.ts
+  - Forwards GET request to Merchant API with authentication
+  - Preserves Content-Disposition header for proper browser download
+
+- Updated admin subscribers page (apps/admin/src/pages/subscribers/index.astro)
+  - Added Export CSV button in header next to Add Subscriber button
+  - Uses download icon with consistent styling
+  - Links to /api/newsletter/subscribers/export with download attribute
+
+- Added 9 unit tests in merchant/tests/routes/newsletter.test.ts
+  - Admin-only access (403 for non-admin)
+  - CSV content generation with correct columns
+  - CSV header verification
+  - Date in filename format validation
+  - Status derivation (verified, unverified, unsubscribed)
+  - Empty CSV handling (headers only)
+  - CSV escaping for special characters
+  - Store isolation via store_id filter
+  - Default source value handling when null
+
+FILES CHANGED:
+- merchant/src/routes/newsletter.ts (added export endpoint and escapeCSVField helper)
+- merchant/tests/routes/newsletter.test.ts (added 9 tests for export)
+- apps/admin/src/pages/api/newsletter/subscribers/export.ts (new file)
+- apps/admin/src/pages/subscribers/index.astro (added Export CSV button)
+- prd.json (marked newsletter-20 as passed)
+- apps/storefront/tests/components/CountdownTimer.test.tsx (fixed pre-existing type error)
+
+TEST RESULTS:
+- All 474 tests pass in merchant package (9 new tests for export)
+- TypeScript type check: PASSED (0 errors)
+- Lint: My new code passes (pre-existing errors in TagInput.tsx remain)
+
+NOTES:
+- Fixed a pre-existing type error in CountdownTimer.test.tsx (passing Date object instead of string)
+- The export endpoint fetches all subscribers without pagination for simplicity - suitable for moderate list sizes
+- For very large subscriber lists (10,000+), a streaming approach could be considered in the future
+
+================================================================================
+ITERATION: 2026-01-18
+TASK: newsletter-22 - Wire up footer newsletter form to API
+================================================================================
+
+COMPLETED WORK:
+- Created NewsletterForm React component at apps/storefront/src/components/NewsletterForm.tsx
+  - Handles form submission with email validation
+  - Shows loading state during submission
+  - Displays success message: "Check your email to confirm your subscription"
+  - Shows error messages for validation failures and API errors
+  - Accessible with proper aria-labels, aria-invalid, aria-describedby
+  - Normalizes email to lowercase and trims whitespace
+
+- Updated Footer.astro to use NewsletterForm component
+  - Imports NewsletterForm component
+  - Passes API URL and API key from environment variables
+  - Uses client:load directive for client-side hydration
+  - Fallback to static form if env vars not available
+
+- Added 20 unit tests in apps/storefront/tests/components/NewsletterForm.test.tsx
+  - Tests for rendering, email validation, form submission
+  - Tests for loading state, success state, error handling
+  - Tests for accessibility (aria-invalid, aria-describedby)
+  - Tests for keyboard interaction (form submit on Enter)
+
+FILES CHANGED:
+- apps/storefront/src/components/NewsletterForm.tsx (new file)
+- apps/storefront/src/components/Footer.astro (updated)
+- apps/storefront/tests/components/NewsletterForm.test.tsx (new file)
+- prd.json (marked newsletter-22 as passed)
+
+TEST RESULTS:
+- All 103 tests pass in storefront package (20 new tests for NewsletterForm)
+- TypeScript type check: PASSED (0 errors)
+- Lint: PASSED for new code (pre-existing errors in TagInput.tsx remain in admin)
+
+NOTES:
+- The component follows the same pattern as WaitlistForm for consistency
+- Uses existing API endpoint POST /v1/newsletter/subscribe
+- Success message matches the API response: "Check your email to confirm your subscription"
+- Fixed redundant role="form" attribute flagged by jsx-a11y eslint rule
