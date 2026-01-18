@@ -1839,3 +1839,65 @@ Visual verification needed:
 ### Next Steps
 - newsletter-1: Create newsletter_subscribers table in D1
 - Other newsletter and storefront tasks
+
+## 2026-01-18: newsletter-1 - Create newsletter_subscribers table in D1
+
+### Task Completed
+Created D1 migration for the newsletter_subscribers table, implementing general newsletter subscriptions with double opt-in support.
+
+### Key Decisions
+- Created migration file `015-newsletter-subscribers.sql` following existing naming convention
+- Table structure includes all required columns:
+  - `id TEXT PRIMARY KEY` - unique identifier
+  - `store_id TEXT NOT NULL` - for multi-tenant support
+  - `email TEXT NOT NULL` - subscriber email
+  - `verified INTEGER NOT NULL DEFAULT 0` - for double opt-in (0=unverified, 1=verified)
+  - `verification_token TEXT` - token for email verification
+  - `subscribed_at TEXT NOT NULL` - when they subscribed
+  - `verified_at TEXT` - when they verified
+  - `unsubscribed_at TEXT` - soft unsubscribe timestamp
+  - `source TEXT NOT NULL DEFAULT 'footer'` - signup source tracking
+  - `created_at TEXT NOT NULL`, `updated_at TEXT NOT NULL` - timestamps
+- Added `UNIQUE(store_id, email)` constraint to prevent duplicate subscriptions per store
+- Created five indexes for efficient queries:
+  - `idx_newsletter_store_id` - for store filtering
+  - `idx_newsletter_email` - for fast email lookups
+  - `idx_newsletter_verified` - for filtering by verification status
+  - `idx_newsletter_token` - for verification token lookups
+  - `idx_newsletter_unsubscribed` - for filtering active subscribers
+
+### Files Created
+- `merchant/migrations/015-newsletter-subscribers.sql` - Database migration (36 lines)
+- `merchant/tests/migrations/newsletter-subscribers.test.ts` - 25 unit tests
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors in new files, pre-existing warnings only)
+- Merchant Tests: PASSED (322 tests - 25 new newsletter + 297 existing)
+
+### Test Coverage Summary
+All PRD unit tests documented:
+- Migration file exists ✓
+- Table has all required columns ✓
+- Unique constraint on (store_id, email) exists ✓
+- Index on email exists ✓
+
+Additional test coverage:
+- Table structure validation (all columns documented)
+- Unique constraint behavior (same email for different stores, duplicate rejection)
+- Query patterns (by email, by token, verified only, active only)
+- Double opt-in flow (insert unverified, verify, clear token)
+- Unsubscribe flow (soft delete with unsubscribed_at)
+- Resubscribe flow (clear unsubscribed_at)
+- Count queries (active subscribers, by source)
+
+### Migration Commands (for production deployment)
+```bash
+cd merchant
+wrangler d1 migrations apply merchant-db --remote
+```
+
+### Next Steps
+- newsletter-2: Create newsletter_sends table in D1 for tracking
+- newsletter-3: Create newsletter subscription API endpoint
+- newsletter-4: Create double opt-in verification email template
