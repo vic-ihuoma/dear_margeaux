@@ -162,6 +162,52 @@ describe('Cart Store', () => {
       expect(items[0].quantity).toBe(10);
     });
 
+    it('respects availableQuantity limit when adding items', () => {
+      const item = createMockItem({ availableQuantity: 3 });
+      addToCart(item, 5); // Request 5 but only 3 available
+
+      const items = $cartItems.get();
+      expect(items[0].quantity).toBe(3);
+    });
+
+    it('uses availableQuantity as limit when less than 10', () => {
+      const item = createMockItem({ availableQuantity: 5 });
+      addToCart(item, 3);
+      addToCart(item, 4); // Would be 7, should cap at 5
+
+      const items = $cartItems.get();
+      expect(items[0].quantity).toBe(5);
+    });
+
+    it('stores availableQuantity in cart item', () => {
+      const item = createMockItem({ availableQuantity: 7 });
+      addToCart(item);
+
+      const items = $cartItems.get();
+      expect(items[0].availableQuantity).toBe(7);
+    });
+
+    it('updates availableQuantity when adding same item again', () => {
+      const item1 = createMockItem({ availableQuantity: 5 });
+      addToCart(item1);
+
+      const item2 = createMockItem({ availableQuantity: 8 });
+      addToCart(item2);
+
+      const items = $cartItems.get();
+      expect(items[0].availableQuantity).toBe(8);
+    });
+
+    it('defaults to 10 when availableQuantity not provided', () => {
+      const item = createMockItem();
+      // Don't set availableQuantity
+      addToCart(item, 8);
+      addToCart(item, 5); // Would be 13, should cap at 10
+
+      const items = $cartItems.get();
+      expect(items[0].quantity).toBe(10);
+    });
+
     it('handles multiple different items', () => {
       const item1 = createMockItem({ variantId: 'variant-1' });
       const item2 = createMockItem({
@@ -222,6 +268,31 @@ describe('Cart Store', () => {
       const items = $cartItems.get();
       expect(items).toHaveLength(1);
       expect(items[0].quantity).toBe(1); // Original item unchanged
+    });
+
+    it('respects availableQuantity when updating quantity', () => {
+      addToCart(createMockItem({ availableQuantity: 3 }));
+      updateCartItemQuantity('variant-1', 5); // Try to set 5, but only 3 available
+
+      const items = $cartItems.get();
+      expect(items[0].quantity).toBe(1); // Should remain unchanged (5 > 3)
+    });
+
+    it('allows quantity up to availableQuantity limit', () => {
+      addToCart(createMockItem({ availableQuantity: 5 }));
+      updateCartItemQuantity('variant-1', 5); // Set to max available
+
+      const items = $cartItems.get();
+      expect(items[0].quantity).toBe(5);
+    });
+
+    it('prevents increasing quantity beyond inventory', () => {
+      const item = createMockItem({ availableQuantity: 2 });
+      addToCart(item, 2); // Start at max
+      updateCartItemQuantity('variant-1', 3); // Try to go beyond
+
+      const items = $cartItems.get();
+      expect(items[0].quantity).toBe(2); // Should remain at 2
     });
   });
 

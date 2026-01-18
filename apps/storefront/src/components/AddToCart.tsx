@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { addToCart } from '../stores/cart';
 
+/** Low stock threshold - show warning when inventory is below this */
+const LOW_STOCK_THRESHOLD = 5;
+
 interface AddToCartProps {
   variantId: string | null;
   variantSku: string | null;
@@ -8,6 +11,8 @@ interface AddToCartProps {
   productTitle: string;
   price: number;
   available: boolean;
+  /** Available quantity from inventory (defaults to 10 if not provided) */
+  availableQuantity?: number;
   imageUrl: string | null;
 }
 
@@ -18,11 +23,19 @@ export default function AddToCart({
   productTitle,
   price,
   available,
+  availableQuantity = 10,
   imageUrl,
 }: AddToCartProps) {
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Calculate the maximum quantity based on available inventory
+  const maxQuantity = Math.min(availableQuantity, 10);
+  const isLowStock =
+    available &&
+    availableQuantity > 0 &&
+    availableQuantity <= LOW_STOCK_THRESHOLD;
 
   const formattedPrice = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -36,7 +49,7 @@ export default function AddToCart({
   };
 
   const handleIncrement = () => {
-    if (quantity < 10) {
+    if (quantity < maxQuantity) {
       setQuantity(quantity + 1);
     }
   };
@@ -46,7 +59,7 @@ export default function AddToCart({
 
     setIsAdding(true);
 
-    // Add item to cart store
+    // Add item to cart store with inventory limit
     addToCart(
       {
         variantId,
@@ -55,6 +68,7 @@ export default function AddToCart({
         variantTitle,
         price,
         imageUrl,
+        availableQuantity,
       },
       quantity
     );
@@ -79,6 +93,11 @@ export default function AddToCart({
         {!available && (
           <span className="text-sm font-medium text-status-error">
             Sold Out
+          </span>
+        )}
+        {isLowStock && (
+          <span className="text-sm font-medium text-status-warning">
+            Only {availableQuantity} left
           </span>
         )}
       </div>
@@ -119,11 +138,14 @@ export default function AddToCart({
               id="quantity"
               name="quantity"
               min="1"
-              max="10"
+              max={maxQuantity}
               value={quantity}
               onChange={(e) =>
                 setQuantity(
-                  Math.min(10, Math.max(1, parseInt(e.target.value) || 1))
+                  Math.min(
+                    maxQuantity,
+                    Math.max(1, parseInt(e.target.value) || 1)
+                  )
                 )
               }
               className="w-12 h-10 text-center text-text font-medium border-x border-border bg-transparent focus:outline-none focus:ring-0"
@@ -131,7 +153,7 @@ export default function AddToCart({
             <button
               type="button"
               onClick={handleIncrement}
-              disabled={quantity >= 10}
+              disabled={quantity >= maxQuantity}
               className="w-10 h-10 flex items-center justify-center text-text-secondary hover:text-text disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-normal"
               aria-label="Increase quantity"
             >

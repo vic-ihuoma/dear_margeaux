@@ -54,6 +54,9 @@ export default function ProductControls({
         available={
           disablePurchase ? false : (selectedVariant?.available ?? false)
         }
+        availableQuantity={
+          disablePurchase ? 0 : (selectedVariant?.availableQuantity ?? 10)
+        }
         imageUrl={selectedVariant?.image_url ?? null}
       />
     </div>

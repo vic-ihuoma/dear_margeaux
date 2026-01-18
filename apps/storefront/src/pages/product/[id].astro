@@ -16,6 +16,8 @@ interface DisplayVariant {
   image_url: string | null;
   image_alt: string | null;
   available: boolean;
+  /** Available quantity for inventory validation */
+  availableQuantity: number;
 }
 
 interface DisplayProduct {
@@ -142,6 +144,7 @@ if (apiUrl && apiKey && id) {
       collectionSlug: productDrop?.slug,
       variants: apiProduct.variants.map((v: Variant) => {
         const inv = inventoryMap.get(v.sku);
+        const availableQty = inv ? inv.available : 10; // Default to 10 if no inventory data
         return {
           id: v.id,
           sku: v.sku,
@@ -149,7 +152,8 @@ if (apiUrl && apiKey && id) {
           price_cents: v.price_cents,
           image_url: v.image_url,
           image_alt: v.image_alt,
-          available: inv ? inv.available > 0 : true,
+          available: availableQty > 0,
+          availableQuantity: availableQty,
         };
       }),
     };

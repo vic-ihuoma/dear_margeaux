@@ -10,6 +10,8 @@ export interface SampleVariant {
   image_url: string | null;
   image_alt: string | null;
   available: boolean;
+  /** Available quantity for inventory validation */
+  availableQuantity: number;
 }
 
 export interface SampleProduct {
@@ -40,6 +42,7 @@ export const sampleProducts: SampleProduct[] = [
         image_url: null,
         image_alt: null,
         available: true,
+        availableQuantity: 15,
       },
       {
         id: 'v1b',
@@ -49,6 +52,7 @@ export const sampleProducts: SampleProduct[] = [
         image_url: null,
         image_alt: null,
         available: true,
+        availableQuantity: 8,
       },
       {
         id: 'v1c',
@@ -58,6 +62,7 @@ export const sampleProducts: SampleProduct[] = [
         image_url: null,
         image_alt: null,
         available: false,
+        availableQuantity: 0,
       },
     ],
   },
@@ -78,6 +83,7 @@ export const sampleProducts: SampleProduct[] = [
         image_url: null,
         image_alt: null,
         available: true,
+        availableQuantity: 3, // Low stock for testing
       },
     ],
   },
@@ -98,6 +104,7 @@ export const sampleProducts: SampleProduct[] = [
         image_url: null,
         image_alt: null,
         available: false,
+        availableQuantity: 0,
       },
     ],
   },
@@ -118,6 +125,7 @@ export const sampleProducts: SampleProduct[] = [
         image_url: null,
         image_alt: null,
         available: true,
+        availableQuantity: 12,
       },
       {
         id: 'v4b',
@@ -127,6 +135,7 @@ export const sampleProducts: SampleProduct[] = [
         image_url: null,
         image_alt: null,
         available: true,
+        availableQuantity: 4, // Low stock for testing
       },
     ],
   },
@@ -147,6 +156,7 @@ export const sampleProducts: SampleProduct[] = [
         image_url: null,
         image_alt: null,
         available: false,
+        availableQuantity: 0,
       },
     ],
   },
@@ -167,6 +177,7 @@ export const sampleProducts: SampleProduct[] = [
         image_url: null,
         image_alt: null,
         available: true,
+        availableQuantity: 20,
       },
     ],
   },
@@ -187,6 +198,7 @@ export const sampleProducts: SampleProduct[] = [
         image_url: null,
         image_alt: null,
         available: true,
+        availableQuantity: 2, // Very low stock for testing
       },
     ],
   },
@@ -207,6 +219,7 @@ export const sampleProducts: SampleProduct[] = [
         image_url: null,
         image_alt: null,
         available: true,
+        availableQuantity: 10,
       },
     ],
   },

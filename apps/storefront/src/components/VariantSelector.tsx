@@ -7,6 +7,8 @@ export interface VariantOption {
   price_cents: number;
   image_url: string | null;
   available: boolean;
+  /** Available quantity for inventory validation (defaults to 10 if not provided) */
+  availableQuantity?: number;
 }
 
 interface VariantSelectorProps {

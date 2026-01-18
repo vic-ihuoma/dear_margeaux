@@ -300,6 +300,15 @@ export default function CartDrawer() {
                         {formatPrice(item.price)}
                       </p>
 
+                      {/* Low stock warning */}
+                      {item.availableQuantity !== undefined &&
+                        item.availableQuantity > 0 &&
+                        item.availableQuantity <= 5 && (
+                          <p className="text-xs text-status-warning mt-1">
+                            Only {item.availableQuantity} left in stock
+                          </p>
+                        )}
+
                       {/* Quantity Controls */}
                       <div className="flex items-center gap-3 mt-2">
                         <div className="flex items-center border border-border rounded">
@@ -340,7 +349,10 @@ export default function CartDrawer() {
                                 item.quantity + 1
                               )
                             }
-                            disabled={item.quantity >= 10}
+                            disabled={
+                              item.quantity >=
+                              Math.min(item.availableQuantity ?? 10, 10)
+                            }
                             className="w-8 h-8 flex items-center justify-center text-text-secondary hover:text-text disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-normal"
                             aria-label="Increase quantity"
                           >

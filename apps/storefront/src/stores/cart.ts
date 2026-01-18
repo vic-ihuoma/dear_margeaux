@@ -11,6 +11,8 @@ export interface CartItem {
   price: number; // in cents
   quantity: number;
   imageUrl: string | null;
+  /** Available quantity from inventory (for validation, defaults to 10) */
+  availableQuantity?: number;
 }
 
 /**
@@ -248,18 +250,29 @@ export function addToCart(
   const items = $cartItems.get();
   const existingIndex = items.findIndex((i) => i.variantId === item.variantId);
 
+  // Use availableQuantity if provided, otherwise default to 10
+  const maxQuantity = Math.min(item.availableQuantity ?? 10, 10);
+
   let newItems: CartItem[];
 
   if (existingIndex >= 0) {
-    // Update quantity of existing item
+    // Update quantity of existing item, respecting inventory limit
     newItems = items.map((i, idx) =>
       idx === existingIndex
-        ? { ...i, quantity: Math.min(i.quantity + quantity, 10) }
+        ? {
+            ...i,
+            quantity: Math.min(i.quantity + quantity, maxQuantity),
+            // Update availableQuantity if provided
+            availableQuantity: item.availableQuantity ?? i.availableQuantity,
+          }
         : i
     );
   } else {
-    // Add new item
-    newItems = [...items, { ...item, quantity }];
+    // Add new item with quantity capped at available inventory
+    newItems = [
+      ...items,
+      { ...item, quantity: Math.min(quantity, maxQuantity) },
+    ];
   }
 
   $cartItems.set(newItems);
@@ -276,11 +289,18 @@ export function updateCartItemQuantity(
   variantId: string,
   quantity: number
 ): void {
-  if (quantity < 1 || quantity > 10) return;
-
   const items = $cartItems.get();
-  const newItems = items.map((item) =>
-    item.variantId === variantId ? { ...item, quantity } : item
+  const item = items.find((i) => i.variantId === variantId);
+
+  if (!item) return;
+
+  // Respect inventory limit if available
+  const maxQuantity = Math.min(item.availableQuantity ?? 10, 10);
+
+  if (quantity < 1 || quantity > maxQuantity) return;
+
+  const newItems = items.map((i) =>
+    i.variantId === variantId ? { ...i, quantity } : i
   );
 
   $cartItems.set(newItems);
