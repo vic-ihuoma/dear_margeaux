@@ -2428,3 +2428,44 @@ Integrated newsletter send into the blog publish flow. When a user publishes a d
 - newsletter-14: Add rate limiting to subscribe endpoint
 - newsletter-15: Add invisible reCAPTCHA to subscribe forms
 - newsletter-16: Create admin Subscribers page
+
+
+## 2026-01-18: newsletter-14 - Add rate limiting to subscribe endpoint
+
+### Task Completed
+Implemented IP-based rate limiting for the newsletter subscribe endpoint with persistent storage in D1.
+
+### Key Decisions
+- Created new D1 table `newsletter_subscribe_attempts` to track subscription attempts per IP
+- Implemented rate limit of 5 requests per hour per IP (matches PRD requirements)
+- Created `newsletter-rate-limit.ts` middleware with these functions:
+  - `enforceNewsletterRateLimit` - Main function called at start of subscribe handler
+  - `checkNewsletterRateLimit` - Checks if IP has exceeded rate limit
+  - `recordNewsletterAttempt` - Records each subscription attempt
+  - `cleanupOldNewsletterAttempts` - Cleanup function for cron job
+- Returns 429 with Retry-After header when rate limited
+- Sets X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset headers on all responses
+- Uses D1 for persistence (not in-memory) to survive worker restarts
+
+### Files Changed
+- `merchant/migrations/017-newsletter-rate-limit.sql` - New migration for newsletter_subscribe_attempts table
+- `merchant/src/middleware/newsletter-rate-limit.ts` - New rate limiting middleware
+- `merchant/src/routes/newsletter.ts` - Integrated rate limiting into subscribe endpoint
+- `merchant/tests/middleware/newsletter-rate-limit.test.ts` - 17 unit tests for rate limiting
+- `merchant/tests/routes/newsletter.test.ts` - Updated to mock rate limiting middleware
+- `prd.json` - Set passes: true for newsletter-14
+
+### Test Results
+- Type Check: PASSED (0 errors)
+- Lint: PASSED (0 errors)
+- Unit Tests: 436 PASSED (17 new + 419 existing)
+
+### PRD Requirements Verified
+- ✓ 6th request from same IP returns 429
+- ✓ 429 response includes Retry-After header
+- ✓ Rate limit resets after 1 hour
+
+### Next Steps
+- newsletter-15: Add invisible reCAPTCHA to subscribe forms
+- newsletter-16: Create admin Subscribers page
+- newsletter-17: Add subscriber list API endpoint

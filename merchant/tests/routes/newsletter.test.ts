@@ -66,6 +66,11 @@ vi.mock('../../src/lib/notifications', () => ({
   sendNewsletterToSubscribers: mockSendNewsletterToSubscribers,
 }));
 
+// Mock the newsletter rate limit middleware to avoid needing to mock the DB table
+vi.mock('../../src/middleware/newsletter-rate-limit', () => ({
+  enforceNewsletterRateLimit: vi.fn().mockResolvedValue({ remaining: 4, resetAt: new Date() }),
+}));
+
 import { ApiError } from '../../src/types';
 
 // Helper function to set auth context for a test

@@ -3,6 +3,7 @@ import { getDb } from '../db';
 import { authMiddleware, adminOnly } from '../middleware/auth';
 import { ApiError, uuid, now, type Env, type AuthContext, isValidEmail } from '../types';
 import { sendNewsletterVerificationEmail, sendNewsletterToSubscribers } from '../lib/notifications';
+import { enforceNewsletterRateLimit } from '../middleware/newsletter-rate-limit';
 
 // ============================================================
 // NEWSLETTER ROUTES
@@ -17,6 +18,11 @@ newsletterRoutes.use('*', authMiddleware);
 
 // POST /v1/newsletter/subscribe - Subscribe email to newsletter
 newsletterRoutes.post('/subscribe', async (c) => {
+  const { store } = c.get('auth');
+
+  // Enforce rate limit (5 requests per hour per IP)
+  await enforceNewsletterRateLimit(c, store.id);
+
   const body = await c.req.json();
   const { email } = body;
 
@@ -29,7 +35,6 @@ newsletterRoutes.post('/subscribe', async (c) => {
     throw ApiError.invalidRequest('Invalid email format');
   }
 
-  const { store } = c.get('auth');
   const db = getDb(c.env);
 
   // Check for existing subscription

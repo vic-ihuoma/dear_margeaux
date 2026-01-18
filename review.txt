@@ -1816,3 +1816,46 @@ All unit tests implemented:
 - newsletter-14: Add rate limiting to subscribe endpoint
 - newsletter-15: Add invisible reCAPTCHA to subscribe forms
 - Consider adding newsletter send history to admin dashboard
+
+
+## [newsletter-14]: Add rate limiting to subscribe endpoint
+**Status:** PASSED
+**Tests Written:** 17 unit tests in merchant/tests/middleware/newsletter-rate-limit.test.ts
+  - getClientIp: 3 tests for IP extraction from headers
+  - setRateLimitHeaders: 1 test for header setting
+  - recordNewsletterAttempt: 1 test for database insert
+  - checkNewsletterRateLimit: 5 tests for rate limit checking
+  - enforceNewsletterRateLimit: 4 tests for middleware enforcement
+  - cleanupOldNewsletterAttempts: 2 tests for cleanup
+  - defaultNewsletterRateLimitConfig: 1 test for config validation
+**Test Results:** 436 tests passed (merchant)
+**Type Check:** PASSED - 0 errors across all packages
+**Lint:** PASSED - 0 errors
+**Browser Tests:** N/A - no visual tests in PRD for this task
+**Pre-commit Hooks:** Pending
+**Findings:**
+- Created database migration `017-newsletter-rate-limit.sql`:
+  - Table: `newsletter_subscribe_attempts` with columns: id, store_id, ip_address, attempted_at
+  - Index on (store_id, ip_address, attempted_at) for quick rate limit checks
+  - Index on attempted_at for cleanup queries
+- Created rate limit middleware `newsletter-rate-limit.ts`:
+  - `defaultNewsletterRateLimitConfig`: 5 maxAttempts, 1 hour windowMs
+  - `getClientIp()`: Extracts IP from CF-Connecting-IP or X-Forwarded-For headers
+  - `checkNewsletterRateLimit()`: Queries D1 for attempts in current window
+  - `recordNewsletterAttempt()`: Inserts attempt record
+  - `enforceNewsletterRateLimit()`: Main middleware that checks, sets headers, records, and throws 429 if blocked
+  - `cleanupOldNewsletterAttempts()`: For cron job to remove old attempts (default 24h)
+- Integrated into newsletter subscribe endpoint:
+  - Rate limit check happens before request body parsing (as first action)
+  - Attempt is recorded only if rate limit check passes
+  - Rate limit headers returned on all responses
+- Updated existing newsletter tests to mock the rate limit middleware
+**PRD Coverage:**
+- ✓ IP-based rate limiting (5 requests per hour per IP)
+- ✓ Data stored in D1 (persistent across worker restarts)
+- ✓ Returns 429 Too Many Requests when limit exceeded
+- ✓ Includes Retry-After header (seconds until window reset)
+**Recommendations:**
+- Consider adding newsletter attempt cleanup to the existing cron job (cron.ts)
+- newsletter-15: Add invisible reCAPTCHA to subscribe forms (for additional spam protection)
+- Monitor rate limit hits in production to tune thresholds if needed
