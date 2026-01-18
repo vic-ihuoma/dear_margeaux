@@ -1127,7 +1127,7 @@
           "Click Twitter share and verify popup opens with correct text"
         ]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "sf-3",

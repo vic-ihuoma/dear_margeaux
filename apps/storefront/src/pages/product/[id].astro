@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import SEO from '../../components/SEO.astro';
 import ProductControls from '../../components/ProductControls';
 import ProductImageGallery from '../../components/ProductImageGallery';
+import ShareButtons from '../../components/ShareButtons';
 import { sampleProducts } from '../../data/sample-products';
 import type { Variant, Drop, InventoryItem } from '@dear-margeaux/api';
 import type { LightboxImage } from '../../components/ImageLightbox';
@@ -561,6 +562,18 @@ const productUrl = `https://dearmargeaux.com/product/${product.id}`;
               </svg>
               <span class="text-text-secondary">30-day return policy</span>
             </div>
+          </div>
+
+          {/* Share Buttons */}
+          <div class="flex items-center gap-3">
+            <span class="text-sm text-text-secondary">Share:</span>
+            <ShareButtons
+              client:load
+              url={productUrl}
+              title={product.title}
+              description={product.description?.slice(0, 200)}
+              imageUrl={mainImageUrl || undefined}
+            />
           </div>
         </div>
       </div>
