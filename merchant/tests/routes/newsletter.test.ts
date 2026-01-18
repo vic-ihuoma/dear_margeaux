@@ -1762,6 +1762,239 @@ describe('Newsletter Routes', () => {
     });
   });
 
+  describe('GET /v1/newsletter/subscribers/export - Export subscribers to CSV (admin only)', () => {
+    it('returns 403 for non-admin users', async () => {
+      setAuthContext('public');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/export', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('returns CSV content for admin', async () => {
+      setAuthContext('admin');
+
+      // Mock: subscribers query
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          email: 'user1@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-18T10:00:00.000Z',
+          verified_at: '2026-01-18T10:01:00.000Z',
+          unsubscribed_at: null,
+          source: 'footer',
+        },
+        {
+          email: 'user2@example.com',
+          verified: 0,
+          subscribed_at: '2026-01-17T10:00:00.000Z',
+          verified_at: null,
+          unsubscribed_at: null,
+          source: 'blog',
+        },
+      ]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/export', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('Content-Type')).toBe('text/csv; charset=utf-8');
+
+      const csv = await res.text();
+      expect(csv).toContain('email,status,subscribed_at,verified_at,unsubscribed_at,source');
+      expect(csv).toContain('user1@example.com,verified');
+      expect(csv).toContain('user2@example.com,unverified');
+    });
+
+    it('includes all required columns in CSV header', async () => {
+      setAuthContext('admin');
+
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/export', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const csv = await res.text();
+      const headerLine = csv.split('\n')[0];
+      expect(headerLine).toBe('email,status,subscribed_at,verified_at,unsubscribed_at,source');
+    });
+
+    it('includes date in filename', async () => {
+      setAuthContext('admin');
+
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/export', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const contentDisposition = res.headers.get('Content-Disposition');
+      expect(contentDisposition).toMatch(
+        /attachment; filename="subscribers-\d{4}-\d{2}-\d{2}\.csv"/
+      );
+    });
+
+    it('correctly derives status from verified and unsubscribed_at fields', async () => {
+      setAuthContext('admin');
+
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          email: 'verified@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-18T10:00:00.000Z',
+          verified_at: '2026-01-18T10:01:00.000Z',
+          unsubscribed_at: null,
+          source: 'footer',
+        },
+        {
+          email: 'unverified@example.com',
+          verified: 0,
+          subscribed_at: '2026-01-17T10:00:00.000Z',
+          verified_at: null,
+          unsubscribed_at: null,
+          source: 'blog',
+        },
+        {
+          email: 'unsubscribed@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-16T10:00:00.000Z',
+          verified_at: '2026-01-16T10:01:00.000Z',
+          unsubscribed_at: '2026-01-18T12:00:00.000Z',
+          source: 'footer',
+        },
+      ]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/export', {
+        method: 'GET',
+      });
+
+      const csv = await res.text();
+      const lines = csv.split('\n');
+      expect(lines[1]).toContain('verified@example.com,verified');
+      expect(lines[2]).toContain('unverified@example.com,unverified');
+      expect(lines[3]).toContain('unsubscribed@example.com,unsubscribed');
+    });
+
+    it('returns empty CSV with headers only when no subscribers', async () => {
+      setAuthContext('admin');
+
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/export', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const csv = await res.text();
+      const lines = csv.split('\n');
+      expect(lines).toHaveLength(1); // Just the header
+      expect(lines[0]).toBe('email,status,subscribed_at,verified_at,unsubscribed_at,source');
+    });
+
+    it('escapes commas and quotes in email addresses', async () => {
+      setAuthContext('admin');
+
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          email: 'user,with"quotes@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-18T10:00:00.000Z',
+          verified_at: '2026-01-18T10:01:00.000Z',
+          unsubscribed_at: null,
+          source: 'footer',
+        },
+      ]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/export', {
+        method: 'GET',
+      });
+
+      const csv = await res.text();
+      // Field should be quoted and internal quotes doubled
+      expect(csv).toContain('"user,with""quotes@example.com"');
+    });
+
+    it('filters by store_id', async () => {
+      setAuthContext('admin');
+
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      await app.request('/v1/newsletter/subscribers/export', {
+        method: 'GET',
+      });
+
+      // Verify query includes store_id filter
+      expect(mockDbQuery).toHaveBeenCalledWith(
+        expect.stringContaining('store_id = ?'),
+        expect.arrayContaining(['store-1'])
+      );
+    });
+
+    it('defaults source to website when null', async () => {
+      setAuthContext('admin');
+
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          email: 'user@example.com',
+          verified: 1,
+          subscribed_at: '2026-01-18T10:00:00.000Z',
+          verified_at: '2026-01-18T10:01:00.000Z',
+          unsubscribed_at: null,
+          source: null,
+        },
+      ]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/export', {
+        method: 'GET',
+      });
+
+      const csv = await res.text();
+      expect(csv).toContain('website');
+    });
+  });
+
   describe('POST /v1/newsletter/subscribers/add - Manually add subscriber (admin only)', () => {
     it('returns 403 for non-admin users', async () => {
       setAuthContext('public');

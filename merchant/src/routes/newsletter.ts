@@ -509,6 +509,82 @@ newsletterRoutes.delete('/subscribers/:id', adminOnly, async (c) => {
   });
 });
 
+// GET /v1/newsletter/subscribers/export - Export subscribers to CSV (admin only)
+newsletterRoutes.get('/subscribers/export', adminOnly, async (c) => {
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+
+  // Fetch all subscribers for this store (no pagination for export)
+  const subscribers = await db.query<{
+    email: string;
+    verified: number;
+    subscribed_at: string;
+    verified_at: string | null;
+    unsubscribed_at: string | null;
+    source: string | null;
+  }>(
+    `SELECT email, verified, subscribed_at, verified_at, unsubscribed_at, source
+     FROM newsletter_subscribers
+     WHERE store_id = ?
+     ORDER BY subscribed_at DESC`,
+    [store.id]
+  );
+
+  // Build CSV content
+  const csvHeaders = [
+    'email',
+    'status',
+    'subscribed_at',
+    'verified_at',
+    'unsubscribed_at',
+    'source',
+  ];
+  const csvRows: string[] = [csvHeaders.join(',')];
+
+  for (const sub of subscribers) {
+    const status = sub.unsubscribed_at
+      ? 'unsubscribed'
+      : sub.verified === 1
+        ? 'verified'
+        : 'unverified';
+    const row = [
+      escapeCSVField(sub.email),
+      status,
+      sub.subscribed_at || '',
+      sub.verified_at || '',
+      sub.unsubscribed_at || '',
+      sub.source || 'website',
+    ];
+    csvRows.push(row.join(','));
+  }
+
+  const csvContent = csvRows.join('\n');
+
+  // Generate filename with current date
+  const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const filename = `subscribers-${date}.csv`;
+
+  console.log(`[NEWSLETTER] Admin exported ${subscribers.length} subscribers to CSV`);
+
+  // Return CSV with appropriate headers for download
+  return new Response(csvContent, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    },
+  });
+});
+
+// Helper function to escape CSV fields (handles commas, quotes, newlines)
+function escapeCSVField(field: string): string {
+  if (field.includes(',') || field.includes('"') || field.includes('\n') || field.includes('\r')) {
+    // Escape double quotes by doubling them, then wrap in quotes
+    return `"${field.replace(/"/g, '""')}"`;
+  }
+  return field;
+}
+
 // POST /v1/newsletter/send - Send newsletter to all subscribers (admin only)
 newsletterRoutes.post('/send', adminOnly, async (c) => {
   const body = await c.req.json();

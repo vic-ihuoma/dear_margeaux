@@ -2976,7 +2976,7 @@
         ],
         "manual": ["Open downloaded CSV and verify contents"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "newsletter-21",
