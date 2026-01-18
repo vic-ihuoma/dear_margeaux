@@ -87,6 +87,11 @@
         "Create a new API key with send permissions",
         "Copy the API key for the next step"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [],
+        "manual": ["Verify API key is visible in Resend dashboard"]
+      },
       "passes": false
     },
     {
@@ -99,6 +104,11 @@
         "Paste the API key when prompted",
         "Verify secret was added successfully"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [],
+        "manual": ["Run wrangler secret list and verify RESEND_API_KEY appears"]
+      },
       "passes": false
     },
     {
@@ -111,6 +121,13 @@
         "Add RESEND_API_KEY: string; to the interface",
         "Save the file and verify no TypeScript errors"
       ],
+      "tests": {
+        "unit": [
+          "TypeScript compiles without errors when accessing env.RESEND_API_KEY"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": true
     },
     {
@@ -124,6 +141,17 @@
         "Uncomment the sendEmailViaResend async function",
         "Verify the function compiles without errors"
       ],
+      "tests": {
+        "unit": [
+          "sendEmailViaResend sends email successfully with valid API key",
+          "sendEmailViaResend returns error object when API key is missing",
+          "sendEmailViaResend returns error object on network failure",
+          "sendEmailViaResend returns error object on 401 unauthorized",
+          "sendEmailViaResend includes correct headers (Authorization, Content-Type)"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": true
     },
     {
@@ -136,6 +164,20 @@
         "Verify the template has correct brand colors (#8B4513)",
         "Test that the formatPrice helper works correctly"
       ],
+      "tests": {
+        "unit": [
+          "buildOrderConfirmationHtml includes customer name in greeting",
+          "buildOrderConfirmationHtml includes order number in header",
+          "buildOrderConfirmationHtml lists all order items with names and quantities",
+          "buildOrderConfirmationHtml formats prices correctly with currency symbol",
+          "buildOrderConfirmationHtml displays subtotal, shipping, and total",
+          "buildOrderConfirmationHtml includes shipping address",
+          "buildOrderConfirmationHtml uses brand color #8B4513",
+          "buildOrderConfirmationHtml escapes HTML in product names to prevent XSS"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": true
     },
     {
@@ -148,6 +190,19 @@
         "Verify tracking info section renders correctly",
         "Verify the Track Your Package button has correct URL"
       ],
+      "tests": {
+        "unit": [
+          "buildShippingUpdateHtml includes tracking number in email body",
+          "buildShippingUpdateHtml includes carrier name",
+          "buildShippingUpdateHtml generates correct tracking URL for USPS",
+          "buildShippingUpdateHtml generates correct tracking URL for FedEx",
+          "buildShippingUpdateHtml generates correct tracking URL for UPS",
+          "buildShippingUpdateHtml includes Track Your Package button with correct href",
+          "buildShippingUpdateHtml handles missing tracking URL gracefully"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": true
     },
     {
@@ -160,6 +215,19 @@
         "Verify terracotta accent color (#E2725B) is used",
         "Verify featured image renders when provided"
       ],
+      "tests": {
+        "unit": [
+          "buildDropLaunchHtml includes drop name in header",
+          "buildDropLaunchHtml includes drop description",
+          "buildDropLaunchHtml displays featured image when provided",
+          "buildDropLaunchHtml handles missing featured image gracefully",
+          "buildDropLaunchHtml uses terracotta accent color #E2725B",
+          "buildDropLaunchHtml includes Shop Now CTA button",
+          "buildDropLaunchHtml CTA links to correct drop URL"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": true
     },
     {
@@ -172,6 +240,17 @@
         "Pass env parameter to sendEmailViaResend",
         "Test with a mock order to verify email sends"
       ],
+      "tests": {
+        "unit": [
+          "sendOrderConfirmationEmail calls sendEmailViaResend with correct parameters",
+          "sendOrderConfirmationEmail uses customer email as recipient",
+          "sendOrderConfirmationEmail sets correct subject line with order number",
+          "sendOrderConfirmationEmail returns success on successful send",
+          "sendOrderConfirmationEmail returns error on failed send"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": true
     },
     {
@@ -184,6 +263,16 @@
         "Pass tracking info to the template builder",
         "Test with a mock order to verify email sends"
       ],
+      "tests": {
+        "unit": [
+          "sendShippingUpdateEmail calls sendEmailViaResend with correct parameters",
+          "sendShippingUpdateEmail sets subject line with shipped status",
+          "sendShippingUpdateEmail includes tracking info in email body",
+          "sendShippingUpdateEmail handles order without tracking info"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": true
     },
     {
@@ -196,6 +285,16 @@
         "Pass featured image URL to template builder",
         "Add env parameter to the function signature"
       ],
+      "tests": {
+        "unit": [
+          "sendDropLaunchToSubscriber sends to subscriber email address",
+          "sendDropLaunchToSubscriber includes drop information in email",
+          "sendDropLaunchToSubscriber logs send attempt",
+          "sendDropLaunchToSubscriber handles send failure gracefully"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": true
     },
     {
@@ -209,6 +308,11 @@
         "Add DNS records to your domain registrar",
         "Wait for domain verification (may take up to 48 hours)"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [],
+        "manual": ["Verify domain shows as verified in Resend dashboard"]
+      },
       "passes": false
     },
     {
@@ -221,6 +325,17 @@
         "Check email renders correctly in Gmail/Outlook",
         "Verify all order details are correct in email"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: complete checkout flow and verify confirmation page",
+          "agent-browser: screenshot order confirmation page"
+        ],
+        "manual": [
+          "Check email inbox for order confirmation",
+          "Verify email renders correctly in Gmail/Outlook"
+        ]
+      },
       "passes": false
     },
     {
@@ -233,6 +348,18 @@
         "Verify shipping email is received by customer",
         "Verify tracking link works correctly"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: navigate to admin order detail",
+          "agent-browser: update order status to shipped with tracking",
+          "agent-browser: screenshot status update confirmation"
+        ],
+        "manual": [
+          "Check email inbox for shipping notification",
+          "Click tracking link and verify it works"
+        ]
+      },
       "passes": false
     },
     {
@@ -245,6 +372,19 @@
         "Verify all waitlist subscribers receive email",
         "Verify notified_at is updated in waitlist_entries"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: navigate to admin drops page",
+          "agent-browser: activate scheduled drop",
+          "agent-browser: screenshot drop activation confirmation"
+        ],
+        "integration": [
+          "Drop activation triggers email to all waitlist subscribers",
+          "notified_at timestamp is set for each subscriber after email sent"
+        ],
+        "manual": ["Check subscriber email inbox for drop launch notification"]
+      },
       "passes": false
     },
     {
@@ -259,6 +399,26 @@
         "Test network error scenarios",
         "Add tests to CI pipeline"
       ],
+      "tests": {
+        "unit": [
+          "getProducts fetches products list successfully",
+          "getProducts passes pagination parameters correctly",
+          "getProducts handles empty response",
+          "getProduct fetches single product by ID",
+          "getProduct throws on 404 not found",
+          "createProduct creates product with valid data",
+          "createProduct throws on 400 validation error",
+          "createProduct throws on 409 conflict (duplicate)",
+          "updateProduct updates product fields",
+          "updateProduct throws on 404 not found",
+          "deleteProduct deletes product successfully",
+          "deleteProduct throws on 403 forbidden",
+          "All methods throw on 401 unauthorized",
+          "All methods throw on network error"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -274,6 +434,30 @@
         "Test computed values ($cartCount, $cartSubtotal, $isCartEmpty)",
         "Test localStorage persistence"
       ],
+      "tests": {
+        "unit": [
+          "addToCart adds new item to empty cart",
+          "addToCart increments quantity for existing item",
+          "addToCart stores variant ID and product info",
+          "addToCart persists to localStorage",
+          "updateCartItemQuantity updates quantity for existing item",
+          "updateCartItemQuantity removes item when quantity is 0",
+          "removeFromCart removes item by variant ID",
+          "removeFromCart handles non-existent item gracefully",
+          "clearCart removes all items",
+          "clearCart clears localStorage",
+          "$cartCount returns total item count",
+          "$cartCount handles quantities greater than 1",
+          "$cartSubtotal calculates correct total",
+          "$cartSubtotal handles empty cart",
+          "$isCartEmpty returns true when empty",
+          "$isCartEmpty returns false when items exist",
+          "Cart loads from localStorage on init",
+          "Cart handles corrupted localStorage data"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -289,6 +473,27 @@
         "Create tests for /api/blog routes",
         "Mock MerchantClient for isolated testing"
       ],
+      "tests": {
+        "integration": [
+          "GET /api/products returns product list",
+          "POST /api/products creates new product",
+          "PATCH /api/products/:id updates product",
+          "DELETE /api/products/:id deletes product",
+          "GET /api/orders returns order list",
+          "GET /api/orders/:id returns order detail",
+          "PATCH /api/orders/:id updates order status",
+          "GET /api/inventory returns inventory list",
+          "PATCH /api/inventory/:sku updates inventory",
+          "GET /api/drops returns drops list",
+          "POST /api/drops creates new drop",
+          "GET /api/blog returns blog posts",
+          "POST /api/blog creates new blog post",
+          "All routes require authentication",
+          "All routes return 401 without valid session"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -304,6 +509,25 @@
         "Write E2E tests for admin product management",
         "Configure CI to run E2E tests"
       ],
+      "tests": {
+        "visual": [
+          "agent-browser: user can register new account",
+          "agent-browser: user can login with valid credentials",
+          "agent-browser: user can logout",
+          "agent-browser: user can browse products",
+          "agent-browser: user can add item to cart",
+          "agent-browser: user can update cart quantity",
+          "agent-browser: user can remove item from cart",
+          "agent-browser: user can complete checkout flow",
+          "agent-browser: user can view order confirmation",
+          "agent-browser: user can browse drops page",
+          "agent-browser: user can join waitlist for scheduled drop",
+          "agent-browser: admin can create new product",
+          "agent-browser: admin can edit product",
+          "agent-browser: admin can delete product"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -320,6 +544,28 @@
         "Add tests for blog and lookbook layouts",
         "Configure baseline image management"
       ],
+      "tests": {
+        "visual": [
+          "agent-browser: screenshot ProductCard default state",
+          "agent-browser: screenshot ProductCard hover state",
+          "agent-browser: screenshot ProductCard out-of-stock state",
+          "agent-browser: screenshot CartDrawer empty state",
+          "agent-browser: screenshot CartDrawer with items",
+          "agent-browser: screenshot CartDrawer with discount applied",
+          "agent-browser: screenshot StatCard component",
+          "agent-browser: screenshot ActivityFeed component",
+          "agent-browser: screenshot blog listing page",
+          "agent-browser: screenshot blog post page",
+          "agent-browser: screenshot lookbook gallery",
+          "agent-browser: screenshot homepage desktop",
+          "agent-browser: screenshot homepage mobile (iPhone 14)",
+          "agent-browser: screenshot checkout page"
+        ],
+        "manual": [
+          "Compare screenshots against baselines",
+          "Update baselines when intentional changes made"
+        ]
+      },
       "passes": false
     },
     {
@@ -334,6 +580,22 @@
         "Test list subscribers endpoint",
         "Test duplicate email rejection"
       ],
+      "tests": {
+        "unit": [
+          "POST /v1/waitlist/subscribe creates subscription for valid email",
+          "POST /v1/waitlist/subscribe returns 400 for invalid email format",
+          "POST /v1/waitlist/subscribe returns 400 for missing drop_id",
+          "POST /v1/waitlist/subscribe returns 409 for duplicate email on same drop",
+          "POST /v1/waitlist/subscribe normalizes email to lowercase",
+          "POST /v1/waitlist/unsubscribe removes subscription",
+          "POST /v1/waitlist/unsubscribe returns 404 for non-existent subscription",
+          "GET /v1/waitlist/:drop_id returns subscribers (admin only)",
+          "GET /v1/waitlist/:drop_id returns 401 without auth",
+          "GET /v1/waitlist/:drop_id supports pagination"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -348,6 +610,21 @@
         "Verify email content and recipients",
         "Test error handling when Resend fails"
       ],
+      "tests": {
+        "integration": [
+          "Drop launch sends email to all waitlist subscribers",
+          "Drop launch updates notified_at for each subscriber",
+          "Drop launch handles partial failures gracefully",
+          "Order confirmation triggers on order creation",
+          "Order confirmation includes correct order data",
+          "Shipping update triggers on status change to shipped",
+          "Shipping update includes tracking information",
+          "Email failure does not fail parent operation",
+          "Failed emails are queued for retry"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -362,6 +639,21 @@
         "Return appropriate error messages",
         "Log rate limit events for monitoring"
       ],
+      "tests": {
+        "unit": [
+          "Rate limiter allows requests under limit",
+          "Rate limiter blocks after 5 failed attempts",
+          "Rate limiter resets counter after 15 minutes",
+          "Rate limiter returns 429 with Retry-After header",
+          "Rate limiter locks account after repeated failures",
+          "Rate limiter logs rate limit events"
+        ],
+        "visual": [
+          "agent-browser: attempt login 6 times with wrong password",
+          "agent-browser: verify rate limit error message displayed"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -377,6 +669,24 @@
         "Add unverified flag to customer accounts",
         "Restrict certain actions for unverified accounts"
       ],
+      "tests": {
+        "unit": [
+          "Registration generates unique verification token",
+          "Verification email is sent on registration",
+          "Valid token verifies account successfully",
+          "Expired token is rejected",
+          "Invalid token is rejected",
+          "Account is marked as verified after token use",
+          "Token is cleared after successful verification"
+        ],
+        "visual": [
+          "agent-browser: register new account",
+          "agent-browser: screenshot unverified account state",
+          "agent-browser: navigate to verify link",
+          "agent-browser: screenshot verified confirmation"
+        ],
+        "manual": ["Check email for verification link"]
+      },
       "passes": false
     },
     {
@@ -393,6 +703,26 @@
         "Implement token validation and password update",
         "Expire token after use or 1 hour"
       ],
+      "tests": {
+        "unit": [
+          "Password reset generates secure token",
+          "Reset email is sent to valid email",
+          "Valid token allows password reset",
+          "Token expires after 1 hour",
+          "Token expires after use",
+          "Invalid token is rejected",
+          "Password is updated successfully with valid token"
+        ],
+        "visual": [
+          "agent-browser: navigate to forgot password page",
+          "agent-browser: submit email address",
+          "agent-browser: screenshot success message",
+          "agent-browser: navigate to reset link with token",
+          "agent-browser: enter new password",
+          "agent-browser: screenshot reset confirmation"
+        ],
+        "manual": ["Check email for password reset link"]
+      },
       "passes": false
     },
     {
@@ -408,6 +738,28 @@
         "Provide backup codes for recovery",
         "Allow disabling 2FA with re-authentication"
       ],
+      "tests": {
+        "unit": [
+          "TOTP secret is generated correctly",
+          "Valid TOTP code is accepted",
+          "Invalid TOTP code is rejected",
+          "Expired TOTP code is rejected",
+          "Backup codes are generated correctly",
+          "Backup code allows login",
+          "Used backup code is invalidated"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin 2FA setup",
+          "agent-browser: screenshot QR code display",
+          "agent-browser: screenshot backup codes display",
+          "agent-browser: logout and login with 2FA prompt",
+          "agent-browser: screenshot 2FA input screen"
+        ],
+        "manual": [
+          "Scan QR code with authenticator app",
+          "Enter code from authenticator"
+        ]
+      },
       "passes": false
     },
     {
@@ -421,6 +773,21 @@
         "Test CORS with actual domain configuration",
         "Document CORS configuration for deployment"
       ],
+      "tests": {
+        "unit": [
+          "CORS allows requests from storefront domain",
+          "CORS allows requests from admin domain",
+          "CORS blocks requests from unknown origins",
+          "CORS sets correct Access-Control-Allow-Origin header",
+          "CORS sets correct Access-Control-Allow-Methods header",
+          "CORS sets correct Access-Control-Allow-Headers header"
+        ],
+        "visual": [],
+        "manual": [
+          "Test API call from allowed domain",
+          "Test API call from disallowed domain"
+        ]
+      },
       "passes": false
     },
     {
@@ -434,6 +801,19 @@
         "Verify all subdomains support HTTPS",
         "Submit domain to HSTS preload list"
       ],
+      "tests": {
+        "unit": [
+          "Response includes Strict-Transport-Security header",
+          "HSTS max-age is at least 31536000 (1 year)",
+          "HSTS includes includeSubDomains directive",
+          "HSTS includes preload directive"
+        ],
+        "visual": [],
+        "manual": [
+          "Verify header in browser dev tools",
+          "Submit to hstspreload.org"
+        ]
+      },
       "passes": false
     },
     {
@@ -448,6 +828,19 @@
         "Add font-display: swap for performance",
         "Test font loading across browsers"
       ],
+      "tests": {
+        "unit": [
+          "Font files exist in public/fonts directory",
+          "CSS includes @font-face declarations for Inter",
+          "font-display: swap is set in @font-face"
+        ],
+        "visual": [
+          "agent-browser: open homepage and verify Inter font loads",
+          "agent-browser: check network tab - no requests to fonts.googleapis.com",
+          "agent-browser: screenshot text rendering"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -462,6 +855,17 @@
         "Set up size limits for CI checks",
         "Identify large dependencies for optimization"
       ],
+      "tests": {
+        "unit": [
+          "pnpm run analyze script exists and runs",
+          "Bundle analysis report is generated"
+        ],
+        "visual": [],
+        "manual": [
+          "Review bundle analysis output",
+          "Identify optimization opportunities"
+        ]
+      },
       "passes": false
     },
     {
@@ -477,6 +881,20 @@
         "Minimize FID (First Input Delay)",
         "Re-run audit to verify improvements"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: load homepage and measure load time",
+          "agent-browser: verify no layout shift on page load",
+          "agent-browser: verify images have explicit dimensions"
+        ],
+        "manual": [
+          "Run Lighthouse audit - Performance score >= 90",
+          "LCP under 2.5 seconds",
+          "CLS under 0.1",
+          "FID under 100ms"
+        ]
+      },
       "passes": false
     },
     {
@@ -491,6 +909,21 @@
         "Add optional filters (status, date range)",
         "Update MerchantClient with count methods"
       ],
+      "tests": {
+        "unit": [
+          "GET /v1/products/count returns total product count",
+          "GET /v1/products/count filters by status",
+          "GET /v1/orders/count returns total order count",
+          "GET /v1/orders/count filters by date range",
+          "GET /v1/orders/count filters by status",
+          "GET /v1/customers/count returns total customer count",
+          "GET /v1/inventory/count returns total inventory count",
+          "MerchantClient.getProductsCount works correctly",
+          "MerchantClient.getOrdersCount works correctly"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -505,6 +938,18 @@
         "Update MerchantClient.getOrders method",
         "Update admin analytics to use server-side filtering"
       ],
+      "tests": {
+        "unit": [
+          "GET /v1/orders filters by start_date",
+          "GET /v1/orders filters by end_date",
+          "GET /v1/orders filters by both start_date and end_date",
+          "GET /v1/orders validates ISO 8601 date format",
+          "GET /v1/orders returns 400 for invalid date format",
+          "MerchantClient.getOrders accepts date range params"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -519,6 +964,21 @@
         "Only retry on network errors and 5xx responses",
         "Add option to disable retry per request"
       ],
+      "tests": {
+        "unit": [
+          "Retry utility retries on network timeout",
+          "Retry utility retries on 500 error",
+          "Retry utility retries on 502 error",
+          "Retry utility retries on 503 error",
+          "Retry utility does NOT retry on 400 error",
+          "Retry utility does NOT retry on 401 error",
+          "Retry utility applies exponential backoff",
+          "Retry utility respects max retry limit",
+          "Retry utility can be disabled per request"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -533,6 +993,19 @@
         "Configure log level (debug/info/error)",
         "Optional: send logs to external service"
       ],
+      "tests": {
+        "unit": [
+          "Logger logs request method and path",
+          "Logger logs response status code",
+          "Logger logs request duration in milliseconds",
+          "Logger redacts Authorization header value",
+          "Logger redacts password fields in body",
+          "Logger redacts API key values",
+          "Logger respects configured log level"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -547,6 +1020,22 @@
         "Move to dead letter after max retries",
         "Log all retry attempts"
       ],
+      "tests": {
+        "unit": [
+          "Failed email is added to queue",
+          "Queue entry includes retry count",
+          "Retry job processes queued emails",
+          "Retry job applies exponential backoff",
+          "Email moves to dead letter after 3 failures",
+          "Retry attempts are logged"
+        ],
+        "integration": [
+          "Failed email send triggers queue insertion",
+          "Cron job retries queued emails"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -561,6 +1050,18 @@
         "Log rate limit events",
         "Add admin endpoint to view usage"
       ],
+      "tests": {
+        "unit": [
+          "Rate limiter allows emails under limit",
+          "Rate limiter blocks emails when limit exceeded",
+          "Rate limiter resets after time window",
+          "Rate limiter tracks per-store usage",
+          "Rate limit events are logged",
+          "GET /v1/email-usage returns current usage"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -576,6 +1077,25 @@
         "Support keyboard navigation (arrows, escape)",
         "Add touch/swipe support for mobile"
       ],
+      "tests": {
+        "unit": [
+          "ImageLightbox opens on image click",
+          "ImageLightbox displays full-size image",
+          "ImageLightbox closes on Escape key",
+          "ImageLightbox closes on backdrop click",
+          "ImageLightbox navigates with arrow keys",
+          "ImageLightbox navigates with arrow buttons",
+          "ImageLightbox handles single image (no arrows)"
+        ],
+        "visual": [
+          "agent-browser: navigate to product page",
+          "agent-browser: click product image",
+          "agent-browser: screenshot lightbox open state",
+          "agent-browser: press ArrowRight and verify image changes",
+          "agent-browser: press Escape and verify lightbox closes"
+        ],
+        "manual": ["Test touch swipe on mobile device"]
+      },
       "passes": false
     },
     {
@@ -590,6 +1110,23 @@
         "Add copy link functionality",
         "Style buttons to match design system"
       ],
+      "tests": {
+        "unit": [
+          "ShareButtons generates correct Twitter share URL",
+          "ShareButtons generates correct Facebook share URL",
+          "ShareButtons generates correct Pinterest pin URL with image",
+          "ShareButtons copy link copies URL to clipboard",
+          "ShareButtons shows success feedback on copy"
+        ],
+        "visual": [
+          "agent-browser: navigate to product page",
+          "agent-browser: screenshot share buttons",
+          "agent-browser: click copy link and verify success message"
+        ],
+        "manual": [
+          "Click Twitter share and verify popup opens with correct text"
+        ]
+      },
       "passes": false
     },
     {
@@ -604,6 +1141,25 @@
         "Show error for invalid codes",
         "Allow removing applied discount"
       ],
+      "tests": {
+        "unit": [
+          "applyDiscount validates code via API",
+          "applyDiscount stores discount in cart state",
+          "applyDiscount calculates discount amount correctly",
+          "removeDiscount clears discount from cart",
+          "Invalid code shows error message",
+          "Expired code shows error message"
+        ],
+        "visual": [
+          "agent-browser: add item to cart",
+          "agent-browser: open cart drawer",
+          "agent-browser: enter valid discount code",
+          "agent-browser: screenshot discount applied state",
+          "agent-browser: enter invalid code and screenshot error",
+          "agent-browser: click remove discount and verify removed"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -618,6 +1174,24 @@
         "Show warning when inventory low",
         "Disable add if inventory exhausted"
       ],
+      "tests": {
+        "unit": [
+          "Product page fetches inventory on load",
+          "AddToCart limits quantity to available inventory",
+          "AddToCart disables button when inventory is 0",
+          "Cart drawer validates quantity against inventory",
+          "Cart shows warning when inventory is low (< 5)",
+          "Cart prevents increasing quantity beyond inventory"
+        ],
+        "visual": [
+          "agent-browser: navigate to product with limited inventory",
+          "agent-browser: screenshot low stock warning",
+          "agent-browser: navigate to out-of-stock product",
+          "agent-browser: verify Add to Cart button is disabled",
+          "agent-browser: screenshot out-of-stock state"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -633,6 +1207,23 @@
         "Show 'Live Now!' when drop starts",
         "Add to scheduled drop pages"
       ],
+      "tests": {
+        "unit": [
+          "CountdownTimer calculates correct time remaining",
+          "CountdownTimer displays days, hours, minutes, seconds",
+          "CountdownTimer updates every second",
+          "CountdownTimer handles timezone conversion",
+          "CountdownTimer shows Live Now when time reaches 0",
+          "CountdownTimer handles past dates gracefully"
+        ],
+        "visual": [
+          "agent-browser: navigate to drops page with scheduled drop",
+          "agent-browser: screenshot countdown timer",
+          "agent-browser: wait 2 seconds and verify timer updated",
+          "agent-browser: screenshot timer change"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -647,6 +1238,22 @@
         "Add link to RSS feed in head",
         "Add RSS icon to blog page header"
       ],
+      "tests": {
+        "unit": [
+          "RSS feed endpoint returns valid XML",
+          "RSS feed includes all published posts",
+          "RSS feed includes correct metadata (title, description)",
+          "RSS feed excludes draft posts",
+          "Blog pages include RSS link in head"
+        ],
+        "visual": [
+          "agent-browser: navigate to /blog/rss.xml",
+          "agent-browser: verify XML content returned",
+          "agent-browser: navigate to /blog",
+          "agent-browser: verify RSS icon visible in header"
+        ],
+        "manual": ["Add feed URL to RSS reader and verify posts appear"]
+      },
       "passes": false
     },
     {
@@ -661,6 +1268,22 @@
         "Add to BlogPost.astro layout",
         "Style cards to match design"
       ],
+      "tests": {
+        "unit": [
+          "getRelatedPosts returns posts with matching tags",
+          "getRelatedPosts limits to 3 posts",
+          "getRelatedPosts excludes current post",
+          "getRelatedPosts handles posts with no tags",
+          "getRelatedPosts returns empty array when no matches"
+        ],
+        "visual": [
+          "agent-browser: navigate to blog post with tags",
+          "agent-browser: scroll to related posts section",
+          "agent-browser: screenshot related posts cards",
+          "agent-browser: verify related posts have matching tags"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -675,6 +1298,22 @@
         "Add tag links to blog post pages",
         "Show active tag in filter UI"
       ],
+      "tests": {
+        "unit": [
+          "Tag page generates paths for all unique tags",
+          "Tag page filters posts by tag correctly",
+          "Tag page shows only posts with matching tag"
+        ],
+        "visual": [
+          "agent-browser: navigate to /blog",
+          "agent-browser: click a tag link",
+          "agent-browser: verify URL is /blog/tag/[tagname]",
+          "agent-browser: verify only tagged posts shown",
+          "agent-browser: screenshot filtered results",
+          "agent-browser: verify active tag is highlighted"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -689,6 +1328,25 @@
         "Handle OAuth callback and user creation",
         "Link social accounts to existing customers"
       ],
+      "tests": {
+        "unit": [
+          "OAuth endpoint generates correct authorization URL",
+          "OAuth callback validates state parameter",
+          "OAuth callback exchanges code for token",
+          "OAuth callback creates new user if not exists",
+          "OAuth callback links to existing user by email"
+        ],
+        "visual": [
+          "agent-browser: navigate to login page",
+          "agent-browser: screenshot social login buttons",
+          "agent-browser: verify Google and Apple buttons visible"
+        ],
+        "manual": [
+          "Click Google login and complete OAuth flow",
+          "Click Apple login and complete OAuth flow",
+          "Verify account created/linked correctly"
+        ]
+      },
       "passes": false
     },
     {
@@ -703,6 +1361,27 @@
         "Set default address option",
         "Pre-fill checkout with default address"
       ],
+      "tests": {
+        "unit": [
+          "Address list fetches addresses from API",
+          "Add address form validates required fields",
+          "Add address saves to API successfully",
+          "Edit address updates existing address",
+          "Delete address removes from list",
+          "Set default marks address as default",
+          "Checkout pre-fills default address"
+        ],
+        "visual": [
+          "agent-browser: login to account",
+          "agent-browser: navigate to /account/addresses",
+          "agent-browser: screenshot address list",
+          "agent-browser: click Add Address",
+          "agent-browser: fill form and submit",
+          "agent-browser: verify new address in list",
+          "agent-browser: navigate to checkout and verify address pre-filled"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -717,6 +1396,26 @@
         "Respect system preference",
         "Update all components for dark mode"
       ],
+      "tests": {
+        "unit": [
+          "Theme toggle switches between light and dark",
+          "Theme preference saves to localStorage",
+          "Theme loads from localStorage on init",
+          "Theme respects system preference when no localStorage",
+          "CSS custom properties change with theme"
+        ],
+        "visual": [
+          "agent-browser: open homepage in light mode",
+          "agent-browser: screenshot light mode",
+          "agent-browser: click theme toggle",
+          "agent-browser: screenshot dark mode",
+          "agent-browser: reload page and verify dark mode persists",
+          "agent-browser: set device to dark mode preference",
+          "agent-browser: clear localStorage and reload",
+          "agent-browser: verify system preference respected"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -731,6 +1430,23 @@
         "Implement bulk status change (active/draft)",
         "Show progress indicator for bulk operations"
       ],
+      "tests": {
+        "unit": [
+          "Individual checkbox toggles selection state",
+          "Select All checkbox selects all visible products",
+          "Bulk delete shows confirmation dialog",
+          "Bulk delete calls API for each selected product",
+          "Bulk status change updates all selected products"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin products list",
+          "agent-browser: click select all checkbox",
+          "agent-browser: screenshot all selected state",
+          "agent-browser: click bulk actions dropdown",
+          "agent-browser: screenshot bulk actions menu"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -745,6 +1461,23 @@
         "Set duplicated product status to draft",
         "Navigate to edit page for duplicate"
       ],
+      "tests": {
+        "unit": [
+          "Duplicate creates new product with new ID",
+          "Duplicate copies all variants with new IDs",
+          "Duplicate appends (Copy) to title",
+          "Duplicate sets status to draft",
+          "Duplicate preserves all other fields"
+        ],
+        "visual": [
+          "agent-browser: navigate to product list",
+          "agent-browser: click duplicate on a product",
+          "agent-browser: verify redirect to edit page",
+          "agent-browser: verify title has (Copy) suffix",
+          "agent-browser: screenshot duplicated product form"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -758,6 +1491,22 @@
         "Create scheduled cleanup job for hard delete",
         "Update list queries to exclude soft-deleted"
       ],
+      "tests": {
+        "unit": [
+          "Delete sets deleted_at timestamp instead of removing",
+          "Undo clears deleted_at timestamp",
+          "Undo only works within 30 seconds",
+          "List queries exclude soft-deleted items",
+          "Cleanup job removes items older than 30 days"
+        ],
+        "visual": [
+          "agent-browser: delete a product",
+          "agent-browser: screenshot undo toast",
+          "agent-browser: click undo button",
+          "agent-browser: verify product restored in list"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -772,6 +1521,23 @@
         "Add next/previous navigation",
         "Configure page size (default: 20)"
       ],
+      "tests": {
+        "unit": [
+          "Pagination shows current page and total",
+          "Next button advances page",
+          "Previous button goes back",
+          "Previous disabled on first page",
+          "Next disabled on last page",
+          "Page size limits results"
+        ],
+        "visual": [
+          "agent-browser: navigate to products list with many items",
+          "agent-browser: screenshot pagination controls",
+          "agent-browser: click next page",
+          "agent-browser: verify page 2 content loaded"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -786,6 +1552,22 @@
         "Show who made each adjustment",
         "Add date range filter"
       ],
+      "tests": {
+        "unit": [
+          "Inventory adjustment creates history record",
+          "History record includes timestamp, reason, admin_id",
+          "History page fetches adjustments for SKU",
+          "History shows admin name for each entry",
+          "Date filter limits results"
+        ],
+        "visual": [
+          "agent-browser: adjust inventory for a product",
+          "agent-browser: navigate to inventory history page",
+          "agent-browser: screenshot history list",
+          "agent-browser: verify new adjustment appears"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -799,6 +1581,20 @@
         "Highlight low stock items on inventory page",
         "Optional: send email alerts when threshold reached"
       ],
+      "tests": {
+        "unit": [
+          "Threshold saves to variant record",
+          "Low stock list shows items below threshold",
+          "Inventory page highlights low stock rows",
+          "Email sent when inventory drops below threshold"
+        ],
+        "visual": [
+          "agent-browser: set low stock threshold on variant",
+          "agent-browser: navigate to inventory page",
+          "agent-browser: screenshot highlighted low stock items"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -812,6 +1608,19 @@
         "Show badge count on inventory nav",
         "Optional: send email when reorder point reached"
       ],
+      "tests": {
+        "unit": [
+          "Reorder point saves to variant record",
+          "Reorder alerts list shows items at reorder point",
+          "Nav badge shows count of items needing reorder"
+        ],
+        "visual": [
+          "agent-browser: set reorder point on variant",
+          "agent-browser: navigate to admin dashboard",
+          "agent-browser: verify inventory nav badge visible"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -825,6 +1634,19 @@
         "Trigger browser download",
         "Include date in filename"
       ],
+      "tests": {
+        "unit": [
+          "exportToCSV generates valid CSV string",
+          "CSV includes all inventory columns",
+          "Filename includes current date"
+        ],
+        "visual": [
+          "agent-browser: navigate to inventory page",
+          "agent-browser: click Export button",
+          "agent-browser: verify download initiated"
+        ],
+        "manual": ["Open downloaded CSV and verify data"]
+      },
       "passes": false
     },
     {
@@ -838,6 +1660,24 @@
         "Display notes with timestamp and admin name",
         "Allow editing/deleting own notes"
       ],
+      "tests": {
+        "unit": [
+          "Add note creates record in order_notes",
+          "Note includes timestamp and admin_id",
+          "Edit note updates existing record",
+          "Delete note removes record",
+          "Cannot edit/delete other admin's notes"
+        ],
+        "visual": [
+          "agent-browser: navigate to order detail",
+          "agent-browser: scroll to notes section",
+          "agent-browser: add a note",
+          "agent-browser: screenshot note in list",
+          "agent-browser: edit the note",
+          "agent-browser: delete the note"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -851,6 +1691,23 @@
         "Pass amount to Stripe refund API",
         "Show partial refund in order history"
       ],
+      "tests": {
+        "unit": [
+          "Refund dialog shows amount input",
+          "Amount validation rejects values over order total",
+          "API accepts and processes partial amount",
+          "Stripe refund called with correct amount",
+          "Order history shows partial refund"
+        ],
+        "visual": [
+          "agent-browser: navigate to order detail",
+          "agent-browser: click refund button",
+          "agent-browser: screenshot refund dialog with amount input",
+          "agent-browser: enter partial amount",
+          "agent-browser: submit and verify success"
+        ],
+        "manual": ["Verify partial refund in Stripe dashboard"]
+      },
       "passes": false
     },
     {
@@ -865,6 +1722,21 @@
         "Add tracking info for shipped status",
         "Log email sends on order"
       ],
+      "tests": {
+        "unit": [
+          "Email template renders order details",
+          "Status change to processing triggers email",
+          "Status change to delivered triggers email",
+          "Shipped status includes tracking info",
+          "Email send is logged on order"
+        ],
+        "visual": [
+          "agent-browser: navigate to order detail",
+          "agent-browser: change status to processing",
+          "agent-browser: verify email sent indicator"
+        ],
+        "manual": ["Check customer email for status notification"]
+      },
       "passes": false
     },
     {
@@ -878,6 +1750,23 @@
         "Display cover image in drop list",
         "Display cover image on storefront drop pages"
       ],
+      "tests": {
+        "unit": [
+          "Drop form accepts image upload",
+          "Image uploads to R2 successfully",
+          "Drop record stores cover_image URL",
+          "Drop list displays cover image"
+        ],
+        "visual": [
+          "agent-browser: navigate to create drop",
+          "agent-browser: upload cover image",
+          "agent-browser: screenshot image preview",
+          "agent-browser: save drop",
+          "agent-browser: navigate to drops list",
+          "agent-browser: verify cover image visible"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -892,6 +1781,21 @@
         "Save positions to API",
         "Respect position in storefront display"
       ],
+      "tests": {
+        "unit": [
+          "Product cards have drag handles",
+          "Drag updates position state",
+          "Drop saves new positions to API",
+          "Storefront displays products in position order"
+        ],
+        "visual": [
+          "agent-browser: navigate to drop edit page",
+          "agent-browser: screenshot product list with drag handles",
+          "agent-browser: drag product to new position",
+          "agent-browser: verify order changed"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -906,6 +1810,22 @@
         "Add type and date filters",
         "Show delivery status (sent, failed)"
       ],
+      "tests": {
+        "unit": [
+          "Email sends are logged to table",
+          "Log includes type, recipient, timestamp, status",
+          "Notifications page fetches email sends",
+          "Type filter limits results",
+          "Date filter limits results"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin notifications page",
+          "agent-browser: screenshot sent notifications list",
+          "agent-browser: apply type filter",
+          "agent-browser: verify filtered results"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -919,6 +1839,21 @@
         "Show image preview in editor",
         "Handle upload errors gracefully"
       ],
+      "tests": {
+        "unit": [
+          "Upload button appears in MDXEditor toolbar",
+          "Image uploads to R2 successfully",
+          "Markdown image syntax inserted with R2 URL",
+          "Upload error shows error message"
+        ],
+        "visual": [
+          "agent-browser: navigate to blog editor",
+          "agent-browser: click image upload in toolbar",
+          "agent-browser: upload test image",
+          "agent-browser: verify image appears in preview"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -932,6 +1867,21 @@
         "Trigger browser download",
         "Include summary stats row"
       ],
+      "tests": {
+        "unit": [
+          "Export button visible on analytics page",
+          "CSV includes orders in date range",
+          "CSV includes summary stats row",
+          "Filename includes date range"
+        ],
+        "visual": [
+          "agent-browser: navigate to analytics page",
+          "agent-browser: set date range",
+          "agent-browser: click Export button",
+          "agent-browser: verify download initiated"
+        ],
+        "manual": ["Open CSV and verify data matches dashboard"]
+      },
       "passes": false
     },
     {
@@ -946,6 +1896,21 @@
         "Add tooltip with detailed data",
         "Ensure responsive behavior"
       ],
+      "tests": {
+        "unit": [
+          "Chart renders with revenue data",
+          "Chart displays correct data points",
+          "Tooltip shows on hover"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin dashboard",
+          "agent-browser: screenshot revenue chart",
+          "agent-browser: hover over data point",
+          "agent-browser: screenshot tooltip displayed",
+          "agent-browser: resize window and verify chart responsive"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -960,6 +1925,20 @@
         "Update activity feed without refresh",
         "Handle reconnection gracefully"
       ],
+      "tests": {
+        "unit": [
+          "WebSocket connection established on dashboard load",
+          "Order events pushed via WebSocket",
+          "Activity feed updates on new event",
+          "Reconnection attempts on disconnect"
+        ],
+        "visual": [
+          "agent-browser: open admin dashboard",
+          "agent-browser: create order in separate tab",
+          "agent-browser: verify activity feed updates without refresh"
+        ],
+        "manual": ["Test disconnect/reconnect by disabling network briefly"]
+      },
       "passes": false
     },
     {
@@ -977,6 +1956,17 @@
         "Deploy storefront to Pages",
         "Deploy admin to Pages"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [],
+        "manual": [
+          "Push branch and verify CI runs",
+          "Verify type checks pass",
+          "Verify lint passes",
+          "Verify tests pass",
+          "Merge to main and verify deployment"
+        ]
+      },
       "passes": false
     },
     {
@@ -991,6 +1981,20 @@
         "Create staging deployment workflow",
         "Document staging URLs"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: open staging storefront URL",
+          "agent-browser: verify site loads correctly",
+          "agent-browser: open staging admin URL",
+          "agent-browser: verify admin loads correctly"
+        ],
+        "manual": [
+          "Verify staging D1 database exists",
+          "Verify staging R2 bucket exists",
+          "Test checkout with Stripe test card"
+        ]
+      },
       "passes": false
     },
     {
@@ -1005,6 +2009,20 @@
         "Configure webhook endpoint for Resend notifications",
         "Alert on bounce rate threshold"
       ],
+      "tests": {
+        "unit": [
+          "Success count increments on successful send",
+          "Failure count increments on failed send",
+          "Webhook endpoint receives and logs bounce events",
+          "Webhook endpoint receives and logs complaint events",
+          "Alert triggers when failure rate exceeds threshold"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin email dashboard",
+          "agent-browser: screenshot delivery metrics"
+        ],
+        "manual": ["Verify Resend webhook is configured"]
+      },
       "passes": false
     },
     {
@@ -1018,6 +2036,21 @@
         "Add touch/swipe for mobile",
         "Add keyboard navigation"
       ],
+      "tests": {
+        "unit": [
+          "Lightbox opens on image click",
+          "Navigation arrows appear when multiple images",
+          "Keyboard navigation works (arrows, Escape)"
+        ],
+        "visual": [
+          "agent-browser: navigate to lookbook page",
+          "agent-browser: click gallery image",
+          "agent-browser: screenshot lightbox open",
+          "agent-browser: navigate with arrow keys",
+          "agent-browser: press Escape and verify closes"
+        ],
+        "manual": ["Test touch swipe on mobile"]
+      },
       "passes": false
     },
     {
@@ -1030,6 +2063,20 @@
         "Add skeleton placeholder while loading",
         "Test scroll performance with many images"
       ],
+      "tests": {
+        "unit": [
+          "Images have loading=lazy attribute",
+          "Skeleton shows before image loads",
+          "Image loads when scrolled into view"
+        ],
+        "visual": [
+          "agent-browser: navigate to lookbook with many images",
+          "agent-browser: check network requests - only visible images loaded",
+          "agent-browser: scroll down slowly",
+          "agent-browser: verify more images load as they enter viewport"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1042,6 +2089,23 @@
         "Add Pinterest pin button with image",
         "Test share previews on each platform"
       ],
+      "tests": {
+        "unit": [
+          "Share buttons render on lookbook page",
+          "Open Graph meta tags present in head",
+          "Pinterest pin includes image URL"
+        ],
+        "visual": [
+          "agent-browser: navigate to lookbook page",
+          "agent-browser: screenshot share buttons",
+          "agent-browser: verify Open Graph meta in page source"
+        ],
+        "manual": [
+          "Share to Twitter and verify preview",
+          "Share to Facebook and verify preview",
+          "Pin to Pinterest and verify image"
+        ]
+      },
       "passes": false
     },
     {
@@ -1054,6 +2118,20 @@
         "Handle component errors gracefully",
         "Add toolbar buttons for inserting components"
       ],
+      "tests": {
+        "unit": [
+          "Preview renders supported MDX components",
+          "Preview shows error for unsupported components",
+          "Toolbar has buttons for each component"
+        ],
+        "visual": [
+          "agent-browser: navigate to blog editor",
+          "agent-browser: insert MDX component via toolbar",
+          "agent-browser: screenshot component in preview",
+          "agent-browser: insert invalid component and verify error"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1069,6 +2147,15 @@
         "Run migrations with wrangler d1 migrations apply",
         "Verify columns exist in database"
       ],
+      "tests": {
+        "unit": [
+          "TypeScript compiles with new Product interface fields",
+          "TypeScript compiles with new Variant interface fields",
+          "Migration runs without errors"
+        ],
+        "visual": [],
+        "manual": ["Query database and verify columns exist"]
+      },
       "passes": false
     },
     {
@@ -1083,6 +2170,17 @@
         "Update variant endpoints to handle image_alt field",
         "Test with curl or API client"
       ],
+      "tests": {
+        "unit": [
+          "createProduct stores featured_image_url",
+          "createProduct stores featured_image_alt",
+          "getProduct returns image fields",
+          "listProducts returns image fields",
+          "Variant endpoints handle image_alt"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1096,6 +2194,15 @@
         "Update UpdateProductParams to include tags",
         "Verify TypeScript compiles without errors"
       ],
+      "tests": {
+        "unit": [
+          "Product interface includes tags array",
+          "CreateProductParams includes tags",
+          "TypeScript compiles without errors"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1109,6 +2216,14 @@
         "Add unique constraint on (product_id, tag) pair",
         "Run migration for existing database"
       ],
+      "tests": {
+        "unit": [
+          "Migration runs without errors",
+          "Unique constraint prevents duplicate tags"
+        ],
+        "visual": [],
+        "manual": ["Query database and verify table exists"]
+      },
       "passes": false
     },
     {
@@ -1122,6 +2237,16 @@
         "Update getProduct to join and return tags array",
         "Update listProducts to include tags in response"
       ],
+      "tests": {
+        "unit": [
+          "createProduct inserts tags correctly",
+          "updateProduct syncs tags correctly",
+          "getProduct returns tags array",
+          "listProducts includes tags"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1135,6 +2260,22 @@
         "Add X button to remove individual tags",
         "Support keyboard navigation for accessibility"
       ],
+      "tests": {
+        "unit": [
+          "Enter key creates tag",
+          "Comma creates tag",
+          "Tag displays as chip",
+          "X button removes tag",
+          "Keyboard navigation works"
+        ],
+        "visual": [
+          "agent-browser: navigate to product form",
+          "agent-browser: type tag and press Enter",
+          "agent-browser: screenshot tag chips",
+          "agent-browser: click X to remove tag"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1148,6 +2289,19 @@
         "Wire up onChange handler to update form state",
         "Pre-populate tags when editing existing product"
       ],
+      "tests": {
+        "unit": [
+          "TagInput renders in ProductForm",
+          "Tags update form state",
+          "Existing product shows tags"
+        ],
+        "visual": [
+          "agent-browser: navigate to product edit page",
+          "agent-browser: verify tags pre-populated",
+          "agent-browser: add new tag and save"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1161,6 +2315,15 @@
         "Update UpdateProductParams to include drop_id",
         "Verify TypeScript compiles without errors"
       ],
+      "tests": {
+        "unit": [
+          "Product interface includes drop_id",
+          "CreateProductParams includes drop_id",
+          "TypeScript compiles without errors"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1174,6 +2337,16 @@
         "Validate drop_id exists in drops table before assigning",
         "Return drop info in getProduct response"
       ],
+      "tests": {
+        "unit": [
+          "createProduct stores drop_id",
+          "updateProduct updates drop_id",
+          "Invalid drop_id returns 400 error",
+          "getProduct returns drop info"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1187,6 +2360,21 @@
         "Include 'No drop' option for unassigned products",
         "Show drop status (active, scheduled, ended) as badge"
       ],
+      "tests": {
+        "unit": [
+          "Fetches drops on mount",
+          "Renders dropdown with drop names",
+          "No drop option present",
+          "Status badges display correctly"
+        ],
+        "visual": [
+          "agent-browser: navigate to product form",
+          "agent-browser: click drop selector",
+          "agent-browser: screenshot dropdown options",
+          "agent-browser: verify status badges"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1200,6 +2388,19 @@
         "Wire up onChange handler to update form state",
         "Pre-select current drop when editing existing product"
       ],
+      "tests": {
+        "unit": [
+          "DropSelector renders in form",
+          "Selection updates form state",
+          "Existing product shows current drop"
+        ],
+        "visual": [
+          "agent-browser: navigate to product edit page",
+          "agent-browser: verify drop pre-selected",
+          "agent-browser: change drop and save"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1213,6 +2414,15 @@
         "Update variant API endpoints to handle image_alt",
         "Run migration for existing database"
       ],
+      "tests": {
+        "unit": [
+          "Variant interface includes image_alt",
+          "Migration runs without errors",
+          "API endpoints handle image_alt"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1226,6 +2436,21 @@
         "Make alt text required when image is uploaded",
         "Show image preview with alt text overlay"
       ],
+      "tests": {
+        "unit": [
+          "ImageUploader component renders",
+          "Alt text input renders",
+          "Alt text required with image",
+          "Preview shows image"
+        ],
+        "visual": [
+          "agent-browser: navigate to variant form",
+          "agent-browser: upload image",
+          "agent-browser: verify alt text required",
+          "agent-browser: screenshot image preview"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1239,6 +2464,20 @@
         "Ensure variant images also use alt text",
         "Test with screen reader for accessibility"
       ],
+      "tests": {
+        "unit": [
+          "ProductCard uses featured_image_url",
+          "Images have alt attribute",
+          "Variant images have alt text"
+        ],
+        "visual": [
+          "agent-browser: navigate to shop page",
+          "agent-browser: verify images display",
+          "agent-browser: inspect image alt attributes",
+          "agent-browser: navigate to product detail"
+        ],
+        "manual": ["Test with screen reader"]
+      },
       "passes": false
     },
     {
@@ -1252,6 +2491,20 @@
         "Show active tag as selected state",
         "Add tag links on product cards"
       ],
+      "tests": {
+        "unit": [
+          "Tag page generates paths for all tags",
+          "API filters products by tag",
+          "Tag page shows filtered products"
+        ],
+        "visual": [
+          "agent-browser: navigate to /shop",
+          "agent-browser: click tag link",
+          "agent-browser: verify filtered products",
+          "agent-browser: verify active tag highlighted"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1265,6 +2518,16 @@
         "Add index on email for fast lookups",
         "Run migration with wrangler d1 migrations apply"
       ],
+      "tests": {
+        "unit": [
+          "Migration file exists",
+          "Table has all required columns",
+          "Unique constraint on (store_id, email) exists",
+          "Index on email exists"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1278,6 +2541,16 @@
         "Add index on sent_at for chronological queries",
         "Run migration"
       ],
+      "tests": {
+        "unit": [
+          "Migration file exists",
+          "Table has all required columns",
+          "Index on blog_slug exists",
+          "Index on sent_at exists"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1292,6 +2565,18 @@
         "Insert subscriber with verified=false",
         "Return success response (don't reveal if email exists)"
       ],
+      "tests": {
+        "unit": [
+          "POST /v1/newsletter/subscribe returns 200 for valid email",
+          "Email is normalized to lowercase",
+          "Invalid email format returns 400",
+          "Verification token is generated",
+          "Subscriber inserted with verified=false",
+          "Same response for existing email (no leak)"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1305,6 +2590,16 @@
         "Add clear CTA button 'Confirm Subscription'",
         "Include text explaining why they received this email"
       ],
+      "tests": {
+        "unit": [
+          "buildNewsletterVerificationHtml returns valid HTML",
+          "Email includes verification link with token",
+          "Email includes 'Confirm Subscription' button",
+          "Email uses brand colors"
+        ],
+        "visual": [],
+        "manual": ["Verify email renders correctly in email client"]
+      },
       "passes": false
     },
     {
@@ -1318,6 +2613,15 @@
         "Log email send attempt",
         "Handle and log any send failures"
       ],
+      "tests": {
+        "unit": [
+          "sendNewsletterVerificationEmail calls Resend API",
+          "Email send attempt is logged",
+          "Send failures are caught and logged"
+        ],
+        "visual": [],
+        "manual": ["Subscribe and verify email arrives"]
+      },
       "passes": false
     },
     {
@@ -1331,6 +2635,17 @@
         "Clear verification_token after use",
         "Return success JSON or redirect to success page"
       ],
+      "tests": {
+        "unit": [
+          "GET /v1/newsletter/verify?token=valid returns success",
+          "Subscriber verified=true after verification",
+          "verified_at timestamp is set",
+          "Verification token is cleared",
+          "Invalid token returns 404"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1343,6 +2658,15 @@
         "Include link back to homepage and blog",
         "Match site branding and layout"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: navigate to /newsletter/verified",
+          "agent-browser: screenshot success page",
+          "agent-browser: verify links to homepage and blog"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1356,6 +2680,16 @@
         "Return success page confirming unsubscription",
         "Do not delete record (soft unsubscribe for compliance)"
       ],
+      "tests": {
+        "unit": [
+          "GET /v1/newsletter/unsubscribe returns success for valid email/token",
+          "unsubscribed_at timestamp is set",
+          "Invalid token returns error",
+          "Record is not deleted (soft unsubscribe)"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1368,6 +2702,14 @@
         "Include optional feedback form or resubscribe link",
         "Match site branding"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: navigate to /newsletter/unsubscribed",
+          "agent-browser: screenshot unsubscribe confirmation page"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1381,6 +2723,16 @@
         "Add prominent 'Read More' CTA button linking to blog post",
         "Include footer with unsubscribe link (required by law)"
       ],
+      "tests": {
+        "unit": [
+          "buildNewsletterEmailHtml returns valid HTML",
+          "Email includes logo and featured image",
+          "Email includes 'Read More' button with blog link",
+          "Email includes unsubscribe link"
+        ],
+        "visual": [],
+        "manual": ["Verify email renders correctly in email client"]
+      },
       "passes": false
     },
     {
@@ -1394,6 +2746,19 @@
         "Add checkbox: 'Also send as newsletter to X subscribers'",
         "Fetch and display active subscriber count from API"
       ],
+      "tests": {
+        "unit": [
+          "Toggle appears when changing draft→published",
+          "Subscriber count is fetched and displayed",
+          "Toggle is hidden for already published posts"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin blog editor",
+          "agent-browser: toggle draft to published",
+          "agent-browser: screenshot newsletter toggle with subscriber count"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1408,6 +2773,16 @@
         "Record send in newsletter_sends table",
         "Return send count and status"
       ],
+      "tests": {
+        "unit": [
+          "POST /v1/newsletter/send accepts blog_slug",
+          "Only verified, non-unsubscribed subscribers receive email",
+          "Send is recorded in newsletter_sends table",
+          "Response includes send count"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1421,6 +2796,18 @@
         "Show success/error toast with send count",
         "Log newsletter send in admin activity"
       ],
+      "tests": {
+        "unit": [
+          "Newsletter send triggered when sendAsNewsletter=true",
+          "Newsletter not sent when sendAsNewsletter=false",
+          "Success toast shows send count"
+        ],
+        "visual": [
+          "agent-browser: publish blog post with newsletter toggle on",
+          "agent-browser: verify success toast appears"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1433,6 +2820,15 @@
         "Return 429 Too Many Requests when limit exceeded",
         "Include Retry-After header in response"
       ],
+      "tests": {
+        "unit": [
+          "6th request from same IP returns 429",
+          "429 response includes Retry-After header",
+          "Rate limit resets after hour"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1446,6 +2842,14 @@
         "Send reCAPTCHA token with subscribe request",
         "Verify token server-side before processing subscription"
       ],
+      "tests": {
+        "unit": [
+          "reCAPTCHA token sent with subscribe request",
+          "Server rejects request without valid token"
+        ],
+        "visual": [],
+        "manual": ["Verify form works with reCAPTCHA enabled"]
+      },
       "passes": false
     },
     {
@@ -1459,6 +2863,20 @@
         "Display table with email, status, subscribed_at, source columns",
         "Add search input to filter by email"
       ],
+      "tests": {
+        "unit": [
+          "Subscribers page fetches from API",
+          "Table displays all columns",
+          "Search filters by email"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /subscribers",
+          "agent-browser: verify Subscribers in sidebar",
+          "agent-browser: screenshot subscribers table",
+          "agent-browser: search for email and verify filtering"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1472,6 +2890,17 @@
         "Support search by email",
         "Return subscriber count in response"
       ],
+      "tests": {
+        "unit": [
+          "GET /v1/newsletter/subscribers returns list",
+          "Pagination with cursor works",
+          "Filtering by status works",
+          "Search by email works",
+          "Response includes count"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1485,6 +2914,18 @@
         "Allow adding with optional skip_verification flag",
         "Show success/error feedback"
       ],
+      "tests": {
+        "unit": [
+          "POST /v1/newsletter/subscribers/add creates subscriber",
+          "skip_verification flag sets verified=true immediately"
+        ],
+        "visual": [
+          "agent-browser: click Add Subscriber",
+          "agent-browser: fill form and submit",
+          "agent-browser: verify subscriber added to list"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1498,6 +2939,18 @@
         "Soft delete (set unsubscribed_at) rather than hard delete",
         "Show success toast after removal"
       ],
+      "tests": {
+        "unit": [
+          "DELETE /v1/newsletter/subscribers/:id sets unsubscribed_at",
+          "Record not deleted from database"
+        ],
+        "visual": [
+          "agent-browser: click Remove on subscriber",
+          "agent-browser: confirm in dialog",
+          "agent-browser: verify subscriber removed from list"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1511,6 +2964,18 @@
         "Trigger browser download",
         "Include date in filename"
       ],
+      "tests": {
+        "unit": [
+          "GET /v1/newsletter/subscribers/export returns CSV",
+          "CSV includes all columns",
+          "Filename includes date"
+        ],
+        "visual": [
+          "agent-browser: click Export button",
+          "agent-browser: verify download triggered"
+        ],
+        "manual": ["Open downloaded CSV and verify contents"]
+      },
       "passes": false
     },
     {
@@ -1524,6 +2989,18 @@
         "Display table with post title, sent_at, recipient_count",
         "Link post title to blog post"
       ],
+      "tests": {
+        "unit": [
+          "History page fetches newsletter_sends",
+          "Table shows post title, sent_at, recipient_count"
+        ],
+        "visual": [
+          "agent-browser: navigate to /subscribers/history",
+          "agent-browser: screenshot send history table",
+          "agent-browser: click post title link and verify navigation"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1537,6 +3014,16 @@
         "Show success message: 'Check your email to confirm'",
         "Show error message on failure"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: navigate to storefront",
+          "agent-browser: scroll to footer newsletter form",
+          "agent-browser: fill email and submit",
+          "agent-browser: screenshot success message"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1550,6 +3037,16 @@
         "Wire up form submission to subscribe API",
         "Show inline success/error feedback"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: navigate to /blog",
+          "agent-browser: scroll to newsletter signup section",
+          "agent-browser: screenshot signup form",
+          "agent-browser: submit and verify success message"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1563,6 +3060,16 @@
         "Wire up form submission",
         "Show inline feedback"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: navigate to blog post",
+          "agent-browser: scroll to end of post",
+          "agent-browser: screenshot newsletter CTA section",
+          "agent-browser: submit email and verify feedback"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1577,6 +3084,20 @@
         "For active drops: show 'Shop Now' CTA",
         "For ended drops: show 'View Archive' link"
       ],
+      "tests": {
+        "unit": [
+          "Page fetches all drops from API",
+          "Active drops show 'Shop Now' CTA",
+          "Scheduled drops show countdown timer",
+          "Ended drops show 'View Archive' link"
+        ],
+        "visual": [
+          "agent-browser: navigate to /drops",
+          "agent-browser: screenshot drops listing",
+          "agent-browser: verify status badges visible"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1591,6 +3112,19 @@
         "Handle timezone conversion properly",
         "Show 'Live Now!' when countdown reaches zero"
       ],
+      "tests": {
+        "unit": [
+          "CountdownTimer accepts targetDate prop",
+          "Displays days, hours, minutes, seconds",
+          "Updates every second",
+          "Shows 'Live Now!' at zero"
+        ],
+        "visual": [
+          "agent-browser: navigate to /drops with scheduled drop",
+          "agent-browser: screenshot countdown timer"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1604,6 +3138,19 @@
         "Show success message on subscription",
         "Style consistently with drops page design"
       ],
+      "tests": {
+        "unit": [
+          "Waitlist form shown only for scheduled drops",
+          "drop_id passed to subscribe endpoint",
+          "Success message shown on subscription"
+        ],
+        "visual": [
+          "agent-browser: navigate to /drops with scheduled drop",
+          "agent-browser: fill waitlist form and submit",
+          "agent-browser: screenshot success message"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1617,6 +3164,19 @@
         "Link each card to /shop/[drop-slug] for shoppable archive",
         "Show 'Sold Out' badge on products with no inventory"
       ],
+      "tests": {
+        "unit": [
+          "Archive page fetches only ended drops",
+          "Cards show name, dates, product count",
+          "Links to /shop/[drop-slug]"
+        ],
+        "visual": [
+          "agent-browser: navigate to /drops/archive",
+          "agent-browser: screenshot archive listing",
+          "agent-browser: click a drop card and verify navigation"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1630,6 +3190,20 @@
         "Verify /drops/archive link points to new archive page",
         "Test all footer links work correctly"
       ],
+      "tests": {
+        "unit": [
+          "Footer has 'Journal' link to /blog",
+          "Footer has /drops link",
+          "Footer has /drops/archive link"
+        ],
+        "visual": [
+          "agent-browser: navigate to homepage",
+          "agent-browser: scroll to footer",
+          "agent-browser: verify all navigation links present",
+          "agent-browser: click Journal link and verify /blog"
+        ],
+        "manual": []
+      },
       "passes": true
     },
     {
@@ -1646,6 +3220,21 @@
         "Remove or update 'About' link since it now redirects to blog",
         "Style all items consistently"
       ],
+      "tests": {
+        "unit": [
+          "Header contains img element for logo",
+          "Header has Journal link to /blog",
+          "Header has Lookbook link to /lookbook"
+        ],
+        "visual": [
+          "agent-browser: navigate to homepage",
+          "agent-browser: screenshot header with logo",
+          "agent-browser: verify all nav links present",
+          "agent-browser: set viewport to mobile",
+          "agent-browser: screenshot mobile menu"
+        ],
+        "manual": []
+      },
       "passes": true
     },
     {
@@ -1659,6 +3248,15 @@
         "Verify page layout still looks good without the section",
         "Test responsive behavior"
       ],
+      "tests": {
+        "unit": ["Homepage does not have duplicate newsletter section"],
+        "visual": [
+          "agent-browser: navigate to homepage",
+          "agent-browser: verify no duplicate newsletter sections",
+          "agent-browser: verify footer newsletter still present"
+        ],
+        "manual": []
+      },
       "passes": true
     },
     {
@@ -1671,6 +3269,15 @@
         "Optionally update 'Learn More' text to 'Read Our Story'",
         "This link will work once the pinned About post is created"
       ],
+      "tests": {
+        "unit": ["Our Story section links to /blog/about-dear-margeaux"],
+        "visual": [
+          "agent-browser: navigate to homepage",
+          "agent-browser: scroll to Our Story section",
+          "agent-browser: click link and verify navigation to blog post"
+        ],
+        "manual": []
+      },
       "passes": true
     },
     {
@@ -1683,7 +3290,16 @@
         "Update TypeScript types if needed",
         "Verify schema change doesn't break existing posts"
       ],
-      "passes": false
+      "tests": {
+        "unit": [
+          "Blog schema includes pinned field",
+          "pinned defaults to false",
+          "Existing posts still parse correctly"
+        ],
+        "visual": [],
+        "manual": []
+      },
+      "passes": true
     },
     {
       "id": "nav-10",
@@ -1695,7 +3311,19 @@
         "Optionally add visual indicator for pinned posts",
         "Test with a pinned post to verify ordering"
       ],
-      "passes": false
+      "tests": {
+        "unit": [
+          "Pinned posts appear first in listing",
+          "Non-pinned posts sorted by date"
+        ],
+        "visual": [
+          "agent-browser: navigate to /blog",
+          "agent-browser: verify pinned post appears first",
+          "agent-browser: screenshot blog listing order"
+        ],
+        "manual": []
+      },
+      "passes": true
     },
     {
       "id": "nav-11",
@@ -1708,6 +3336,19 @@
         "Include helper text: 'Pinned posts appear first in the blog'",
         "Include pinned in form submission data"
       ],
+      "tests": {
+        "unit": [
+          "BlogForm has pinned state",
+          "Pin toggle/checkbox renders",
+          "Pinned included in form submission"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin blog editor",
+          "agent-browser: screenshot pin toggle",
+          "agent-browser: toggle pin and verify state change"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1721,6 +3362,15 @@
         "Update POST handler to accept pinned parameter",
         "Update apps/admin/src/pages/api/blog/[slug].ts similarly"
       ],
+      "tests": {
+        "unit": [
+          "POST /api/blog accepts pinned parameter",
+          "Pinned saved to MDX frontmatter",
+          "GET /api/blog returns pinned field"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1733,6 +3383,14 @@
         "If creating redirect, use Astro.redirect() in the page",
         "Test that /about either 404s cleanly or redirects properly"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: navigate to /about",
+          "agent-browser: verify redirect to /blog/about-dear-margeaux or 404"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1751,6 +3409,30 @@
         "Verify footer 'Journal' link works (consistent with header)",
         "Verify newsletter signup in footer and blog pages works"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: record start ./navigation-e2e.webm",
+          "agent-browser: navigate to homepage",
+          "agent-browser: verify logo in header",
+          "agent-browser: click Drops link and verify /drops",
+          "agent-browser: verify drops listing with countdown",
+          "agent-browser: navigate to /drops/archive",
+          "agent-browser: verify ended drops",
+          "agent-browser: click Journal link and verify /blog",
+          "agent-browser: verify pinned About post first",
+          "agent-browser: click Lookbook link and verify /lookbook",
+          "agent-browser: navigate to homepage",
+          "agent-browser: scroll to Our Story and click link",
+          "agent-browser: verify blog post page",
+          "agent-browser: scroll to footer",
+          "agent-browser: verify Journal link works",
+          "agent-browser: fill newsletter signup",
+          "agent-browser: record stop"
+        ],
+        "integration": ["Full navigation flow across all main routes"],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1767,6 +3449,23 @@
         "Add variant image alt text input",
         "Support both create and edit modes via optional product prop"
       ],
+      "tests": {
+        "unit": [
+          "ProductFormComplete renders all product fields",
+          "ProductFormComplete includes featured image upload section",
+          "ProductFormComplete includes alt text input for featured image",
+          "ProductFormComplete includes default variant section",
+          "ProductFormComplete supports create mode (no product prop)",
+          "ProductFormComplete supports edit mode (with product prop)",
+          "ProductFormComplete pre-fills fields in edit mode"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: screenshot full form layout",
+          "agent-browser: verify all sections present (product details, featured image, default variant)"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1781,6 +3480,23 @@
         "Add validation: price must be positive number",
         "Display formatted price preview below input"
       ],
+      "tests": {
+        "unit": [
+          "Price input accepts decimal values with 2 decimal places",
+          "Price converts dollars to cents on submission (19.99 -> 1999)",
+          "Price converts cents to dollars in edit mode (1999 -> 19.99)",
+          "Price validation rejects negative numbers",
+          "Price validation rejects non-numeric input",
+          "Formatted price preview updates on input change"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: type '29.99' in price input",
+          "agent-browser: verify price preview shows '$29.99'",
+          "agent-browser: screenshot price field with preview"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1794,6 +3510,23 @@
         "Auto-generate SKU suggestion from product title if empty",
         "Show validation error for invalid SKU format"
       ],
+      "tests": {
+        "unit": [
+          "SKU input transforms to uppercase",
+          "SKU validation accepts alphanumeric with hyphens/underscores",
+          "SKU validation rejects special characters",
+          "SKU auto-generates from product title when empty",
+          "SKU validation error displays for invalid format"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: type product title",
+          "agent-browser: verify SKU auto-populated from title",
+          "agent-browser: type lowercase in SKU field",
+          "agent-browser: verify auto-converted to uppercase"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1808,6 +3541,23 @@
         "Add remove/replace image functionality",
         "Store URL in featured_image_url field"
       ],
+      "tests": {
+        "unit": [
+          "ImageUploader renders with 'Featured Image' label",
+          "onUpload callback stores URL in form state",
+          "Image preview displays after upload",
+          "Remove button clears featured_image_url",
+          "Replace triggers new upload dialog"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: locate featured image upload section",
+          "agent-browser: upload test image",
+          "agent-browser: screenshot image preview displayed",
+          "agent-browser: click remove and verify image cleared"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1822,6 +3572,23 @@
         "Add remove/replace functionality",
         "Make variant image optional (featured image can be used as fallback)"
       ],
+      "tests": {
+        "unit": [
+          "Variant ImageUploader renders with 'Variant Image' label",
+          "onUpload callback stores URL in variant image_url",
+          "Variant image preview displays after upload",
+          "Remove button clears variant image_url",
+          "Form submits successfully without variant image (optional)"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: scroll to Default Variant section",
+          "agent-browser: locate variant image upload",
+          "agent-browser: upload test image",
+          "agent-browser: screenshot variant image preview"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1835,6 +3602,23 @@
         "Return complete product object with variants array populated",
         "Handle partial variant data gracefully (allow product-only creation)"
       ],
+      "tests": {
+        "unit": [
+          "POST /api/products creates product with variant when variant fields provided",
+          "POST /api/products returns product with variants array populated",
+          "POST /api/products creates product-only when no variant fields",
+          "POST /api/products handles partial variant data gracefully",
+          "Variant has correct product_id foreign key"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: fill all product and variant fields",
+          "agent-browser: submit form",
+          "agent-browser: verify redirect to product edit page",
+          "agent-browser: verify variant appears in variants list"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1848,6 +3632,20 @@
         "Remove text saying 'add variants after creating'",
         "Test creating product with title, description, price, SKU, and images"
       ],
+      "tests": {
+        "unit": [
+          "Page renders ProductFormComplete component",
+          "Page does not render old CreateProduct component",
+          "Page description mentions variant creation"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: verify full form with variant fields visible",
+          "agent-browser: screenshot complete form layout",
+          "agent-browser: verify no 'add variants after creating' text"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1862,6 +3660,23 @@
         "Add alt text input field below image",
         "Save featured image changes via PATCH /api/products/:id"
       ],
+      "tests": {
+        "unit": [
+          "ProductEditor displays current featured image",
+          "Edit/replace button triggers ImageUploader",
+          "Alt text input field renders below image",
+          "PATCH /api/products/:id updates featured_image_url",
+          "Image preview updates after replacement"
+        ],
+        "visual": [
+          "agent-browser: navigate to product edit page",
+          "agent-browser: screenshot featured image section",
+          "agent-browser: click replace button",
+          "agent-browser: upload new image",
+          "agent-browser: verify new image displayed"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1876,6 +3691,23 @@
         "Keep URL input as fallback/alternative for external URLs",
         "Add toggle between upload and URL input modes"
       ],
+      "tests": {
+        "unit": [
+          "VariantForm renders ImageUploader instead of text input",
+          "image_alt field renders for accessibility",
+          "Image preview displays after upload",
+          "Toggle switches between upload and URL input modes",
+          "URL input accepts external URLs"
+        ],
+        "visual": [
+          "agent-browser: navigate to product with variant",
+          "agent-browser: click edit variant",
+          "agent-browser: screenshot ImageUploader in variant form",
+          "agent-browser: toggle to URL input mode",
+          "agent-browser: verify text input appears"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1890,6 +3722,21 @@
         "Provide sensible default alt text if none specified",
         "Test with products that have/don't have images"
       ],
+      "tests": {
+        "unit": [
+          "ProductCard uses featured_image_url when available",
+          "ProductCard falls back to variant image_url",
+          "ProductCard uses featured_image_alt for alt attribute",
+          "ProductCard provides default alt text when none specified"
+        ],
+        "visual": [
+          "agent-browser: navigate to storefront products listing",
+          "agent-browser: screenshot product cards with images",
+          "agent-browser: verify images load correctly",
+          "agent-browser: inspect alt attributes in DOM"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1904,6 +3751,22 @@
         "Handle missing images gracefully with placeholder",
         "Ensure images are responsive and optimized"
       ],
+      "tests": {
+        "unit": [
+          "Product page displays featured image at top",
+          "Product page shows variant images in gallery",
+          "All images have proper alt attributes",
+          "Missing images show placeholder",
+          "Images use responsive srcset"
+        ],
+        "visual": [
+          "agent-browser: navigate to product detail page",
+          "agent-browser: screenshot main product image",
+          "agent-browser: screenshot variant image gallery",
+          "agent-browser: test responsive image at different viewports"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1919,6 +3782,25 @@
         "Edit product fields and verify changes save correctly",
         "View product on storefront and verify images display"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: record start ./product-creation-e2e.webm",
+          "agent-browser: navigate to admin /products/new",
+          "agent-browser: fill title, description, price, SKU fields",
+          "agent-browser: upload featured image and variant image",
+          "agent-browser: submit form",
+          "agent-browser: verify redirect to edit page with all data",
+          "agent-browser: edit product title and save",
+          "agent-browser: navigate to storefront product page",
+          "agent-browser: verify product displays with images",
+          "agent-browser: record stop"
+        ],
+        "integration": [
+          "Full product creation flow from admin to storefront display"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1933,6 +3815,25 @@
         "Require at least one variant before form submission",
         "Show variant count badge in section header"
       ],
+      "tests": {
+        "unit": [
+          "Variants section uses array state",
+          "Variant cards display SKU, title, price, image",
+          "Add Another Variant button adds new variant to array",
+          "Variant cards are collapsible/expandable",
+          "Form validation requires at least one variant",
+          "Variant count badge shows correct count"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: screenshot Variants section with single variant",
+          "agent-browser: click Add Another Variant",
+          "agent-browser: verify second variant card appears",
+          "agent-browser: screenshot multiple variants",
+          "agent-browser: collapse/expand variant card"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1947,6 +3848,23 @@
         "Add delete button with confirmation",
         "Add drag handle for reordering (optional)"
       ],
+      "tests": {
+        "unit": [
+          "VariantCard displays compact view with SKU, title, price, thumbnail",
+          "VariantCard expands to full edit form on click",
+          "VariantCard includes all variant fields when expanded",
+          "Delete button shows confirmation dialog",
+          "Delete confirmed removes variant from parent"
+        ],
+        "visual": [
+          "agent-browser: navigate to product with variants",
+          "agent-browser: screenshot compact variant card",
+          "agent-browser: click to expand variant card",
+          "agent-browser: screenshot expanded edit form",
+          "agent-browser: click delete and screenshot confirmation dialog"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1960,6 +3878,24 @@
         "Auto-focus SKU field when new variant is added",
         "Show confirmation dialog before removing variant with data"
       ],
+      "tests": {
+        "unit": [
+          "addVariant appends empty variant to array",
+          "removeVariant removes variant at specified index",
+          "removeVariant prevented when only 1 variant remains",
+          "SKU field auto-focuses after addVariant",
+          "Confirmation dialog shown before removing variant with data"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: click Add Variant",
+          "agent-browser: verify SKU field focused on new variant",
+          "agent-browser: fill variant data",
+          "agent-browser: click remove on variant with data",
+          "agent-browser: screenshot confirmation dialog"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1973,6 +3909,26 @@
         "Show summary of errors at top of form",
         "Prevent submission until all variants are valid"
       ],
+      "tests": {
+        "unit": [
+          "Validation fails when variant missing SKU",
+          "Validation fails when variant missing title",
+          "Validation fails when variant missing price",
+          "Validation detects duplicate SKUs across variants",
+          "Variant with error is highlighted",
+          "Error summary displays at top of form",
+          "Submit button disabled when validation fails"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: add two variants with same SKU",
+          "agent-browser: attempt submit",
+          "agent-browser: screenshot error summary and highlighted variants",
+          "agent-browser: fix duplicate SKU",
+          "agent-browser: verify submit enabled"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1986,6 +3942,22 @@
         "Use database transaction to ensure all-or-nothing creation",
         "Return product with all created variants in response"
       ],
+      "tests": {
+        "unit": [
+          "POST /api/products accepts variants array in body",
+          "POST creates all variants in the array",
+          "Transaction rolls back if any variant creation fails",
+          "Response includes all created variants",
+          "Variants have correct product_id foreign key"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: add 3 variants with different data",
+          "agent-browser: submit form",
+          "agent-browser: verify all 3 variants appear on edit page"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -1999,6 +3971,25 @@
         "User can edit generated variants before saving",
         "Store custom templates in localStorage for reuse"
       ],
+      "tests": {
+        "unit": [
+          "Quick Add dropdown shows template options",
+          "Sizes template creates XS, S, M, L, XL variants",
+          "Colors template creates common color variants",
+          "Size+Color matrix creates all combinations",
+          "Templates auto-generate SKUs from titles",
+          "Custom templates saved to localStorage",
+          "Custom templates load from localStorage"
+        ],
+        "visual": [
+          "agent-browser: navigate to /products/new",
+          "agent-browser: click Quick Add dropdown",
+          "agent-browser: screenshot template options",
+          "agent-browser: select Sizes template",
+          "agent-browser: screenshot generated size variants"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2012,6 +4003,23 @@
         "Optionally allow percentage adjustment (+10%, -5%)",
         "Show preview of price changes before applying"
       ],
+      "tests": {
+        "unit": [
+          "Set All Prices button opens modal",
+          "Modal shows single price input",
+          "Confirm applies price to all variants",
+          "Percentage adjustment calculates correctly (+10% on $10 = $11)",
+          "Preview shows before/after prices for each variant"
+        ],
+        "visual": [
+          "agent-browser: navigate to product with multiple variants",
+          "agent-browser: click Set All Prices",
+          "agent-browser: screenshot modal with price input",
+          "agent-browser: enter $25.00 and screenshot preview",
+          "agent-browser: confirm and verify all variants updated"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2026,6 +4034,25 @@
         "Check storefront displays all variants correctly",
         "Test variant selection on product detail page"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: record start ./multi-variant-e2e.webm",
+          "agent-browser: navigate to /products/new",
+          "agent-browser: create product with 3 variants at different prices",
+          "agent-browser: submit and verify all variants on edit page",
+          "agent-browser: add 2 more variants and save",
+          "agent-browser: delete one variant and verify removal",
+          "agent-browser: navigate to storefront product page",
+          "agent-browser: verify variant selector shows all variants",
+          "agent-browser: select different variants and verify price changes",
+          "agent-browser: record stop"
+        ],
+        "integration": [
+          "Full multi-variant product lifecycle from creation to storefront"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2039,6 +4066,18 @@
         "Convert to WebP format for optimal web performance",
         "Save processed images to scratchpad directory with consistent naming: prod-1.webp through prod-7.webp"
       ],
+      "tests": {
+        "unit": [
+          "All 7 product images processed successfully",
+          "Processed images are max 1200px width",
+          "Processed images maintain aspect ratio",
+          "Processed images are <200KB each",
+          "Output files are WebP format",
+          "Output files named prod-1.webp through prod-7.webp"
+        ],
+        "visual": [],
+        "manual": ["Verify visual quality of processed images is acceptable"]
+      },
       "passes": false
     },
     {
@@ -2053,6 +4092,18 @@
         "Resize to max 1600px width for blog/lookbook (larger than products)",
         "Compress and convert to WebP"
       ],
+      "tests": {
+        "unit": [
+          "blog-about.webp created successfully",
+          "lookbook-1.webp created successfully",
+          "lookbook-2.webp created successfully",
+          "branding-hero.webp created successfully",
+          "All images are max 1600px width",
+          "All images are WebP format"
+        ],
+        "visual": [],
+        "manual": ["Verify visual quality of blog/lookbook images"]
+      },
       "passes": false
     },
     {
@@ -2066,6 +4117,17 @@
         "Create PNG versions for contexts requiring transparency support",
         "Resize logos to standard header height (48-64px height)"
       ],
+      "tests": {
+        "unit": [
+          "logo-main.webp created with high quality",
+          "logo-light.webp created successfully",
+          "logo-light-bold.webp created successfully",
+          "PNG versions created for each logo",
+          "Logo heights are between 48-64px"
+        ],
+        "visual": [],
+        "manual": ["Verify logo quality and readability at header size"]
+      },
       "passes": false
     },
     {
@@ -2082,6 +4144,20 @@
         "Generate android-chrome-512x512.png",
         "Create site.webmanifest file with icon references"
       ],
+      "tests": {
+        "unit": [
+          "favicon.ico contains 16x16, 32x32, 48x48 sizes",
+          "favicon-16x16.png is exactly 16x16px",
+          "favicon-32x32.png is exactly 32x32px",
+          "apple-touch-icon.png is exactly 180x180px",
+          "android-chrome-192x192.png is exactly 192x192px",
+          "android-chrome-512x512.png is exactly 512x512px",
+          "site.webmanifest is valid JSON",
+          "site.webmanifest references correct icon paths"
+        ],
+        "visual": [],
+        "manual": ["Verify favicon displays correctly in browser tab"]
+      },
       "passes": false
     },
     {
@@ -2097,6 +4173,21 @@
         "Upload logo files to branding/ folder in R2",
         "Verify all uploads successful and URLs accessible"
       ],
+      "tests": {
+        "unit": [
+          "R2 bucket credentials are configured",
+          "Product images uploaded to products/ folder",
+          "Blog images uploaded to blog/ folder",
+          "Lookbook images uploaded to lookbook/ folder",
+          "Branding images uploaded to branding/ folder",
+          "All uploaded URLs return 200 OK"
+        ],
+        "visual": [
+          "agent-browser: open each R2 URL directly",
+          "agent-browser: verify images load correctly"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2112,6 +4203,20 @@
         "Copy site.webmanifest to apps/storefront/public/",
         "Update apps/storefront/src/layouts/BaseLayout.astro with favicon links"
       ],
+      "tests": {
+        "unit": [
+          "favicon.ico exists in apps/storefront/public/",
+          "All favicon PNG files exist in public/",
+          "site.webmanifest exists in public/",
+          "BaseLayout.astro includes favicon link tags"
+        ],
+        "visual": [
+          "agent-browser: navigate to storefront",
+          "agent-browser: verify favicon appears in browser tab",
+          "agent-browser: screenshot browser tab with favicon"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2125,6 +4230,21 @@
         "Ensure logo links to homepage",
         "Test visual consistency with header"
       ],
+      "tests": {
+        "unit": [
+          "Footer.astro includes logo img element",
+          "Logo img has correct src URL",
+          "Logo is wrapped in link to homepage"
+        ],
+        "visual": [
+          "agent-browser: navigate to any storefront page",
+          "agent-browser: scroll to footer",
+          "agent-browser: screenshot footer logo",
+          "agent-browser: click footer logo",
+          "agent-browser: verify navigation to homepage"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2138,6 +4258,20 @@
         "Add descriptive alt text for accessibility",
         "Verify image displays correctly and maintains layout"
       ],
+      "tests": {
+        "unit": [
+          "index.astro Our Story section has img element",
+          "img src points to branding-hero.webp R2 URL",
+          "img has descriptive alt text"
+        ],
+        "visual": [
+          "agent-browser: navigate to homepage",
+          "agent-browser: scroll to Our Story section",
+          "agent-browser: screenshot Our Story section with image",
+          "agent-browser: verify image loaded (not broken)"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2151,6 +4285,21 @@
         "Show title, date, image count, draft status for each",
         "Add 'Create Lookbook' button linking to /lookbook/new"
       ],
+      "tests": {
+        "unit": [
+          "Lookbook listing page fetches lookbooks from API",
+          "Listing shows title, date, image count for each",
+          "Draft status badge displays correctly",
+          "Create Lookbook button links to /lookbook/new"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /lookbook",
+          "agent-browser: verify Lookbook item in sidebar",
+          "agent-browser: screenshot lookbook listing",
+          "agent-browser: verify Create Lookbook button visible"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2164,6 +4313,23 @@
         "Include ImageUploader for cover image",
         "Support both create and edit modes"
       ],
+      "tests": {
+        "unit": [
+          "LookbookForm renders title, description, date fields",
+          "LookbookForm includes draft toggle",
+          "LookbookForm includes drop selector (optional)",
+          "LookbookForm includes ImageUploader for cover",
+          "LookbookForm supports create mode (empty fields)",
+          "LookbookForm supports edit mode (pre-filled fields)"
+        ],
+        "visual": [
+          "agent-browser: navigate to /lookbook/new",
+          "agent-browser: screenshot lookbook form",
+          "agent-browser: verify all fields present",
+          "agent-browser: toggle draft switch and verify state change"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2178,6 +4344,25 @@
         "Add delete button for each image",
         "Show image count and upload progress"
       ],
+      "tests": {
+        "unit": [
+          "LookbookGallery displays images in grid layout",
+          "LookbookGallery shows image count",
+          "ImageUploader adds new images to gallery",
+          "Drag-to-reorder updates image order in state",
+          "Delete button removes image from gallery",
+          "Upload progress indicator displays during upload"
+        ],
+        "visual": [
+          "agent-browser: navigate to lookbook editor with images",
+          "agent-browser: screenshot gallery grid",
+          "agent-browser: drag image to reorder",
+          "agent-browser: verify order changed",
+          "agent-browser: click delete on image",
+          "agent-browser: verify image removed"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2191,6 +4376,24 @@
         "Wire up save/publish functionality",
         "Handle navigation and success/error states"
       ],
+      "tests": {
+        "unit": [
+          "New lookbook page renders LookbookForm and LookbookGallery",
+          "Edit lookbook page loads existing data",
+          "Save button triggers API call",
+          "Publish toggles draft status",
+          "Success redirects to lookbook listing",
+          "Error displays error message"
+        ],
+        "visual": [
+          "agent-browser: navigate to /lookbook/new",
+          "agent-browser: screenshot new lookbook page",
+          "agent-browser: fill form and add images",
+          "agent-browser: click save",
+          "agent-browser: verify redirect to listing or edit page"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2204,6 +4407,19 @@
         "Generate MDX frontmatter with title, date, images array, draft status",
         "Handle image array updates (add/remove/reorder)"
       ],
+      "tests": {
+        "unit": [
+          "GET /api/lookbook returns list of lookbooks",
+          "POST /api/lookbook creates new MDX file",
+          "GET /api/lookbook/[slug] returns lookbook data",
+          "PATCH /api/lookbook/[slug] updates MDX file",
+          "DELETE /api/lookbook/[slug] removes MDX file",
+          "MDX frontmatter includes title, date, images array, draft",
+          "Image array updates preserve order"
+        ],
+        "visual": [],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2217,6 +4433,25 @@
         "Edit lookbook details and save",
         "Verify lookbook appears correctly on storefront /lookbook page"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: record start ./lookbook-admin-e2e.webm",
+          "agent-browser: navigate to admin /lookbook/new",
+          "agent-browser: fill lookbook form fields",
+          "agent-browser: upload 3 images to gallery",
+          "agent-browser: reorder images via drag",
+          "agent-browser: save lookbook",
+          "agent-browser: navigate to storefront /lookbook",
+          "agent-browser: verify new lookbook appears",
+          "agent-browser: click lookbook and verify images in order",
+          "agent-browser: record stop"
+        ],
+        "integration": [
+          "Full lookbook creation flow from admin to storefront display"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2231,6 +4466,21 @@
         "Set start_date to current date",
         "Note the drop_id for product assignment"
       ],
+      "tests": {
+        "unit": [
+          "Drop created with name 'The Debut'",
+          "Drop has correct description",
+          "Drop status is 'active'",
+          "Drop start_date is set"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /drops",
+          "agent-browser: verify 'The Debut' appears in listing",
+          "agent-browser: click to view drop details",
+          "agent-browser: screenshot drop details page"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2246,6 +4496,21 @@
         "Assign to 'The Debut' drop",
         "Set status: active"
       ],
+      "tests": {
+        "unit": [
+          "Product 'The Colette' exists in database",
+          "Product has SKU COLETTE-001",
+          "Product price is $395 (39500 cents)",
+          "Product assigned to 'The Debut' drop",
+          "Product featured_image_url is set"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /products",
+          "agent-browser: verify 'The Colette' in listing",
+          "agent-browser: click product and verify all fields correct"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2261,6 +4526,19 @@
         "Assign to 'The Debut' drop",
         "Set status: active"
       ],
+      "tests": {
+        "unit": [
+          "Product 'The Amélie' exists in database",
+          "Product has SKU AMELIE-001",
+          "Product price is $450 (45000 cents)",
+          "Product assigned to 'The Debut' drop"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /products",
+          "agent-browser: verify 'The Amélie' in listing with correct price"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2276,6 +4554,19 @@
         "Assign to 'The Debut' drop",
         "Set status: active"
       ],
+      "tests": {
+        "unit": [
+          "Product 'The Giselle' exists in database",
+          "Product has SKU GISELLE-001",
+          "Product price is $525 (52500 cents)",
+          "Product assigned to 'The Debut' drop"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /products",
+          "agent-browser: verify 'The Giselle' in listing with correct price"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2291,6 +4582,19 @@
         "Assign to 'The Debut' drop",
         "Set status: active"
       ],
+      "tests": {
+        "unit": [
+          "Product 'The Margot' exists in database",
+          "Product has SKU MARGOT-001",
+          "Product price is $475 (47500 cents)",
+          "Product assigned to 'The Debut' drop"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /products",
+          "agent-browser: verify 'The Margot' in listing with correct price"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2306,6 +4610,19 @@
         "Assign to 'The Debut' drop",
         "Set status: active"
       ],
+      "tests": {
+        "unit": [
+          "Product 'The Vivienne' exists in database",
+          "Product has SKU VIVIENNE-001",
+          "Product price is $595 (59500 cents)",
+          "Product assigned to 'The Debut' drop"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /products",
+          "agent-browser: verify 'The Vivienne' in listing with correct price"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2321,6 +4638,19 @@
         "Assign to 'The Debut' drop",
         "Set status: active"
       ],
+      "tests": {
+        "unit": [
+          "Product 'The Eloise' exists in database",
+          "Product has SKU ELOISE-001",
+          "Product price is $345 (34500 cents)",
+          "Product assigned to 'The Debut' drop"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /products",
+          "agent-browser: verify 'The Eloise' in listing with correct price"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2336,6 +4666,19 @@
         "Assign to 'The Debut' drop",
         "Set status: active"
       ],
+      "tests": {
+        "unit": [
+          "Product 'The Céline' exists in database",
+          "Product has SKU CELINE-001",
+          "Product price is $425 (42500 cents)",
+          "Product assigned to 'The Debut' drop"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /products",
+          "agent-browser: verify 'The Céline' in listing with correct price"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2353,6 +4696,23 @@
         "The Eloise: 25 units (entry price point)",
         "The Céline: 15 units"
       ],
+      "tests": {
+        "unit": [
+          "The Colette inventory is 20 units",
+          "The Amélie inventory is 15 units",
+          "The Giselle inventory is 12 units",
+          "The Margot inventory is 18 units",
+          "The Vivienne inventory is 10 units",
+          "The Eloise inventory is 25 units",
+          "The Céline inventory is 15 units"
+        ],
+        "visual": [
+          "agent-browser: navigate to admin /inventory",
+          "agent-browser: verify all 7 products listed with correct quantities",
+          "agent-browser: screenshot inventory listing"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2369,6 +4729,22 @@
         "Set draft: false to publish",
         "Verify post appears first on /blog page"
       ],
+      "tests": {
+        "unit": [
+          "Blog post 'About Dear Margeaux' exists",
+          "Blog post slug is 'about-dear-margeaux'",
+          "Blog post is pinned",
+          "Blog post has featured image",
+          "Blog post is not draft"
+        ],
+        "visual": [
+          "agent-browser: navigate to storefront /blog",
+          "agent-browser: verify 'About Dear Margeaux' appears first (pinned)",
+          "agent-browser: screenshot blog listing",
+          "agent-browser: click post and verify content loads"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2384,6 +4760,21 @@
         "Set draft: false to publish",
         "Verify lookbook appears on /lookbook page"
       ],
+      "tests": {
+        "unit": [
+          "Lookbook 'The Debut' exists",
+          "Lookbook has 3 images",
+          "Lookbook is not draft"
+        ],
+        "visual": [
+          "agent-browser: navigate to storefront /lookbook",
+          "agent-browser: verify 'The Debut' lookbook appears",
+          "agent-browser: click lookbook",
+          "agent-browser: verify all 3 images display",
+          "agent-browser: screenshot lookbook gallery"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2398,6 +4789,20 @@
         "Verify prices display correctly",
         "Click 'Shop Now' and verify it navigates to /shop"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: navigate to storefront homepage",
+          "agent-browser: scroll to Featured Products section",
+          "agent-browser: screenshot product cards",
+          "agent-browser: verify product images load (no broken images)",
+          "agent-browser: verify product names visible",
+          "agent-browser: verify prices visible",
+          "agent-browser: click Shop Now",
+          "agent-browser: verify navigation to /shop"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2412,6 +4817,19 @@
         "Click on a product to view detail page",
         "Verify product detail page shows full description and image"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: navigate to /shop",
+          "agent-browser: count product cards (should be 7)",
+          "agent-browser: screenshot shop page",
+          "agent-browser: verify drop filter shows 'The Debut'",
+          "agent-browser: click on The Colette product",
+          "agent-browser: verify product detail page loads",
+          "agent-browser: screenshot product detail page"
+        ],
+        "manual": []
+      },
       "passes": false
     },
     {
@@ -2426,6 +4844,26 @@
         "Complete test purchase with Stripe test card",
         "Verify order confirmation page displays"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: record start ./purchase-flow-e2e.webm",
+          "agent-browser: navigate to product detail page",
+          "agent-browser: click Add to Cart",
+          "agent-browser: navigate to /cart",
+          "agent-browser: verify product in cart with correct price",
+          "agent-browser: click Checkout",
+          "agent-browser: verify redirect to Stripe checkout",
+          "agent-browser: fill test card (4242424242424242)",
+          "agent-browser: complete purchase",
+          "agent-browser: verify order confirmation page",
+          "agent-browser: record stop"
+        ],
+        "integration": [
+          "Full purchase flow from product selection to order confirmation"
+        ],
+        "manual": ["Verify order appears in admin orders list"]
+      },
       "passes": false
     },
     {
@@ -2444,6 +4882,35 @@
         "Test on mobile viewport for responsive layout",
         "Verify consistent 'Journal' naming across header and footer"
       ],
+      "tests": {
+        "unit": [],
+        "visual": [
+          "agent-browser: record start ./final-qa.webm",
+          "agent-browser: navigate to homepage",
+          "agent-browser: screenshot header with logo",
+          "agent-browser: scroll to footer and screenshot footer with logo",
+          "agent-browser: click Shop link and verify /shop",
+          "agent-browser: click Drops link and verify /drops",
+          "agent-browser: click Lookbook link and verify /lookbook",
+          "agent-browser: click Journal link and verify /blog",
+          "agent-browser: navigate to homepage",
+          "agent-browser: scroll to Our Story section",
+          "agent-browser: verify branding image loads",
+          "agent-browser: navigate to /blog",
+          "agent-browser: verify About Dear Margeaux is first post",
+          "agent-browser: navigate to /lookbook",
+          "agent-browser: verify The Debut lookbook appears with images",
+          "agent-browser: set viewport 375 812 (mobile)",
+          "agent-browser: screenshot homepage mobile",
+          "agent-browser: screenshot navigation mobile",
+          "agent-browser: verify Journal naming in header and footer consistent",
+          "agent-browser: record stop"
+        ],
+        "integration": [
+          "Complete site QA verifying all content and navigation"
+        ],
+        "manual": ["Cross-browser testing on Safari, Firefox, Chrome"]
+      },
       "passes": false
     }
   ]
