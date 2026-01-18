@@ -1740,3 +1740,41 @@ All unit tests implemented:
 - newsletter-12: Create send newsletter API endpoint
 - newsletter-13: Integrate newsletter send into blog publish flow
 - Consider adding subscriber count caching to avoid repeated fetches
+
+
+## [newsletter-12]: Create send newsletter API endpoint
+**Status:** PASSED
+**Tests Written:** 8 unit tests in merchant/tests/routes/newsletter.test.ts
+**Test Results:** 419 tests passed (merchant)
+**Type Check:** PASSED - 0 errors across all packages
+**Lint:** PASSED - 0 errors (238 pre-existing warnings for `any` types)
+**Browser Tests:** N/A - no visual tests in PRD for this task
+**Pre-commit Hooks:** Pending
+**Findings:**
+- Created `sendNewsletterToSubscribers` function in notifications.ts (lines 871-971):
+  - Fetches verified, non-unsubscribed subscribers: `verified = 1 AND unsubscribed_at IS NULL`
+  - Batch sends emails in groups of 10 to respect rate limits
+  - Uses existing buildNewsletterEmailHtml template from newsletter-10
+  - Generates unsubscribe URL using `unsub-{subscriber.id}` format (compatible with existing unsubscribe endpoint)
+  - Records send in newsletter_sends table with id, store_id, blog_slug, subject, sent_at, recipient_count
+  - Returns SendNewsletterResult with success, recipientCount, sendId, and errors array
+- Created POST /v1/newsletter/send endpoint in newsletter.ts (lines 226-260):
+  - Admin-only endpoint using adminOnly middleware
+  - Accepts: blog_slug (required), title (required), excerpt (required), featured_image_url (optional)
+  - Returns: success boolean, recipient_count, send_id, and errors array (only if there are errors)
+- Test coverage includes:
+  - 403 for non-admin users
+  - 400 for missing blog_slug, title, excerpt
+  - Success response with recipient count and send_id
+  - Passes featured_image_url to send function
+  - Returns errors array when some sends fail
+  - Records send in newsletter_sends table
+**PRD Coverage:**
+- ✓ POST /v1/newsletter/send accepts blog_slug
+- ✓ Only verified, non-unsubscribed subscribers receive email
+- ✓ Send is recorded in newsletter_sends table
+- ✓ Response includes send count
+**Recommendations:**
+- newsletter-13: Integrate newsletter send into blog publish flow
+- Consider adding rate limiting per blog_slug to prevent duplicate sends
+- Consider adding a check to prevent re-sending same blog as newsletter

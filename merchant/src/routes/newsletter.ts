@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { getDb } from '../db';
 import { authMiddleware, adminOnly } from '../middleware/auth';
 import { ApiError, uuid, now, type Env, type AuthContext, isValidEmail } from '../types';
-import { sendNewsletterVerificationEmail } from '../lib/notifications';
+import { sendNewsletterVerificationEmail, sendNewsletterToSubscribers } from '../lib/notifications';
 
 // ============================================================
 // NEWSLETTER ROUTES
@@ -217,6 +217,42 @@ newsletterRoutes.get('/subscribers/count', adminOnly, async (c) => {
 
   return c.json({
     count: result?.count ?? 0,
+  });
+});
+
+// POST /v1/newsletter/send - Send newsletter to all subscribers (admin only)
+newsletterRoutes.post('/send', adminOnly, async (c) => {
+  const body = await c.req.json();
+  const { blog_slug, title, excerpt, featured_image_url } = body;
+
+  // Validate required fields
+  if (!blog_slug) {
+    throw ApiError.invalidRequest('blog_slug is required');
+  }
+  if (!title) {
+    throw ApiError.invalidRequest('title is required');
+  }
+  if (!excerpt) {
+    throw ApiError.invalidRequest('excerpt is required');
+  }
+
+  const { store } = c.get('auth');
+
+  // eslint-disable-next-line no-console
+  console.log(`[NEWSLETTER] Admin sending newsletter for blog: ${blog_slug}`);
+
+  const result = await sendNewsletterToSubscribers(c.env, store.id, {
+    blogSlug: blog_slug,
+    title,
+    excerpt,
+    featuredImageUrl: featured_image_url,
+  });
+
+  return c.json({
+    success: result.success,
+    recipient_count: result.recipientCount,
+    send_id: result.sendId,
+    errors: result.errors.length > 0 ? result.errors : undefined,
   });
 });
 

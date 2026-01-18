@@ -2356,3 +2356,38 @@ Implemented `buildNewsletterEmailHtml` function in merchant/src/lib/notification
 - newsletter-11: Add 'Send as Newsletter' toggle to BlogForm
 - newsletter-12: Create send newsletter API endpoint
 - newsletter-13: Integrate newsletter send into blog publish flow
+
+
+## 2026-01-18: newsletter-12 - Create send newsletter API endpoint
+
+### Task Completed
+Implemented POST /v1/newsletter/send endpoint in Merchant API that sends blog posts as newsletters to all verified subscribers.
+
+### Key Decisions
+- Created `sendNewsletterToSubscribers` function in notifications.ts that:
+  - Fetches all verified, non-unsubscribed subscribers from newsletter_subscribers table
+  - Batch sends emails in groups of 10 to respect rate limits
+  - Uses buildNewsletterEmailHtml template (created in newsletter-10)
+  - Generates unique unsubscribe URL for each subscriber using `unsub-{subscriber_id}` format
+  - Records send in newsletter_sends table with send_id, blog_slug, subject, recipient_count
+  - Returns success/failure status with count and any errors
+- Created POST /v1/newsletter/send endpoint that:
+  - Is admin-only (requires adminOnly middleware)
+  - Accepts blog_slug, title, excerpt, and optional featured_image_url
+  - Validates all required parameters
+  - Returns recipient_count, send_id, and errors array if any
+
+### Files Changed
+- `merchant/src/lib/notifications.ts` - Added NewsletterData interface, SendNewsletterResult interface, and sendNewsletterToSubscribers function
+- `merchant/src/routes/newsletter.ts` - Added POST /v1/newsletter/send endpoint
+- `merchant/tests/routes/newsletter.test.ts` - Added 8 unit tests for the send endpoint
+- `prd.json` - Set passes: true for newsletter-12
+
+### Test Results
+- Type Check: PASSED (0 errors)
+- Lint: PASSED (0 errors, 238 pre-existing warnings)
+- Unit Tests: 419 PASSED (8 new + 411 existing)
+
+### Next Steps
+- newsletter-13: Integrate newsletter send into blog publish flow
+- newsletter-14-19: Newsletter admin management UI

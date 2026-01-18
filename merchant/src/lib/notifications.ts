@@ -843,6 +843,133 @@ function buildNewsletterVerificationHtml(data: {
 }
 
 // ============================================================
+// NEWSLETTER SEND TO SUBSCRIBERS
+// ============================================================
+
+export interface NewsletterData {
+  blogSlug: string;
+  title: string;
+  excerpt: string;
+  featuredImageUrl?: string;
+}
+
+export interface SendNewsletterResult {
+  success: boolean;
+  recipientCount: number;
+  sendId?: string;
+  errors: string[];
+}
+
+/**
+ * Send a newsletter to all verified subscribers
+ *
+ * @param env - The environment with RESEND_API_KEY
+ * @param storeId - The store ID
+ * @param newsletter - Newsletter data (blog post info)
+ * @returns SendNewsletterResult with recipient count and any errors
+ */
+export async function sendNewsletterToSubscribers(
+  env: Env,
+  storeId: string,
+  newsletter: NewsletterData
+): Promise<SendNewsletterResult> {
+  const db = getDb(env);
+  const config = getStoreConfig();
+  const currentTime = now();
+
+  // Fetch all verified, non-unsubscribed subscribers
+  const subscribers = await db.query<{ id: string; email: string }>(
+    `SELECT id, email FROM newsletter_subscribers
+     WHERE store_id = ? AND verified = 1 AND unsubscribed_at IS NULL`,
+    [storeId]
+  );
+
+  const result: SendNewsletterResult = {
+    success: true,
+    recipientCount: 0,
+    errors: [],
+  };
+
+  if (subscribers.length === 0) {
+    // eslint-disable-next-line no-console
+    console.log(`[NEWSLETTER] No subscribers to send to for blog ${newsletter.blogSlug}`);
+    return result;
+  }
+
+  // eslint-disable-next-line no-console
+  console.log(`[NEWSLETTER] Sending "${newsletter.title}" to ${subscribers.length} subscribers`);
+
+  const blogUrl = `${config.baseUrl}/blog/${newsletter.blogSlug}`;
+
+  // Send in batches of 10 to respect rate limits
+  const batchSize = 10;
+  let successCount = 0;
+
+  for (let i = 0; i < subscribers.length; i += batchSize) {
+    const batch = subscribers.slice(i, i + batchSize);
+
+    const batchResults = await Promise.all(
+      batch.map(async (subscriber) => {
+        // Generate unsubscribe URL for this subscriber
+        const unsubscribeUrl = `${config.baseUrl}/newsletter/unsubscribe?email=${encodeURIComponent(subscriber.email)}&token=unsub-${subscriber.id}`;
+
+        const html = buildNewsletterEmailHtml({
+          title: newsletter.title,
+          excerpt: newsletter.excerpt,
+          blogUrl,
+          unsubscribeUrl,
+          featuredImageUrl: newsletter.featuredImageUrl,
+        });
+
+        const sendResult = await sendEmailViaResend(env, {
+          to: subscriber.email,
+          subject: newsletter.title,
+          html,
+          queueOnFailure: {
+            storeId,
+            emailType: 'newsletter',
+            metadata: { blogSlug: newsletter.blogSlug, title: newsletter.title },
+          },
+        });
+
+        return { email: subscriber.email, ...sendResult };
+      })
+    );
+
+    for (const r of batchResults) {
+      if (r.success) {
+        successCount++;
+      } else {
+        result.errors.push(`${r.email}: ${r.error}`);
+      }
+    }
+  }
+
+  result.recipientCount = successCount;
+
+  // Record the send in newsletter_sends table
+  const sendId = `ns_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  await db.run(
+    `INSERT INTO newsletter_sends (id, store_id, blog_slug, subject, sent_at, recipient_count, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [sendId, storeId, newsletter.blogSlug, newsletter.title, currentTime, successCount, currentTime]
+  );
+
+  result.sendId = sendId;
+
+  // eslint-disable-next-line no-console
+  console.log(
+    `[NEWSLETTER] Send complete: ${successCount}/${subscribers.length} successful, ${result.errors.length} failed`
+  );
+
+  if (result.errors.length > 0) {
+    result.success = false;
+  }
+
+  return result;
+}
+
+// ============================================================
 // NEWSLETTER VERIFICATION EMAIL
 // ============================================================
 

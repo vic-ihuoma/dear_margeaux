@@ -55,12 +55,15 @@ vi.mock('../../src/types', async () => {
   };
 });
 
-// Mock sendNewsletterVerificationEmail to prevent actual email sending
+// Mock sendNewsletterVerificationEmail and sendNewsletterToSubscribers to prevent actual email sending
+const mockSendNewsletterToSubscribers = vi.fn();
+
 vi.mock('../../src/lib/notifications', () => ({
   sendNewsletterVerificationEmail: vi.fn().mockResolvedValue({
     success: true,
     messageId: 'mock-message-id',
   }),
+  sendNewsletterToSubscribers: mockSendNewsletterToSubscribers,
 }));
 
 import { ApiError } from '../../src/types';
@@ -893,6 +896,231 @@ describe('Newsletter Routes', () => {
         expect.stringContaining('store_id = ?'),
         expect.arrayContaining(['store-1'])
       );
+    });
+  });
+
+  describe('POST /v1/newsletter/send - Send newsletter', () => {
+    beforeEach(() => {
+      mockSendNewsletterToSubscribers.mockReset();
+    });
+
+    it('returns 403 for non-admin users', async () => {
+      setAuthContext('public');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          blog_slug: 'my-post',
+          title: 'My Post',
+          excerpt: 'A great post',
+        }),
+      });
+
+      expect(res.status).toBe(403);
+      expect(mockSendNewsletterToSubscribers).not.toHaveBeenCalled();
+    });
+
+    it('returns 400 when blog_slug is missing', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'My Post',
+          excerpt: 'A great post',
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('invalid_request');
+      expect(body.message).toContain('blog_slug');
+    });
+
+    it('returns 400 when title is missing', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          blog_slug: 'my-post',
+          excerpt: 'A great post',
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('invalid_request');
+      expect(body.message).toContain('title');
+    });
+
+    it('returns 400 when excerpt is missing', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          blog_slug: 'my-post',
+          title: 'My Post',
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('invalid_request');
+      expect(body.message).toContain('excerpt');
+    });
+
+    it('sends newsletter to subscribers and returns success', async () => {
+      setAuthContext('admin');
+
+      mockSendNewsletterToSubscribers.mockResolvedValueOnce({
+        success: true,
+        recipientCount: 25,
+        sendId: 'ns_123_abc',
+        errors: [],
+      });
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          blog_slug: 'my-post',
+          title: 'My Post',
+          excerpt: 'A great post about something',
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+      expect(body.recipient_count).toBe(25);
+      expect(body.send_id).toBe('ns_123_abc');
+      expect(body.errors).toBeUndefined();
+    });
+
+    it('passes featured_image_url to send function when provided', async () => {
+      setAuthContext('admin');
+
+      mockSendNewsletterToSubscribers.mockResolvedValueOnce({
+        success: true,
+        recipientCount: 10,
+        sendId: 'ns_456_xyz',
+        errors: [],
+      });
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      await app.request('/v1/newsletter/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          blog_slug: 'my-post',
+          title: 'My Post',
+          excerpt: 'A great post',
+          featured_image_url: 'https://example.com/image.jpg',
+        }),
+      });
+
+      // Check the call was made with the right data (env can be undefined in test context)
+      expect(mockSendNewsletterToSubscribers).toHaveBeenCalledTimes(1);
+      const callArgs = mockSendNewsletterToSubscribers.mock.calls[0];
+      expect(callArgs[1]).toBe('store-1');
+      expect(callArgs[2]).toEqual(
+        expect.objectContaining({
+          blogSlug: 'my-post',
+          title: 'My Post',
+          excerpt: 'A great post',
+          featuredImageUrl: 'https://example.com/image.jpg',
+        })
+      );
+    });
+
+    it('returns errors when some sends fail', async () => {
+      setAuthContext('admin');
+
+      mockSendNewsletterToSubscribers.mockResolvedValueOnce({
+        success: false,
+        recipientCount: 8,
+        sendId: 'ns_789_def',
+        errors: ['user@bad.com: Rate limit exceeded', 'other@bad.com: Invalid email'],
+      });
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          blog_slug: 'my-post',
+          title: 'My Post',
+          excerpt: 'A great post',
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(false);
+      expect(body.recipient_count).toBe(8);
+      expect(body.errors).toHaveLength(2);
+      expect(body.errors[0]).toContain('Rate limit exceeded');
+    });
+
+    it('records send in newsletter_sends table (via sendNewsletterToSubscribers)', async () => {
+      setAuthContext('admin');
+
+      mockSendNewsletterToSubscribers.mockResolvedValueOnce({
+        success: true,
+        recipientCount: 5,
+        sendId: 'ns_record_test',
+        errors: [],
+      });
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          blog_slug: 'test-slug',
+          title: 'Test Title',
+          excerpt: 'Test excerpt',
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.send_id).toBe('ns_record_test');
     });
   });
 });
