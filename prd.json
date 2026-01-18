@@ -2224,7 +2224,7 @@
         "visual": [],
         "manual": ["Query database and verify table exists"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-8",

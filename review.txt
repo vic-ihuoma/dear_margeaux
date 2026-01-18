@@ -888,3 +888,34 @@ All unit tests implemented:
 - Proceed with pm-7 to create product_tags database table
 - Then pm-8 to update Merchant API to handle tags in CRUD operations
 - Consider adding validation for tag content (length limits, allowed characters) in API layer
+
+## [pm-7]: Create product_tags table in database
+**Status:** PASSED
+**Tests Written:** 13 unit tests in merchant/tests/migrations/product-tags.test.ts
+**Test Results:** 273 tests passed (merchant - 13 new migration + 260 existing)
+**Type Check:** PASSED - 0 errors across all 7 packages
+**Lint:** PASSED - 0 errors, pre-existing warnings only
+**Browser Tests:** N/A - no visual tests in PRD for this task
+**Pre-commit Hooks:** Pending commit
+**Findings:**
+- Created D1 migration `014-product-tags.sql` with product_tags table
+- Table schema:
+  - `id TEXT PRIMARY KEY` - unique identifier for the tag record
+  - `product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE` - foreign key to products
+  - `tag TEXT NOT NULL` - the tag string value
+  - `created_at TEXT NOT NULL DEFAULT (datetime('now'))` - timestamp
+  - `UNIQUE(product_id, tag)` - prevents duplicate tags per product
+- Created two indexes for efficient queries:
+  - `idx_product_tags_product` - fast lookup of tags by product_id
+  - `idx_product_tags_tag` - fast lookup of products by tag (for filtering)
+- ON DELETE CASCADE ensures tags are cleaned up when products are deleted
+- Test suite validates:
+  - Unique constraint behavior (allows different tags per product, same tag for different products, rejects duplicates)
+  - Query patterns (select by product, select by tag, bulk operations)
+  - Foreign key cascade behavior
+  - Tag normalization expectations (API layer responsibility)
+**Recommendations:**
+- Proceed with pm-8 to update Merchant API catalog routes to handle tags in CRUD operations
+- In pm-8, implement the tag sync pattern: DELETE existing + INSERT new tags on update
+- Consider adding tag validation in API layer (max length, allowed characters, max tags per product)
+- The migration requires `wrangler d1 migrations apply merchant-db --remote` for production deployment

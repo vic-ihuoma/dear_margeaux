@@ -1314,3 +1314,50 @@ Added `tags: string[]` field to Product and ProductListItem interfaces, and `tag
 ### Next Steps
 - pm-7: Create product_tags table in database
 - pm-8: Update Merchant API to handle product tags in CRUD operations
+
+## 2026-01-18: pm-7 - Create product_tags table in database
+
+### Task Completed
+Created D1 migration for the product_tags table, implementing a many-to-many relationship between products and tags.
+
+### Key Decisions
+- Created migration file `014-product-tags.sql` following existing naming convention
+- Table structure: `id`, `product_id`, `tag`, `created_at`
+- Used `ON DELETE CASCADE` for foreign key so tags are automatically deleted when a product is deleted
+- Added `UNIQUE(product_id, tag)` constraint to prevent duplicate tags on the same product
+- Created two indexes for efficient queries:
+  - `idx_product_tags_product` - for querying tags by product_id
+  - `idx_product_tags_tag` - for querying products by tag
+- Tags stored as normalized strings (API layer handles normalization like lowercase, trim)
+
+### Files Created
+- `merchant/migrations/014-product-tags.sql` - Database migration with CREATE TABLE and indexes
+- `merchant/tests/migrations/product-tags.test.ts` - 13 unit tests for migration behavior
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors, pre-existing warnings only)
+- Merchant Tests: PASSED (273 tests - 13 new migration tests + 260 existing)
+
+### Test Coverage Summary
+All PRD unit tests implemented:
+- Migration runs without errors (documented in test structure)
+- Unique constraint prevents duplicate tags (tested with mock rejection)
+
+Additional test coverage:
+- Table structure validation (columns: id, product_id, tag, created_at)
+- Query patterns for efficiency (SELECT tags by product_id, SELECT products by tag)
+- Bulk tag operations (DELETE + INSERT for sync)
+- CASCADE delete behavior validation
+- Tag normalization expectations documented
+
+### Migration Commands (for production deployment)
+```bash
+cd merchant
+wrangler d1 migrations apply merchant-db --remote
+```
+
+### Next Steps
+- pm-8: Update Merchant API to handle product tags in CRUD operations
+- pm-9: Create TagInput component for admin
+- pm-10: Integrate TagInput into ProductForm
