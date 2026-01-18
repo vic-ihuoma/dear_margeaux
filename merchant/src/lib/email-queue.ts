@@ -18,7 +18,11 @@ import { uuid, now, type Env } from '../types';
 // TYPES
 // ============================================================
 
-export type EmailType = 'order_confirmation' | 'shipping_update' | 'drop_launch';
+export type EmailType =
+  | 'order_confirmation'
+  | 'shipping_update'
+  | 'drop_launch'
+  | 'newsletter_verification';
 
 export interface QueuedEmail {
   id: string;

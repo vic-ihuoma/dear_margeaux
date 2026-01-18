@@ -51,6 +51,7 @@ import {
   sendShippingUpdateEmail,
   sendDropLaunchEmails,
   sendEmailViaResend,
+  sendNewsletterVerificationEmail,
   buildOrderConfirmationHtml,
   buildShippingUpdateHtml,
   buildDropLaunchHtml,
@@ -1008,5 +1009,159 @@ describe('buildNewsletterVerificationHtml', () => {
     // Should mention what subscribers will receive
     expect(html).toContain('new collections');
     expect(html).toContain('exclusive drops');
+  });
+});
+
+// ============================================================
+// TESTS: sendNewsletterVerificationEmail
+// ============================================================
+
+describe('sendNewsletterVerificationEmail', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('calls Resend API with correct parameters', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendSuccess('msg-verify-123'));
+
+    const env = createMockEnv(true);
+    const result = await sendNewsletterVerificationEmail(env, {
+      email: 'subscriber@example.com',
+      verificationToken: 'token-abc-123',
+      storeId: 'store-123',
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.messageId).toBe('msg-verify-123');
+    expect(mockFetch).toHaveBeenCalledWith('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer test-resend-api-key',
+        'Content-Type': 'application/json',
+      },
+      body: expect.any(String),
+    });
+
+    // Verify the email body contains expected content
+    const callArgs = mockFetch.mock.calls[0];
+    const body = JSON.parse(callArgs[1].body);
+    expect(body.to).toBe('subscriber@example.com');
+    expect(body.subject).toContain('Confirm your subscription');
+    expect(body.subject).toContain('Dear Margeaux');
+    expect(body.html).toContain('token-abc-123');
+  });
+
+  it('logs email send attempt', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    mockFetch.mockImplementationOnce(() => createMockResendSuccess('msg-123'));
+
+    const env = createMockEnv(true);
+    await sendNewsletterVerificationEmail(env, {
+      email: 'test@example.com',
+      verificationToken: 'token-xyz',
+      storeId: 'store-123',
+    });
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[EMAIL] Sending newsletter verification to test@example.com')
+    );
+
+    consoleSpy.mockRestore();
+  });
+
+  it('catches and returns errors on send failure', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendError('Invalid API key', 401));
+
+    const env = createMockEnv(true);
+    const result = await sendNewsletterVerificationEmail(env, {
+      email: 'test@example.com',
+      verificationToken: 'token-xyz',
+      storeId: 'store-123',
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Invalid API key');
+  });
+
+  it('builds correct verification URL with token', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendSuccess('msg-123'));
+
+    const env = createMockEnv(true);
+    await sendNewsletterVerificationEmail(env, {
+      email: 'test@example.com',
+      verificationToken: 'my-special-token',
+      storeId: 'store-123',
+    });
+
+    const callArgs = mockFetch.mock.calls[0];
+    const body = JSON.parse(callArgs[1].body);
+    expect(body.html).toContain(
+      'https://dearmargeaux.com/newsletter/verify?token=my-special-token'
+    );
+  });
+
+  it('builds correct unsubscribe URL with email and token', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendSuccess('msg-123'));
+
+    const env = createMockEnv(true);
+    await sendNewsletterVerificationEmail(env, {
+      email: 'user@example.com',
+      verificationToken: 'unsub-token-123',
+      storeId: 'store-123',
+    });
+
+    const callArgs = mockFetch.mock.calls[0];
+    const body = JSON.parse(callArgs[1].body);
+    expect(body.html).toContain(
+      'https://dearmargeaux.com/newsletter/unsubscribe?email=user%40example.com&token=unsub-token-123'
+    );
+  });
+
+  it('falls back to stub when RESEND_API_KEY is not configured', async () => {
+    const env = createMockEnv(false);
+    const result = await sendNewsletterVerificationEmail(env, {
+      email: 'test@example.com',
+      verificationToken: 'token-xyz',
+      storeId: 'store-123',
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.messageId).toMatch(/^stub-/);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('queues email for retry on failure', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendError('Service unavailable', 503));
+
+    const env = createMockEnv(true);
+    await sendNewsletterVerificationEmail(env, {
+      email: 'test@example.com',
+      verificationToken: 'token-xyz',
+      storeId: 'store-123',
+    });
+
+    // The email should be queued for retry via queueFailedEmail
+    // This is verified by checking that mockDbRun was called for the queue insertion
+    expect(mockDbRun).toHaveBeenCalled();
+  });
+
+  it('uses newsletter_verification as email type for queuing', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendError('Temporary failure', 500));
+
+    const env = createMockEnv(true);
+    await sendNewsletterVerificationEmail(env, {
+      email: 'test@example.com',
+      verificationToken: 'token-xyz',
+      storeId: 'store-456',
+    });
+
+    // Check the queue insertion call includes newsletter_verification type
+    const queueCall = mockDbRun.mock.calls.find((call) =>
+      call[0].includes('INSERT INTO email_queue')
+    );
+    expect(queueCall).toBeDefined();
+    if (queueCall) {
+      expect(queueCall[1]).toContain('newsletter_verification');
+    }
   });
 });

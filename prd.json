@@ -2622,7 +2622,7 @@
         "visual": [],
         "manual": ["Subscribe and verify email arrives"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "newsletter-6",

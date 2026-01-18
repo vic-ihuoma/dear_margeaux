@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { getDb } from '../db';
 import { authMiddleware } from '../middleware/auth';
 import { ApiError, uuid, now, type Env, type AuthContext, isValidEmail } from '../types';
+import { sendNewsletterVerificationEmail } from '../lib/notifications';
 
 // ============================================================
 // NEWSLETTER ROUTES
@@ -57,7 +58,19 @@ newsletterRoutes.post('/subscribe', async (c) => {
     [id, store.id, normalizedEmail, 0, verificationToken, timestamp, timestamp, timestamp]
   );
 
-  // TODO: Send verification email (newsletter-4 task)
+  // Send verification email
+  const emailResult = await sendNewsletterVerificationEmail(c.env, {
+    email: normalizedEmail,
+    verificationToken,
+    storeId: store.id,
+  });
+
+  // Log the result (don't fail the request if email fails - it will be queued for retry)
+  if (!emailResult.success) {
+    console.warn(
+      `[NEWSLETTER] Verification email send failed for ${normalizedEmail}: ${emailResult.error}`
+    );
+  }
 
   return c.json({
     success: true,

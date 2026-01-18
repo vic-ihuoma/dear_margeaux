@@ -48,6 +48,14 @@ vi.mock('../../src/types', async () => {
   };
 });
 
+// Mock sendNewsletterVerificationEmail to prevent actual email sending
+vi.mock('../../src/lib/notifications', () => ({
+  sendNewsletterVerificationEmail: vi.fn().mockResolvedValue({
+    success: true,
+    messageId: 'mock-message-id',
+  }),
+}));
+
 import { ApiError } from '../../src/types';
 
 // Helper function to set auth context for a test

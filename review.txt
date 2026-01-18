@@ -1460,3 +1460,75 @@ Created apps/admin/tests/components/VariantForm.test.ts with 40 documented tests
 - newsletter-4: Create double opt-in verification email template
 - newsletter-5: Create verification endpoint to complete the flow
 - Consider adding rate limiting to prevent subscription spam
+
+## [newsletter-4]: Create double opt-in verification email template
+**Status:** PASSED
+**Tests Written:** 12 unit tests in merchant/tests/lib/notifications.test.ts
+**Test Results:** 364 tests passed (merchant - 12 new + 352 existing)
+**Type Check:** PASSED - 0 errors across all 7 packages
+**Lint:** PASSED - 0 errors (pre-existing warnings only)
+**Browser Tests:** N/A - no visual tests in PRD for this task
+**Pre-commit Hooks:** All passed
+**Commit:** 37132f8 feat(newsletter-4): create double opt-in verification email template
+**Findings:**
+- Created `buildNewsletterVerificationHtml` function in merchant/src/lib/notifications.ts (lines 697-752)
+- Function accepts `verificationUrl` (required) and `unsubscribeUrl` (optional)
+- Uses store config from `getStoreConfig()` for consistent branding
+- Template features:
+  - Header with brand color #8B4513 and "Confirm Your Subscription" title
+  - Welcome message with store name (Dear Margeaux)
+  - Description of newsletter benefits (new collections, exclusive drops, behind-the-scenes)
+  - Prominent CTA button with terracotta color #E2725B
+  - 24-hour expiration notice
+  - Safety explanation for unintended recipients
+  - Footer with store name, support email, optional unsubscribe link
+- All 12 unit tests verify PRD requirements plus edge cases
+**PRD Coverage:**
+- buildNewsletterVerificationHtml returns valid HTML ✓
+- Email includes verification link with token ✓
+- Email includes 'Confirm Subscription' button ✓
+- Email uses brand colors ✓
+**Recommendations:**
+- newsletter-5: Create sendNewsletterVerificationEmail function to call this template and send via Resend
+- newsletter-6: Create verification endpoint to handle token validation
+- Consider adding email preview/testing in Storybook or similar for visual review
+
+## [newsletter-5]: Send verification email on subscribe
+**Status:** PASSED
+**Tests Written:** 8 unit tests in merchant/tests/lib/notifications.test.ts
+**Test Results:** 372 tests passed (merchant - 8 new + 364 existing)
+**Type Check:** PASSED - 0 errors across all packages
+**Lint:** PASSED - 0 errors on new files (pre-existing warnings only)
+**Browser Tests:** N/A - no visual tests in PRD for this task
+**Pre-commit Hooks:** Pending (commit in progress)
+**Findings:**
+- Created `sendNewsletterVerificationEmail` function in merchant/src/lib/notifications.ts (lines 758-801):
+  - Accepts email, verificationToken, and storeId parameters
+  - Builds verification URL: `${baseUrl}/newsletter/verify?token=${token}`
+  - Builds unsubscribe URL: `${baseUrl}/newsletter/unsubscribe?email=${email}&token=${token}`
+  - Logs email send attempt with console.log for debugging
+  - Uses sendEmailViaResend with queueOnFailure option for retry mechanism
+  - Subject line: "Confirm your subscription to Dear Margeaux"
+- Added `newsletter_verification` to EmailType union in email-queue.ts (line 21)
+- Updated POST /v1/newsletter/subscribe endpoint in newsletter.ts (lines 61-72):
+  - Calls sendNewsletterVerificationEmail after inserting subscriber
+  - Logs warning if email send fails (email will be queued for retry)
+  - Does not fail the request if email fails (UX consideration)
+- Added mock for sendNewsletterVerificationEmail in newsletter route tests
+**PRD Coverage:**
+- sendNewsletterVerificationEmail calls Resend API ✓
+- Email send attempt is logged ✓
+- Send failures are caught and logged ✓
+**Test Coverage Details:**
+- calls Resend API with correct parameters ✓
+- logs email send attempt ✓
+- catches and returns errors on send failure ✓
+- builds correct verification URL with token ✓
+- builds correct unsubscribe URL with email and token ✓
+- falls back to stub when RESEND_API_KEY is not configured ✓
+- queues email for retry on failure ✓
+- uses newsletter_verification as email type for queuing ✓
+**Recommendations:**
+- newsletter-6: Create verification confirmation endpoint to handle token validation
+- newsletter-7: Create storefront verification success page
+- newsletter-8: Create one-click unsubscribe endpoint

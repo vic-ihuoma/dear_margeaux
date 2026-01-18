@@ -751,6 +751,55 @@ function buildNewsletterVerificationHtml(data: {
   `;
 }
 
+// ============================================================
+// NEWSLETTER VERIFICATION EMAIL
+// ============================================================
+
+export interface SendNewsletterVerificationParams {
+  email: string;
+  verificationToken: string;
+  storeId: string;
+}
+
+/**
+ * Send a newsletter verification email to a new subscriber
+ *
+ * @param env - The environment with RESEND_API_KEY
+ * @param params - Parameters for the verification email
+ * @returns NotificationResult indicating success or failure
+ */
+export async function sendNewsletterVerificationEmail(
+  env: Env,
+  params: SendNewsletterVerificationParams
+): Promise<NotificationResult> {
+  const config = getStoreConfig();
+
+  // Build verification URL
+  const verificationUrl = `${config.baseUrl}/newsletter/verify?token=${params.verificationToken}`;
+
+  // Build unsubscribe URL using the verification token for security
+  const unsubscribeUrl = `${config.baseUrl}/newsletter/unsubscribe?email=${encodeURIComponent(params.email)}&token=${params.verificationToken}`;
+
+  // eslint-disable-next-line no-console
+  console.log(`[EMAIL] Sending newsletter verification to ${params.email}`);
+
+  const html = buildNewsletterVerificationHtml({
+    verificationUrl,
+    unsubscribeUrl,
+  });
+
+  return sendEmailViaResend(env, {
+    to: params.email,
+    subject: `Confirm your subscription to ${config.storeName}`,
+    html,
+    queueOnFailure: {
+      storeId: params.storeId,
+      emailType: 'newsletter_verification',
+      metadata: { email: params.email },
+    },
+  });
+}
+
 // Export for testing
 export {
   sendEmailViaResend,
