@@ -114,3 +114,25 @@
 - nav-14: Remove or redirect legacy /about route
 - initial-content-10: Create the 'About Dear Margeaux' blog post to make this link functional
 - Consider nav-1 through nav-6 for /drops index page creation
+
+## [nav-6]: Update header with logo image, Journal link, and Lookbook link
+**Status:** PASSED
+**Tests Written:** N/A (HTML/Astro template changes, no logic change)
+**Test Results:** 18 tests passed (2 files)
+**Type Check:** PASSED - 0 errors, 3 hints across all packages
+**Lint:** PASSED - 0 errors (1 pre-existing warning in CartDrawer.tsx)
+**Browser Tests:** SKIPPED - visual changes require manual verification
+**Pre-commit Hooks:** Pending commit
+**Findings:**
+- Added PUBLIC_IMAGES_URL environment variable support for R2 CDN
+- Logo conditionally renders: `<img>` from R2 if configured, text fallback otherwise
+- Logo uses `h-8 w-auto` for proper sizing with aspect ratio preservation
+- Added 'Journal' navigation link to /blog (after Drops)
+- Added 'Lookbook' navigation link to /lookbook (after Journal)
+- Removed 'About' link from both desktop nav and mobile menu
+- Kept 'My Account' link in mobile menu (not in desktop nav - handled by AccountIcon)
+- Updated .env.example with PUBLIC_IMAGES_URL configuration section
+**Recommendations:**
+- Complete assets-1 through assets-7 to upload logo and configure PUBLIC_IMAGES_URL
+- nav-5 should update footer navigation for consistency with header (About→Journal)
+- Consider adding active state styling for current page links

@@ -1646,7 +1646,7 @@
         "Remove or update 'About' link since it now redirects to blog",
         "Style all items consistently"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "nav-7",
