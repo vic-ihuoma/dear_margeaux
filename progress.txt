@@ -2391,3 +2391,40 @@ Implemented POST /v1/newsletter/send endpoint in Merchant API that sends blog po
 ### Next Steps
 - newsletter-13: Integrate newsletter send into blog publish flow
 - newsletter-14-19: Newsletter admin management UI
+
+
+## 2026-01-18: newsletter-13 - Integrate newsletter send into blog publish flow
+
+### Task Completed
+Integrated newsletter send into the blog publish flow. When a user publishes a draft blog post with the "Send as Newsletter" toggle enabled, the newsletter is automatically sent to all verified subscribers.
+
+### Key Decisions
+- Created a new admin API route `/api/newsletter/send` to proxy requests to the Merchant API
+- Implemented newsletter send logic in `BlogEditor.tsx` (frontend) rather than the blog PATCH endpoint (backend)
+  - This provides better separation of concerns
+  - Allows for independent success/error messages for blog update and newsletter send
+  - Blog post is saved even if newsletter send fails
+- The newsletter send request uses the blog's `description` field as the `excerpt` parameter
+- Success message includes recipient count: "Post published and newsletter sent to X subscriber(s)!"
+- If newsletter fails but blog saved, shows both success and error messages
+
+### Files Changed
+- `apps/admin/src/pages/api/newsletter/send.ts` - New API route to proxy newsletter send to Merchant API
+- `apps/admin/src/components/BlogEditor.tsx` - Added newsletter send logic in handleMetadataSubmit
+- `apps/admin/tests/api/newsletter-send.test.ts` - Added 12 unit tests for newsletter send API and behavior documentation
+- `prd.json` - Set passes: true for newsletter-13
+
+### Test Results
+- Type Check: PASSED (0 errors)
+- Lint: PASSED (0 errors on new files, 2 pre-existing accessibility errors in TagInput.tsx)
+- Unit Tests: 170 PASSED (12 new + 158 existing in admin)
+
+### PRD Requirements Verified
+- ✓ Newsletter send triggered when sendAsNewsletter=true
+- ✓ Newsletter not sent when sendAsNewsletter=false
+- ✓ Success toast shows send count
+
+### Next Steps
+- newsletter-14: Add rate limiting to subscribe endpoint
+- newsletter-15: Add invisible reCAPTCHA to subscribe forms
+- newsletter-16: Create admin Subscribers page

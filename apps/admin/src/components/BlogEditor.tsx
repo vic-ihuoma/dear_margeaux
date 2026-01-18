@@ -43,10 +43,45 @@ export function BlogEditor({ post: initialPost }: BlogEditorProps) {
 
         const updatedPost = await response.json();
         setPost(updatedPost);
-        setSuccessMessage('Post updated successfully!');
 
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccessMessage(null), 3000);
+        // If sendAsNewsletter is true, send the newsletter
+        if (data.sendAsNewsletter) {
+          try {
+            const newsletterResponse = await fetch('/api/newsletter/send', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                blog_slug: data.slug,
+                title: data.title,
+                excerpt: data.description,
+                featured_image_url: data.image,
+              }),
+            });
+
+            if (!newsletterResponse.ok) {
+              const errorData = await newsletterResponse.json();
+              throw new Error(errorData.error || 'Failed to send newsletter');
+            }
+
+            const newsletterResult = await newsletterResponse.json();
+            setSuccessMessage(
+              `Post published and newsletter sent to ${newsletterResult.recipient_count} subscriber${newsletterResult.recipient_count === 1 ? '' : 's'}!`
+            );
+          } catch (newsletterErr) {
+            // Blog was saved successfully, but newsletter failed
+            const newsletterError =
+              newsletterErr instanceof Error
+                ? newsletterErr.message
+                : 'Failed to send newsletter';
+            setSuccessMessage('Post updated successfully!');
+            setError(`Newsletter send failed: ${newsletterError}`);
+          }
+        } else {
+          setSuccessMessage('Post updated successfully!');
+        }
+
+        // Clear success message after 5 seconds (longer to read newsletter info)
+        setTimeout(() => setSuccessMessage(null), 5000);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to update post');
       } finally {

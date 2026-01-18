@@ -1778,3 +1778,41 @@ All unit tests implemented:
 - newsletter-13: Integrate newsletter send into blog publish flow
 - Consider adding rate limiting per blog_slug to prevent duplicate sends
 - Consider adding a check to prevent re-sending same blog as newsletter
+
+
+## [newsletter-13]: Integrate newsletter send into blog publish flow
+**Status:** PASSED
+**Tests Written:** 12 tests in apps/admin/tests/api/newsletter-send.test.ts
+  - 7 unit tests for POST /api/newsletter/send endpoint
+  - 5 documented behavior tests for BlogEditor integration
+**Test Results:** 170 tests passed (admin)
+**Type Check:** PASSED - 0 errors across all packages
+**Lint:** PASSED - 0 errors on new files (2 pre-existing accessibility errors in TagInput.tsx)
+**Browser Tests:** Visual tests defined in PRD - requires running dev server for full verification
+**Pre-commit Hooks:** Pending
+**Findings:**
+- Created `/api/newsletter/send` admin API route:
+  - Proxies to Merchant API POST /v1/newsletter/send
+  - Validates required fields: blog_slug, title, excerpt
+  - Optional: featured_image_url
+  - Returns: success, recipient_count, send_id, errors[]
+- Updated `BlogEditor.tsx` handleMetadataSubmit:
+  - After successful blog PATCH, checks if data.sendAsNewsletter is true
+  - If true, calls POST /api/newsletter/send with:
+    - blog_slug: data.slug
+    - title: data.title
+    - excerpt: data.description (description serves as excerpt)
+    - featured_image_url: data.image
+  - Success message: "Post published and newsletter sent to X subscriber(s)!"
+  - Handles singular/plural: "1 subscriber" vs "2 subscribers"
+  - On newsletter failure, shows both success (blog saved) and error (newsletter failed)
+  - Increased success message timeout from 3s to 5s for newsletter info
+**PRD Coverage:**
+- ✓ Newsletter send triggered when sendAsNewsletter=true
+- ✓ Newsletter not sent when sendAsNewsletter=false  
+- ✓ Success toast shows send count
+- Note: PRD step about "Log newsletter send in admin activity" is already handled by Merchant API
+**Recommendations:**
+- newsletter-14: Add rate limiting to subscribe endpoint
+- newsletter-15: Add invisible reCAPTCHA to subscribe forms
+- Consider adding newsletter send history to admin dashboard
