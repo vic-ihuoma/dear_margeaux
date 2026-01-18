@@ -6,24 +6,19 @@
  * - Order confirmations (to customers)
  * - Shipping updates (to customers)
  *
- * STATUS: Currently stubbed - emails are logged but not sent.
+ * STATUS: Resend API implementation ready.
  *
- * TODO: Implement Resend API for email delivery
+ * SETUP REQUIRED:
  * ============================================
  *
- * 1. Sign up at https://resend.com and get an API key
+ * 1. Sign up at https://resend.com and get an API key (task email-1)
  *
- * 2. Add the secret to Cloudflare:
+ * 2. Add the secret to Cloudflare (task email-2):
  *    wrangler secret put RESEND_API_KEY
  *
- * 3. Add to wrangler.jsonc bindings (for type safety):
- *    [vars]
- *    # RESEND_API_KEY is set via `wrangler secret put`
+ * 3. Configure sending domain in Resend dashboard (task email-11)
  *
- * 4. Update Env type in types.ts:
- *    RESEND_API_KEY: string;
- *
- * 5. Uncomment the Resend implementation below and remove the stub
+ * If RESEND_API_KEY is not configured, emails will be logged but not sent.
  */
 
 import { getDb } from '../db';
@@ -364,247 +359,274 @@ export async function processDropNotifications(env: Env, ctx: ExecutionContext):
   }
 }
 
-/*
- * ============================================
- * RESEND API IMPLEMENTATION (uncomment when ready):
- * ============================================
- *
- * interface ResendEmailOptions {
- *   to: string | string[];
- *   subject: string;
- *   html: string;
- *   text?: string;
- *   from?: string;
- *   replyTo?: string;
- * }
- *
- * interface ResendResponse {
- *   id?: string;
- *   error?: { message: string; name: string };
- * }
- *
- * async function sendEmailViaResend(
- *   env: Env,
- *   options: ResendEmailOptions
- * ): Promise<NotificationResult> {
- *   const fromEmail = options.from || 'Dear Margeaux <orders@dearmargeaux.com>';
- *
- *   try {
- *     const response = await fetch('https://api.resend.com/emails', {
- *       method: 'POST',
- *       headers: {
- *         'Authorization': `Bearer ${env.RESEND_API_KEY}`,
- *         'Content-Type': 'application/json',
- *       },
- *       body: JSON.stringify({
- *         from: fromEmail,
- *         to: options.to,
- *         subject: options.subject,
- *         html: options.html,
- *         text: options.text,
- *         reply_to: options.replyTo || 'hello@dearmargeaux.com',
- *       }),
- *     });
- *
- *     const data: ResendResponse = await response.json();
- *
- *     if (!response.ok || data.error) {
- *       console.error('Resend API error:', data.error);
- *       return {
- *         success: false,
- *         error: data.error?.message || 'Unknown Resend error',
- *       };
- *     }
- *
- *     return {
- *       success: true,
- *       messageId: data.id,
- *     };
- *   } catch (error) {
- *     const errorMsg = error instanceof Error ? error.message : String(error);
- *     console.error('Resend send exception:', errorMsg);
- *     return { success: false, error: errorMsg };
- *   }
- * }
- *
- * // HTML Email Templates (inline, no React dependency)
- * // These can be enhanced with better styling as needed
- *
- * function buildOrderConfirmationHtml(data: {
- *   customerName: string;
- *   orderNumber: string;
- *   items: OrderItemData[];
- *   subtotal: number;
- *   shipping: number;
- *   tax: number;
- *   discount: number;
- *   total: number;
- *   orderUrl: string;
- * }): string {
- *   const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
- *
- *   const itemsHtml = data.items.map(item => `
- *     <tr>
- *       <td style="padding: 12px; border-bottom: 1px solid #eee;">
- *         ${item.title}${item.variant_title ? ` - ${item.variant_title}` : ''}
- *       </td>
- *       <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">
- *         ${item.qty}
- *       </td>
- *       <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">
- *         ${formatPrice(item.unit_price_cents * item.qty)}
- *       </td>
- *     </tr>
- *   `).join('');
- *
- *   return `
- *     <!DOCTYPE html>
- *     <html>
- *     <head>
- *       <meta charset="utf-8">
- *       <meta name="viewport" content="width=device-width, initial-scale=1.0">
- *     </head>
- *     <body style="font-family: 'Inter', -apple-system, sans-serif; background: #fafafa; padding: 40px 20px;">
- *       <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden;">
- *         <div style="background: #8B4513; color: white; padding: 32px; text-align: center;">
- *           <h1 style="margin: 0; font-size: 24px;">Thank you for your order!</h1>
- *         </div>
- *         <div style="padding: 32px;">
- *           <p style="color: #333; font-size: 16px;">Hi ${data.customerName},</p>
- *           <p style="color: #666;">Your order <strong>#${data.orderNumber}</strong> has been confirmed.</p>
- *
- *           <table style="width: 100%; border-collapse: collapse; margin: 24px 0;">
- *             <thead>
- *               <tr style="background: #f5f5f5;">
- *                 <th style="padding: 12px; text-align: left;">Item</th>
- *                 <th style="padding: 12px; text-align: center;">Qty</th>
- *                 <th style="padding: 12px; text-align: right;">Price</th>
- *               </tr>
- *             </thead>
- *             <tbody>${itemsHtml}</tbody>
- *           </table>
- *
- *           <div style="border-top: 2px solid #eee; padding-top: 16px;">
- *             <p style="display: flex; justify-content: space-between; margin: 8px 0;">
- *               <span>Subtotal:</span> <span>${formatPrice(data.subtotal)}</span>
- *             </p>
- *             <p style="display: flex; justify-content: space-between; margin: 8px 0;">
- *               <span>Shipping:</span> <span>${formatPrice(data.shipping)}</span>
- *             </p>
- *             <p style="display: flex; justify-content: space-between; margin: 8px 0;">
- *               <span>Tax:</span> <span>${formatPrice(data.tax)}</span>
- *             </p>
- *             ${data.discount > 0 ? `
- *             <p style="display: flex; justify-content: space-between; margin: 8px 0; color: #16a34a;">
- *               <span>Discount:</span> <span>-${formatPrice(data.discount)}</span>
- *             </p>
- *             ` : ''}
- *             <p style="display: flex; justify-content: space-between; margin: 16px 0 0; font-size: 18px; font-weight: bold;">
- *               <span>Total:</span> <span>${formatPrice(data.total)}</span>
- *             </p>
- *           </div>
- *
- *           <a href="${data.orderUrl}" style="display: block; background: #8B4513; color: white; text-align: center; padding: 16px; border-radius: 6px; text-decoration: none; margin-top: 24px;">
- *             View Order Details
- *           </a>
- *         </div>
- *         <div style="background: #f5f5f5; padding: 24px; text-align: center; color: #666; font-size: 14px;">
- *           <p style="margin: 0;">Dear Margeaux</p>
- *           <p style="margin: 8px 0 0;">Questions? Reply to this email or contact hello@dearmargeaux.com</p>
- *         </div>
- *       </div>
- *     </body>
- *     </html>
- *   `;
- * }
- *
- * function buildShippingUpdateHtml(data: {
- *   customerName: string;
- *   orderNumber: string;
- *   trackingNumber?: string;
- *   trackingUrl?: string;
- *   carrier?: string;
- *   estimatedDelivery?: string;
- * }): string {
- *   return `
- *     <!DOCTYPE html>
- *     <html>
- *     <head>
- *       <meta charset="utf-8">
- *       <meta name="viewport" content="width=device-width, initial-scale=1.0">
- *     </head>
- *     <body style="font-family: 'Inter', -apple-system, sans-serif; background: #fafafa; padding: 40px 20px;">
- *       <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden;">
- *         <div style="background: #8B4513; color: white; padding: 32px; text-align: center;">
- *           <h1 style="margin: 0; font-size: 24px;">Your order has shipped! 📦</h1>
- *         </div>
- *         <div style="padding: 32px;">
- *           <p style="color: #333; font-size: 16px;">Hi ${data.customerName},</p>
- *           <p style="color: #666;">Great news! Your order <strong>#${data.orderNumber}</strong> is on its way.</p>
- *
- *           <div style="background: #f5f5f5; border-radius: 8px; padding: 24px; margin: 24px 0;">
- *             ${data.carrier ? `<p style="margin: 0 0 8px;"><strong>Carrier:</strong> ${data.carrier}</p>` : ''}
- *             ${data.trackingNumber ? `<p style="margin: 0 0 8px;"><strong>Tracking:</strong> ${data.trackingNumber}</p>` : ''}
- *             ${data.estimatedDelivery ? `<p style="margin: 0;"><strong>Estimated Delivery:</strong> ${data.estimatedDelivery}</p>` : ''}
- *           </div>
- *
- *           ${data.trackingUrl ? `
- *           <a href="${data.trackingUrl}" style="display: block; background: #8B4513; color: white; text-align: center; padding: 16px; border-radius: 6px; text-decoration: none;">
- *             Track Your Package
- *           </a>
- *           ` : ''}
- *         </div>
- *         <div style="background: #f5f5f5; padding: 24px; text-align: center; color: #666; font-size: 14px;">
- *           <p style="margin: 0;">Dear Margeaux</p>
- *         </div>
- *       </div>
- *     </body>
- *     </html>
- *   `;
- * }
- *
- * function buildDropLaunchHtml(data: {
- *   subscriberName: string;
- *   dropName: string;
- *   dropDescription?: string | null;
- *   dropUrl: string;
- *   featuredImageUrl?: string;
- * }): string {
- *   return `
- *     <!DOCTYPE html>
- *     <html>
- *     <head>
- *       <meta charset="utf-8">
- *       <meta name="viewport" content="width=device-width, initial-scale=1.0">
- *     </head>
- *     <body style="font-family: 'Inter', -apple-system, sans-serif; background: #fafafa; padding: 40px 20px;">
- *       <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden;">
- *         <div style="background: #E2725B; color: white; padding: 32px; text-align: center;">
- *           <h1 style="margin: 0; font-size: 24px;">${data.dropName} is NOW LIVE! 🎉</h1>
- *         </div>
- *         ${data.featuredImageUrl ? `
- *         <img src="${data.featuredImageUrl}" alt="${data.dropName}" style="width: 100%; height: auto;">
- *         ` : ''}
- *         <div style="padding: 32px;">
- *           <p style="color: #333; font-size: 16px;">Hey ${data.subscriberName},</p>
- *           <p style="color: #666;">The wait is over! ${data.dropName} is now available.</p>
- *           ${data.dropDescription ? `<p style="color: #666;">${data.dropDescription}</p>` : ''}
- *           <p style="color: #666; font-weight: bold;">Shop now before it sells out!</p>
- *
- *           <a href="${data.dropUrl}" style="display: block; background: #E2725B; color: white; text-align: center; padding: 16px; border-radius: 6px; text-decoration: none; margin-top: 24px; font-weight: bold;">
- *             SHOP THE DROP
- *           </a>
- *         </div>
- *         <div style="background: #f5f5f5; padding: 24px; text-align: center; color: #666; font-size: 14px;">
- *           <p style="margin: 0;">Dear Margeaux</p>
- *         </div>
- *       </div>
- *     </body>
- *     </html>
- *   `;
- * }
- *
- * ============================================
- * END RESEND IMPLEMENTATION
- * ============================================
- */
+// ============================================================
+// RESEND API IMPLEMENTATION
+// ============================================================
+
+interface ResendEmailOptions {
+  to: string | string[];
+  subject: string;
+  html: string;
+  text?: string;
+  from?: string;
+  replyTo?: string;
+}
+
+interface ResendResponse {
+  id?: string;
+  error?: { message: string; name: string };
+}
+
+async function sendEmailViaResend(
+  env: Env,
+  options: ResendEmailOptions
+): Promise<NotificationResult> {
+  const fromEmail = options.from || 'Dear Margeaux <orders@dearmargeaux.com>';
+
+  // Check if Resend API key is configured
+  if (!env.RESEND_API_KEY) {
+    console.warn('[EMAIL] RESEND_API_KEY not configured, using stub');
+    return logEmailStub('RESEND_FALLBACK', String(options.to), options.subject, {
+      html: options.html.substring(0, 200) + '...',
+    });
+  }
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+        reply_to: options.replyTo || 'hello@dearmargeaux.com',
+      }),
+    });
+
+    const data: ResendResponse = await response.json();
+
+    if (!response.ok || data.error) {
+      console.error('Resend API error:', data.error);
+      return {
+        success: false,
+        error: data.error?.message || 'Unknown Resend error',
+      };
+    }
+
+    return {
+      success: true,
+      messageId: data.id,
+    };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('Resend send exception:', errorMsg);
+    return { success: false, error: errorMsg };
+  }
+}
+
+// ============================================================
+// HTML EMAIL TEMPLATES
+// ============================================================
+
+function buildOrderConfirmationHtml(data: {
+  customerName: string;
+  orderNumber: string;
+  items: OrderItemData[];
+  subtotal: number;
+  shipping: number;
+  tax: number;
+  discount: number;
+  total: number;
+  orderUrl: string;
+}): string {
+  const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+
+  const itemsHtml = data.items
+    .map(
+      (item) => `
+    <tr>
+      <td style="padding: 12px; border-bottom: 1px solid #eee;">
+        ${item.title}${item.variant_title ? ` - ${item.variant_title}` : ''}
+      </td>
+      <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">
+        ${item.qty}
+      </td>
+      <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">
+        ${formatPrice(item.unit_price_cents * item.qty)}
+      </td>
+    </tr>
+  `
+    )
+    .join('');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: 'Inter', -apple-system, sans-serif; background: #fafafa; padding: 40px 20px;">
+      <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden;">
+        <div style="background: #8B4513; color: white; padding: 32px; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px;">Thank you for your order!</h1>
+        </div>
+        <div style="padding: 32px;">
+          <p style="color: #333; font-size: 16px;">Hi ${data.customerName},</p>
+          <p style="color: #666;">Your order <strong>#${data.orderNumber}</strong> has been confirmed.</p>
+
+          <table style="width: 100%; border-collapse: collapse; margin: 24px 0;">
+            <thead>
+              <tr style="background: #f5f5f5;">
+                <th style="padding: 12px; text-align: left;">Item</th>
+                <th style="padding: 12px; text-align: center;">Qty</th>
+                <th style="padding: 12px; text-align: right;">Price</th>
+              </tr>
+            </thead>
+            <tbody>${itemsHtml}</tbody>
+          </table>
+
+          <div style="border-top: 2px solid #eee; padding-top: 16px;">
+            <p style="display: flex; justify-content: space-between; margin: 8px 0;">
+              <span>Subtotal:</span> <span>${formatPrice(data.subtotal)}</span>
+            </p>
+            <p style="display: flex; justify-content: space-between; margin: 8px 0;">
+              <span>Shipping:</span> <span>${formatPrice(data.shipping)}</span>
+            </p>
+            <p style="display: flex; justify-content: space-between; margin: 8px 0;">
+              <span>Tax:</span> <span>${formatPrice(data.tax)}</span>
+            </p>
+            ${
+              data.discount > 0
+                ? `
+            <p style="display: flex; justify-content: space-between; margin: 8px 0; color: #16a34a;">
+              <span>Discount:</span> <span>-${formatPrice(data.discount)}</span>
+            </p>
+            `
+                : ''
+            }
+            <p style="display: flex; justify-content: space-between; margin: 16px 0 0; font-size: 18px; font-weight: bold;">
+              <span>Total:</span> <span>${formatPrice(data.total)}</span>
+            </p>
+          </div>
+
+          <a href="${data.orderUrl}" style="display: block; background: #8B4513; color: white; text-align: center; padding: 16px; border-radius: 6px; text-decoration: none; margin-top: 24px;">
+            View Order Details
+          </a>
+        </div>
+        <div style="background: #f5f5f5; padding: 24px; text-align: center; color: #666; font-size: 14px;">
+          <p style="margin: 0;">Dear Margeaux</p>
+          <p style="margin: 8px 0 0;">Questions? Reply to this email or contact hello@dearmargeaux.com</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function buildShippingUpdateHtml(data: {
+  customerName: string;
+  orderNumber: string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  carrier?: string;
+  estimatedDelivery?: string;
+}): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: 'Inter', -apple-system, sans-serif; background: #fafafa; padding: 40px 20px;">
+      <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden;">
+        <div style="background: #8B4513; color: white; padding: 32px; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px;">Your order has shipped!</h1>
+        </div>
+        <div style="padding: 32px;">
+          <p style="color: #333; font-size: 16px;">Hi ${data.customerName},</p>
+          <p style="color: #666;">Great news! Your order <strong>#${data.orderNumber}</strong> is on its way.</p>
+
+          <div style="background: #f5f5f5; border-radius: 8px; padding: 24px; margin: 24px 0;">
+            ${data.carrier ? `<p style="margin: 0 0 8px;"><strong>Carrier:</strong> ${data.carrier}</p>` : ''}
+            ${data.trackingNumber ? `<p style="margin: 0 0 8px;"><strong>Tracking:</strong> ${data.trackingNumber}</p>` : ''}
+            ${data.estimatedDelivery ? `<p style="margin: 0;"><strong>Estimated Delivery:</strong> ${data.estimatedDelivery}</p>` : ''}
+          </div>
+
+          ${
+            data.trackingUrl
+              ? `
+          <a href="${data.trackingUrl}" style="display: block; background: #8B4513; color: white; text-align: center; padding: 16px; border-radius: 6px; text-decoration: none;">
+            Track Your Package
+          </a>
+          `
+              : ''
+          }
+        </div>
+        <div style="background: #f5f5f5; padding: 24px; text-align: center; color: #666; font-size: 14px;">
+          <p style="margin: 0;">Dear Margeaux</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function buildDropLaunchHtml(data: {
+  subscriberName: string;
+  dropName: string;
+  dropDescription?: string | null;
+  dropUrl: string;
+  featuredImageUrl?: string;
+}): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: 'Inter', -apple-system, sans-serif; background: #fafafa; padding: 40px 20px;">
+      <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden;">
+        <div style="background: #E2725B; color: white; padding: 32px; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px;">${data.dropName} is NOW LIVE!</h1>
+        </div>
+        ${
+          data.featuredImageUrl
+            ? `
+        <img src="${data.featuredImageUrl}" alt="${data.dropName}" style="width: 100%; height: auto;">
+        `
+            : ''
+        }
+        <div style="padding: 32px;">
+          <p style="color: #333; font-size: 16px;">Hey ${data.subscriberName},</p>
+          <p style="color: #666;">The wait is over! ${data.dropName} is now available.</p>
+          ${data.dropDescription ? `<p style="color: #666;">${data.dropDescription}</p>` : ''}
+          <p style="color: #666; font-weight: bold;">Shop now before it sells out!</p>
+
+          <a href="${data.dropUrl}" style="display: block; background: #E2725B; color: white; text-align: center; padding: 16px; border-radius: 6px; text-decoration: none; margin-top: 24px; font-weight: bold;">
+            SHOP THE DROP
+          </a>
+        </div>
+        <div style="background: #f5f5f5; padding: 24px; text-align: center; color: #666; font-size: 14px;">
+          <p style="margin: 0;">Dear Margeaux</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+// Export for testing
+export {
+  sendEmailViaResend,
+  buildOrderConfirmationHtml,
+  buildShippingUpdateHtml,
+  buildDropLaunchHtml,
+};

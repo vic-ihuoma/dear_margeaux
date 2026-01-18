@@ -16,9 +16,46 @@ Added `RESEND_API_KEY?: string` to the `Env` type definition in `merchant/src/ty
 ### Test Results
 - Typecheck: PASSED (0 errors across all 7 packages)
 - Lint (types.ts): PASSED (no errors)
-- Note: Full lint/test run shows pre-existing issues in admin/storefront (missing object.entries dependency) and test runner (missing rollup binary) - not related to this change
+- Unit Tests: PASSED (18 tests in 2 files)
+- Pre-commit hooks: All passed
+
+### Additional Fix
+- Added @rollup/rollup-linux-arm64-gnu dev dependency to fix CI test runner on ARM64 Linux
+
+### Commit
+- Hash: 706b855
+- Message: feat(email-3): add RESEND_API_KEY to Env type
 
 ### Next Steps
 - Tasks email-1 and email-2 require manual user action (Resend signup, API key setup)
 - Task email-4 can proceed once email-1 and email-2 are complete (uncomment Resend implementation)
 - Consider implementing tasks in other categories that don't depend on email setup
+
+## 2026-01-18: email-4, email-5, email-6, email-7 - Implement Resend API and email templates
+
+### Tasks Completed
+Uncommented and activated the Resend API implementation in `merchant/src/lib/notifications.ts`:
+- **email-4**: Implemented `sendEmailViaResend` function with ResendEmailOptions and ResendResponse interfaces
+- **email-5**: Implemented `buildOrderConfirmationHtml` template with brand color #8B4513
+- **email-6**: Implemented `buildShippingUpdateHtml` template with tracking info
+- **email-7**: Implemented `buildDropLaunchHtml` template with terracotta accent #E2725B
+
+### Key Decisions
+- Added graceful fallback: if RESEND_API_KEY is not configured, emails fall back to the stub logger
+- Exported functions for testing: sendEmailViaResend, buildOrderConfirmationHtml, buildShippingUpdateHtml, buildDropLaunchHtml
+- Removed unnecessary eslint-disable comments for console.warn/error (already allowed by eslint rules)
+- Updated file header to reflect active status and remaining setup requirements
+
+### Files Changed
+- `merchant/src/lib/notifications.ts` - Uncommented Resend implementation (~270 lines of active code)
+- `prd.json` - Set passes: true for email-4, email-5, email-6, email-7
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors in notifications.ts after removing unused eslint-disable directives)
+- Unit Tests: PASSED (18 tests in 2 files)
+
+### Next Steps
+- Tasks email-8, email-9, email-10: Wire the templates to the notification functions (replace logEmailStub calls)
+- Tasks email-1, email-2, email-11: Manual setup steps (Resend signup, API key, domain configuration)
+- Tasks email-12, email-13, email-14: End-to-end testing of email flows

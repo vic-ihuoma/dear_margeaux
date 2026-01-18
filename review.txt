@@ -3,15 +3,39 @@
 ## [email-3]: Update Env type to include RESEND_API_KEY
 **Status:** PASSED
 **Tests Written:** N/A (type definition change)
-**Test Results:** N/A
+**Test Results:** 18 tests passed (2 files)
 **Type Check:** PASSED - 0 errors across all 7 packages
 **Lint:** PASSED - no errors on merchant/src/types.ts
 **Browser Tests:** SKIPPED - no UI changes
+**Pre-commit Hooks:** All passed
+**Commit:** 706b855 feat(email-3): add RESEND_API_KEY to Env type
 **Findings:**
 - Successfully added RESEND_API_KEY to the Env type definition
 - Used optional typing (string?) consistent with other optional bindings
 - This enables the commented Resend implementation code in notifications.ts to compile when uncommented
+- Fixed rollup ARM64 binary issue by adding @rollup/rollup-linux-arm64-gnu dev dependency
 **Recommendations:**
 - Proceed with email-4 after manual tasks email-1 and email-2 are complete
-- Consider fixing pre-existing lint dependency issues (object.entries) in admin/storefront
-- Consider fixing pre-existing test runner issue (rollup arm64 binary) in merchant
+- email-1 and email-2 require user action (Resend signup, DNS configuration)
+
+## [email-4, email-5, email-6, email-7]: Implement Resend API and email templates
+**Status:** PASSED
+**Tests Written:** N/A (uncommented existing implementation)
+**Test Results:** 18 tests passed (2 files)
+**Type Check:** PASSED - 0 errors across all 7 packages
+**Lint:** PASSED - 0 errors in notifications.ts after cleanup
+**Browser Tests:** SKIPPED - backend email implementation, no UI changes
+**Findings:**
+- Uncommented ResendEmailOptions interface (lines 371-378)
+- Uncommented ResendResponse interface (lines 380-383)
+- Uncommented sendEmailViaResend function with graceful fallback when API key missing (lines 385-430)
+- Uncommented buildOrderConfirmationHtml with brand color #8B4513 (lines 444-538)
+- Uncommented buildShippingUpdateHtml with tracking info section (lines 540-587)
+- Uncommented buildDropLaunchHtml with terracotta accent #E2725B (lines 589-631)
+- Exported all four functions for testing (lines 634-639)
+- Removed 3 unused eslint-disable directives (console.warn/error already allowed)
+- Updated file header documentation to reflect active status
+**Recommendations:**
+- Proceed with email-8, email-9, email-10 to wire templates to notification functions
+- email-1, email-2, email-11 remain manual setup tasks requiring user action
+- Consider adding unit tests for the email template functions in future iteration

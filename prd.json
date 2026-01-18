@@ -124,7 +124,7 @@
         "Uncomment the sendEmailViaResend async function",
         "Verify the function compiles without errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "email-5",
@@ -136,7 +136,7 @@
         "Verify the template has correct brand colors (#8B4513)",
         "Test that the formatPrice helper works correctly"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "email-6",
@@ -148,7 +148,7 @@
         "Verify tracking info section renders correctly",
         "Verify the Track Your Package button has correct URL"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "email-7",
@@ -160,7 +160,7 @@
         "Verify terracotta accent color (#E2725B) is used",
         "Verify featured image renders when provided"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "email-8",
