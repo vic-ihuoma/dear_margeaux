@@ -2,8 +2,10 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SEO from '../../components/SEO.astro';
 import ProductControls from '../../components/ProductControls';
+import ProductImageGallery from '../../components/ProductImageGallery';
 import { sampleProducts } from '../../data/sample-products';
 import type { Variant, Drop, InventoryItem } from '@dear-margeaux/api';
+import type { LightboxImage } from '../../components/ImageLightbox';
 
 interface DisplayVariant {
   id: string;
@@ -170,6 +172,27 @@ const mainImageUrl =
 const mainImageAlt =
   product.featured_image_alt ?? defaultVariant?.image_alt ?? product.title;
 
+// Build lightbox images array from featured image + variant images
+const lightboxImages: LightboxImage[] = [];
+// Add featured image first if it exists
+if (product.featured_image_url) {
+  lightboxImages.push({
+    url: product.featured_image_url,
+    alt: product.featured_image_alt ?? product.title,
+  });
+}
+// Add variant images (deduplicate by URL)
+const seenUrls = new Set(lightboxImages.map((img) => img.url));
+for (const variant of product.variants) {
+  if (variant.image_url && !seenUrls.has(variant.image_url)) {
+    seenUrls.add(variant.image_url);
+    lightboxImages.push({
+      url: variant.image_url,
+      alt: variant.image_alt ?? `${product.title} - ${variant.title}`,
+    });
+  }
+}
+
 // Check if all variants are sold out
 const allSoldOut = product.variants.every((v) => !v.available);
 
@@ -273,13 +296,31 @@ const productUrl = `https://dearmargeaux.com/product/${product.id}`;
           >
             {
               mainImageUrl ? (
-                <img
-                  id="main-product-image"
-                  src={mainImageUrl}
-                  alt={mainImageAlt}
-                  data-default-alt={mainImageAlt}
-                  class="h-full w-full object-cover object-center"
-                />
+                <>
+                  <img
+                    id="main-product-image"
+                    src={mainImageUrl}
+                    alt={mainImageAlt}
+                    data-default-alt={mainImageAlt}
+                    class="h-full w-full object-cover object-center cursor-zoom-in"
+                  />
+                  {/* Zoom indicator */}
+                  <div class="absolute bottom-4 right-4 p-2 bg-background/70 rounded-full text-text pointer-events-none opacity-70">
+                    <svg
+                      class="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6"
+                      />
+                    </svg>
+                  </div>
+                </>
               ) : (
                 <div class="flex h-full w-full items-center justify-center">
                   <svg
@@ -538,6 +579,17 @@ const productUrl = `https://dearmargeaux.com/product/${product.id}`;
       </p>
     </div>
   </section>
+
+  {/* Image Lightbox - React Island for product image viewing */}
+  {
+    lightboxImages.length > 0 && (
+      <ProductImageGallery
+        client:load
+        mainImageId="main-product-image"
+        images={lightboxImages}
+      />
+    )
+  }
 </BaseLayout>
 
 <script>

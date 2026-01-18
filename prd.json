@@ -1096,7 +1096,7 @@
         ],
         "manual": ["Test touch swipe on mobile device"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "sf-2",
@@ -1224,7 +1224,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "sf-6",
