@@ -12,6 +12,10 @@ const currentYear = new Date().getFullYear();
 // API configuration for newsletter form
 const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL || '';
 const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY || '';
+
+// Logo image configuration
+const imagesUrl = import.meta.env.PUBLIC_IMAGES_URL;
+const logoUrl = imagesUrl ? `${imagesUrl}/branding/logo-light.webp` : null;
 ---
 
 <footer
@@ -22,9 +26,20 @@ const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY || '';
       <!-- Brand Column -->
       <div class="md:col-span-2">
         <a href="/" class="inline-block">
-          <span class="text-xl font-bold text-text tracking-tight"
-            >Dear Margeaux</span
-          >
+          {
+            logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="Dear Margeaux"
+                class="h-10 w-auto"
+                loading="lazy"
+              />
+            ) : (
+              <span class="text-xl font-bold text-text tracking-tight">
+                Dear Margeaux
+              </span>
+            )
+          }
         </a>
         <p class="mt-4 text-sm text-text-secondary max-w-sm">
           Boutique bags crafted with care. Limited drops, timeless style.
