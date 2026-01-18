@@ -2725,3 +2725,59 @@ NOTES:
 - Uses existing API endpoint POST /v1/newsletter/subscribe
 - Success message matches the API response: "Check your email to confirm your subscription"
 - Fixed redundant role="form" attribute flagged by jsx-a11y eslint rule
+
+================================================================================
+ITERATION: 2026-01-18
+TASK: sf-6 - Add RSS feed for blog
+================================================================================
+
+COMPLETED WORK:
+- Installed @astrojs/rss package as dev dependency in storefront
+- Created RSS feed endpoint at apps/storefront/src/pages/blog/rss.xml.ts
+  - Uses Astro's getCollection to fetch published blog posts
+  - Filters out draft posts
+  - Sorts posts by date (newest first)
+  - Includes title, description, pubDate, link, author, and categories (tags)
+  - Sets correct RSS metadata (title, description, language)
+
+- Added rssUrl prop to BaseLayout.astro
+  - New optional prop allows pages to specify RSS feed URL
+  - RSS link element rendered in <head> when rssUrl is provided
+  - Uses proper attributes: rel="alternate", type="application/rss+xml"
+
+- Updated blog index page (apps/storefront/src/pages/blog/index.astro)
+  - Added rssUrl="/blog/rss.xml" to BaseLayout component
+  - Added RSS icon next to page header title
+  - Icon is a clickable link to the RSS feed
+  - Accessible with aria-label and title attributes
+
+- Updated BlogPost.astro layout
+  - Added RSS link in <head> section for individual blog posts
+  - Ensures RSS feed is discoverable from any blog page
+
+- Created comprehensive unit tests (tests/pages/rss.test.ts)
+  - 12 tests covering feed metadata, post processing, filtering, sorting
+  - Tests verify correct RSS structure and configuration
+  - Tests validate blog post URL generation
+  - Tests confirm draft posts are filtered out
+
+FILES CHANGED:
+- apps/storefront/package.json (added @astrojs/rss dependency)
+- apps/storefront/src/pages/blog/rss.xml.ts (new file - RSS feed endpoint)
+- apps/storefront/src/layouts/BaseLayout.astro (added rssUrl prop and RSS link)
+- apps/storefront/src/pages/blog/index.astro (added rssUrl and RSS icon)
+- apps/storefront/src/layouts/BlogPost.astro (added RSS link in head)
+- apps/storefront/tests/pages/rss.test.ts (new file - 12 unit tests)
+- prd.json (marked sf-6 as passed)
+- pnpm-lock.yaml (updated with new dependency)
+
+TEST RESULTS:
+- All 115 tests pass in storefront package (12 new + 103 existing)
+- TypeScript type check: PASSED (0 errors, only pre-existing hints)
+- Lint: PASSED for new code (1 pre-existing warning in CartDrawer.tsx)
+
+NOTES:
+- RSS feed URL: /blog/rss.xml
+- Feed uses standard RSS 2.0 format via @astrojs/rss
+- RSS link is visible in browser's RSS auto-discovery feature
+- Icon uses Material Design Icons RSS icon path

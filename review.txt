@@ -2138,3 +2138,54 @@ All unit tests implemented:
 - newsletter-23: Add newsletter signup to blog listing page (can reuse NewsletterForm)
 - newsletter-24: Add newsletter signup to individual blog posts (can reuse NewsletterForm)
 - newsletter-15: Add invisible reCAPTCHA to subscribe forms (requires Google signup)
+
+## [sf-6]: Add RSS feed for blog
+**Status:** PASSED
+**Tests Written:**
+- RSS Feed Configuration - Feed Metadata (4 tests)
+- RSS Feed Configuration - Blog Post Processing (6 tests)
+- RSS Feed Configuration - RSS Link in HTML Head (1 test)
+- RSS Feed XML Structure (2 tests)
+
+**Test Results:** 115 tests passed (12 new + 103 existing in storefront)
+**Type Check:** PASSED - 0 errors (only pre-existing hints)
+**Lint:** PASSED for new code (1 pre-existing warning in CartDrawer.tsx)
+**Browser Tests:** N/A - Task has visual tests but requires dev server for browser automation
+
+**Findings:**
+- Created RSS feed endpoint at apps/storefront/src/pages/blog/rss.xml.ts
+  - Uses @astrojs/rss package for RSS 2.0 generation
+  - Fetches blog posts via getCollection('blog')
+  - Filters out draft posts (!data.draft)
+  - Sorts by date descending (newest first)
+  - Maps posts to RSS items with title, pubDate, description, link, author, categories
+
+- Added RSS autodiscovery support:
+  - BaseLayout.astro: Added optional rssUrl prop for RSS link in <head>
+  - Blog index page: Passes rssUrl="/blog/rss.xml" to BaseLayout
+  - BlogPost.astro: Has hardcoded RSS link for all blog posts
+
+- Added visual RSS icon to blog page header:
+  - Icon uses standard RSS symbol (radio waves)
+  - Links to /blog/rss.xml with descriptive aria-label
+  - Styled with text-text-secondary hover:text-primary
+
+**PRD Coverage:**
+- Install @astrojs/rss package ✓
+- Create apps/storefront/src/pages/blog/rss.xml.ts ✓
+- Configure feed metadata (title, description, site) ✓
+- Include all published blog posts ✓
+- Add link to RSS feed in head ✓
+- Add RSS icon to blog page header ✓
+
+**Unit Test Coverage:**
+- RSS feed endpoint returns valid XML ✓ (via configuration tests)
+- RSS feed includes all published posts ✓ (filtering tests)
+- RSS feed includes correct metadata ✓ (metadata tests)
+- RSS feed excludes draft posts ✓ (filtering tests)
+- Blog pages include RSS link in head ✓ (link attribute tests)
+
+**Recommendations:**
+- sf-7: Add related posts to blog (next natural enhancement)
+- sf-8: Add tag-based blog filtering (already has task defined)
+- Consider adding RSS feed for drop announcements in future

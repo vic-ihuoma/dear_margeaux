@@ -1254,7 +1254,7 @@
         ],
         "manual": ["Add feed URL to RSS reader and verify posts appear"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "sf-7",

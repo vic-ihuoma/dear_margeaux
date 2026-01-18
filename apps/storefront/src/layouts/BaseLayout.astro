@@ -11,6 +11,8 @@ interface Props {
   preloadLcpImage?: string;
   /** Open Graph image URL */
   ogImage?: string;
+  /** RSS feed URL for pages that have an RSS feed */
+  rssUrl?: string;
 }
 
 const {
@@ -18,6 +20,7 @@ const {
   description = 'Boutique bags, limited drops.',
   preloadLcpImage,
   ogImage = '/og-default.png',
+  rssUrl,
 } = Astro.props;
 
 const canonicalUrl = new URL(
@@ -104,6 +107,18 @@ const canonicalUrl = new URL(
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <!-- RSS Feed -->
+    {
+      rssUrl && (
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="Dear Margeaux | The Journal RSS Feed"
+          href={rssUrl}
+        />
+      )
+    }
 
     <!-- Performance: Hint the browser about the critical rendering path -->
     <style>
