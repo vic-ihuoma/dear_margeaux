@@ -1327,3 +1327,107 @@ Created apps/admin/tests/components/VariantForm.test.ts with 40 documented tests
 - Consider adding character limit to alt text (e.g., 125 chars for optimal screen reader experience)
 - Consider adding alt text suggestions or guidelines in the UI
 
+---
+
+## newsletter-1: Create newsletter_subscribers table in D1
+
+**PRD Requirements:**
+- Create D1 migration for newsletter_subscribers table
+- Include columns: id, store_id, email, verified, verification_token, subscribed_at, verified_at, unsubscribed_at, source, created_at, updated_at
+- Add UNIQUE constraint on (store_id, email)
+- Create indexes for efficient queries
+
+**Typecheck:** PASSED (0 errors across all 7 packages)
+**Lint:** PASSED (0 errors on new files, pre-existing warnings only)
+**Unit Tests:** PASSED (322 tests in merchant - 25 new + 297 existing)
+**Browser Tests:** N/A (no visual tests in PRD for this task)
+**Pre-commit Hooks:** All passed
+**Commit:** 2d50157 feat(newsletter-1): create newsletter_subscribers table in D1
+
+**Findings:**
+- Created D1 migration `015-newsletter-subscribers.sql` with newsletter_subscribers table
+- Table schema:
+  - `id TEXT PRIMARY KEY` - unique identifier for the subscriber
+  - `store_id TEXT NOT NULL` - foreign key reference to store
+  - `email TEXT NOT NULL` - subscriber email address
+  - `verified INTEGER NOT NULL DEFAULT 0` - double opt-in verification status (0=false, 1=true)
+  - `verification_token TEXT` - token for email verification (cleared after verification)
+  - `subscribed_at TEXT NOT NULL` - timestamp when user subscribed
+  - `verified_at TEXT` - timestamp when email was verified (null until verified)
+  - `unsubscribed_at TEXT` - soft delete timestamp (null = active)
+  - `source TEXT NOT NULL DEFAULT 'footer'` - signup source tracking
+  - `created_at TEXT NOT NULL` - record creation timestamp
+  - `updated_at TEXT NOT NULL` - last update timestamp
+  - `UNIQUE(store_id, email)` - prevents duplicate subscriptions per store
+- Created five indexes for efficient queries:
+  - `idx_newsletter_store_id` - fast lookup by store_id
+  - `idx_newsletter_email` - fast email lookups for duplicate checking and unsubscribe
+  - `idx_newsletter_verified` - filter verified/unverified subscribers
+  - `idx_newsletter_token` - fast verification token lookups
+  - `idx_newsletter_unsubscribed` - filter active vs unsubscribed
+- Soft delete pattern used (unsubscribed_at) for compliance/audit purposes
+- Double opt-in flow supported via verified flag and verification_token
+
+**Test Coverage (25 tests in merchant/tests/migrations/newsletter-subscribers.test.ts):**
+- Table Structure (3 tests): Column definitions, verified default, source default
+- Unique Constraint (3 tests): Insert subscriber, same email different stores, duplicate rejection
+- Query Patterns (5 tests): By email, by token, verified only, non-unsubscribed, by source
+- Double Opt-In Flow (3 tests): Initial insert with token, verification update, token clearing
+- Unsubscribe Flow (2 tests): Soft unsubscribe, no hard delete
+- Resubscribe Flow (1 test): Clear unsubscribed_at
+- Count Queries (2 tests): Verified active count, source breakdown
+- Migration SQL Validation (6 tests): CREATE TABLE, all index definitions
+
+**Recommendations:**
+- newsletter-2 through newsletter-24: Implement subscribe/verify/unsubscribe API endpoints and storefront integration
+- Migration requires `wrangler d1 migrations apply merchant-db --remote` for production deployment
+- Consider adding index on subscribed_at for time-based queries in analytics
+
+---
+
+## newsletter-2: Create newsletter_sends table in D1 for tracking
+
+**PRD Requirements:**
+- Create D1 migration for newsletter_sends table
+- Include columns: id, store_id, blog_slug, subject, sent_at, recipient_count, created_at
+- Add index on blog_slug for looking up sends by post
+- Add index on sent_at for chronological queries
+
+**Typecheck:** PASSED (0 errors across all 7 packages)
+**Lint:** PASSED (0 errors on new files, pre-existing warnings only)
+**Unit Tests:** PASSED (341 tests in merchant - 19 new + 322 existing)
+**Browser Tests:** N/A (no visual tests in PRD for this task)
+**Pre-commit Hooks:** Pending (commit in progress)
+
+**Findings:**
+- Created D1 migration `016-newsletter-sends.sql` with newsletter_sends table
+- Table schema:
+  - `id TEXT PRIMARY KEY` - unique identifier for the send record
+  - `store_id TEXT NOT NULL` - for multi-tenant support
+  - `blog_slug TEXT NOT NULL` - reference to the blog post sent as newsletter
+  - `subject TEXT NOT NULL` - email subject line
+  - `sent_at TEXT NOT NULL` - when the newsletter was sent
+  - `recipient_count INTEGER NOT NULL DEFAULT 0` - number of recipients
+  - `created_at TEXT NOT NULL` - record creation timestamp
+- Created three indexes for efficient queries:
+  - `idx_newsletter_sends_blog_slug` - for looking up sends by blog post
+  - `idx_newsletter_sends_sent_at` - for chronological queries
+  - `idx_newsletter_sends_store_id` - for store filtering
+- No unique constraint on blog_slug (allows same post to be sent multiple times to new subscribers)
+
+**Test Coverage (19 tests in merchant/tests/migrations/newsletter-sends.test.ts):**
+- Table Structure (2 tests): Column definitions, recipient_count default
+- Insert Operations (3 tests): New record, multiple sends same post, different stores
+- Query by Blog Slug (3 tests): Efficient lookup, check if sent, empty result
+- Chronological Queries (2 tests): Recent sends, date range
+- Store Filtering (1 test): Filter by store_id
+- Statistics and Aggregation (3 tests): Total recipients, sends per post, monthly stats
+- Get Latest Send (1 test): Most recent send for blog post
+- Migration SQL Validation (4 tests): CREATE TABLE, all index definitions
+
+**Recommendations:**
+- newsletter-3: Create newsletter subscription API endpoint
+- newsletter-4: Create double opt-in verification email template
+- Migration requires `wrangler d1 migrations apply merchant-db --remote` for production deployment
+- Consider adding status field for draft/queued/sent states in future iteration
+

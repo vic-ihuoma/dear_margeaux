@@ -1901,3 +1901,59 @@ wrangler d1 migrations apply merchant-db --remote
 - newsletter-2: Create newsletter_sends table in D1 for tracking
 - newsletter-3: Create newsletter subscription API endpoint
 - newsletter-4: Create double opt-in verification email template
+
+## 2026-01-18: newsletter-2 - Create newsletter_sends table in D1 for tracking
+
+### Task Completed
+Created D1 migration for the newsletter_sends table, which tracks newsletter send history for the blog-to-newsletter workflow.
+
+### Key Decisions
+- Created migration file `016-newsletter-sends.sql` following existing naming convention
+- Table structure includes all required columns:
+  - `id TEXT PRIMARY KEY` - unique identifier for the send record
+  - `store_id TEXT NOT NULL` - for multi-tenant support
+  - `blog_slug TEXT NOT NULL` - reference to the blog post sent as newsletter
+  - `subject TEXT NOT NULL` - email subject line
+  - `sent_at TEXT NOT NULL` - when the newsletter was sent
+  - `recipient_count INTEGER NOT NULL DEFAULT 0` - number of recipients
+  - `created_at TEXT NOT NULL` - record creation timestamp
+- No unique constraint on blog_slug (allows same post to be sent multiple times)
+- Created three indexes for efficient queries:
+  - `idx_newsletter_sends_blog_slug` - for looking up sends by blog post
+  - `idx_newsletter_sends_sent_at` - for chronological queries
+  - `idx_newsletter_sends_store_id` - for store filtering
+
+### Files Created
+- `merchant/migrations/016-newsletter-sends.sql` - Database migration (24 lines)
+- `merchant/tests/migrations/newsletter-sends.test.ts` - 19 unit tests
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors in new files, pre-existing warnings only)
+- Merchant Tests: PASSED (341 tests - 19 new newsletter_sends + 322 existing)
+
+### Test Coverage Summary
+All PRD unit tests documented:
+- Migration file exists ✓
+- Table has all required columns ✓
+- Index on blog_slug exists ✓
+- Index on sent_at exists ✓
+
+Additional test coverage:
+- Table structure validation (all columns documented)
+- Insert operations (single, multiple sends for same post, different stores)
+- Query by blog_slug (efficient lookup, check if sent, count)
+- Chronological queries (recent sends, date range)
+- Store filtering
+- Statistics and aggregation (total recipients, sends per post, monthly stats)
+- Get latest send for blog post
+
+### Migration Commands (for production deployment)
+```bash
+cd merchant
+wrangler d1 migrations apply merchant-db --remote
+```
+
+### Next Steps
+- newsletter-3: Create newsletter subscription API endpoint
+- newsletter-4: Create double opt-in verification email template
