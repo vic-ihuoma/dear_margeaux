@@ -1,1342 +1,2450 @@
 {
-  "project": {
-    "name": "dear_margeaux",
-    "description": "Boutique e-commerce website for selling bags through limited drops",
-    "version": "0.1.0",
-    "repository": "github.com/victorihuoma/dear_margeaux"
+  "meta": {
+    "project": "dear_margeaux",
+    "description": "Actionable improvements extracted from code review",
+    "version": "1.0.0",
+    "repository": "github.com/victorihuoma/dear_margeaux",
+    "generated_from": "review.txt",
+    "last_updated": "2026-01-17"
   },
-  "architecture": {
-    "type": "hybrid-cloudflare-aws",
-    "commerce_backend": "merchant.dev",
-    "frontend_framework": "astro",
-    "styling": "tailwindcss",
-    "database": "cloudflare-d1",
-    "storage": "cloudflare-r2",
-    "email": "aws-ses",
-    "payments": "stripe",
-    "deployment": "cloudflare-pages-and-workers"
-  },
-  "phases": [
-    {
-      "id": "phase-1",
-      "name": "Repository & Infrastructure Setup",
-      "tasks": [
-        {
-          "id": "1.1",
-          "category": "infrastructure",
-          "title": "Initialize monorepo with pnpm",
-          "description": "Set up pnpm workspace with turbo for managing multiple packages",
-          "commands": [
-            "pnpm init",
-            "pnpm add -Dw turbo",
-            "touch pnpm-workspace.yaml turbo.json"
-          ],
-          "files_to_create": [
-            {
-              "path": "pnpm-workspace.yaml",
-              "content": "packages:\n  - 'apps/*'\n  - 'packages/*'\n  - 'merchant'"
-            },
-            {
-              "path": "turbo.json",
-              "content_description": "Configure turbo with build, dev, lint pipelines"
-            }
-          ],
-          "acceptance_criteria": [
-            "pnpm workspace configured",
-            "turbo.json exists with build/dev/lint pipelines",
-            "pnpm install runs without errors"
-          ]
-        },
-        {
-          "id": "1.2",
-          "category": "infrastructure",
-          "title": "Clone and configure Merchant.dev",
-          "description": "Add Merchant.dev as the commerce backend",
-          "commands": [
-            "git clone https://github.com/ygwyg/merchant.git merchant",
-            "cd merchant && pnpm install"
-          ],
-          "files_to_modify": [
-            {
-              "path": "merchant/wrangler.toml",
-              "changes": "Update name to 'dear-margeaux-api', configure D1 and R2 bindings"
-            }
-          ],
-          "acceptance_criteria": [
-            "Merchant cloned into /merchant directory",
-            "wrangler.toml configured for dear_margeaux",
-            "pnpm run dev starts local server"
-          ]
-        },
-        {
-          "id": "1.3",
-          "category": "infrastructure",
-          "title": "Create Cloudflare resources",
-          "description": "Set up D1 database and R2 bucket in Cloudflare dashboard",
-          "manual_steps": [
-            "Log into Cloudflare dashboard",
-            "Create D1 database named 'dear-margeaux-db'",
-            "Create R2 bucket named 'dear-margeaux-images'",
-            "Note the database_id and bucket name"
-          ],
-          "commands": [
-            "cd merchant && wrangler d1 migrations apply dear-margeaux-db"
-          ],
-          "acceptance_criteria": [
-            "D1 database created and migrations applied",
-            "R2 bucket created",
-            "wrangler.toml updated with correct IDs"
-          ]
-        },
-        {
-          "id": "1.4",
-          "category": "integration",
-          "title": "Connect Stripe (test mode)",
-          "description": "Configure Stripe test keys for payment processing",
-          "manual_steps": [
-            "Get Stripe test API keys from dashboard.stripe.com",
-            "Add STRIPE_SECRET_KEY to wrangler.toml secrets",
-            "Configure Stripe webhook endpoint"
-          ],
-          "commands": ["wrangler secret put STRIPE_SECRET_KEY"],
-          "acceptance_criteria": [
-            "Stripe test keys configured",
-            "Webhook endpoint registered in Stripe dashboard",
-            "Test checkout creates Stripe session"
-          ]
-        },
-        {
-          "id": "1.5",
-          "category": "infrastructure",
-          "title": "Deploy Merchant API",
-          "description": "Deploy commerce API to Cloudflare Workers",
-          "commands": ["cd merchant && wrangler deploy"],
-          "acceptance_criteria": [
-            "API deployed to *.workers.dev",
-            "GET /v1/products returns empty array",
-            "Health check passes"
-          ]
-        }
-      ]
+  "categories": {
+    "email": {
+      "name": "Email Notifications",
+      "description": "Implement Resend API for email delivery including order confirmations, shipping updates, and drop launch notifications",
+      "source": "merchant/src/lib/notifications.ts TODO comments"
     },
-    {
-      "id": "phase-2",
-      "name": "Storefront Foundation",
-      "tasks": [
-        {
-          "id": "2.1",
-          "category": "infrastructure",
-          "title": "Create Astro storefront project",
-          "description": "Initialize Astro project with Tailwind and React",
-          "commands": [
-            "cd apps && pnpm create astro@latest storefront -- --template minimal --typescript strict",
-            "cd apps/storefront && pnpm astro add tailwind react"
-          ],
-          "files_to_create": [
-            {
-              "path": "apps/storefront/src/styles/global.css",
-              "content_description": "Tailwind imports and CSS custom properties for design system"
-            }
-          ],
-          "acceptance_criteria": [
-            "Astro project created at apps/storefront",
-            "Tailwind CSS configured",
-            "React integration enabled",
-            "pnpm run dev starts at localhost:4321"
-          ]
-        },
-        {
-          "id": "2.2",
-          "category": "frontend",
-          "title": "Implement design system foundation",
-          "description": "Create color palette, typography, and spacing based on oru.club inspiration",
-          "files_to_create": [
-            {
-              "path": "apps/storefront/tailwind.config.mjs",
-              "content_description": "Custom colors (warm palette), Inter font, custom spacing scale"
-            },
-            {
-              "path": "packages/ui/src/tokens.ts",
-              "content_description": "Design tokens exported as TypeScript constants"
-            }
-          ],
-          "design_tokens": {
-            "colors": {
-              "primary": "warm brown (#8B4513)",
-              "secondary": "cream (#FFF8DC)",
-              "accent": "terracotta (#E2725B)",
-              "text": "charcoal (#333333)",
-              "background": "off-white (#FAFAFA)"
-            },
-            "typography": {
-              "font_family": "Inter",
-              "scale": [
-                "12px",
-                "14px",
-                "16px",
-                "18px",
-                "20px",
-                "24px",
-                "30px",
-                "36px",
-                "48px"
-              ]
-            }
-          },
-          "acceptance_criteria": [
-            "Design tokens defined and documented",
-            "Tailwind config extends with custom values",
-            "Sample page renders with correct fonts/colors"
-          ]
-        },
-        {
-          "id": "2.3",
-          "category": "frontend",
-          "title": "Create base layouts and components",
-          "description": "Build reusable layout components for storefront",
-          "files_to_create": [
-            {
-              "path": "apps/storefront/src/layouts/BaseLayout.astro",
-              "content_description": "HTML shell with head, navigation, footer"
-            },
-            {
-              "path": "apps/storefront/src/components/Header.astro",
-              "content_description": "Logo, navigation links, cart icon"
-            },
-            {
-              "path": "apps/storefront/src/components/Footer.astro",
-              "content_description": "Links, newsletter signup, social icons"
-            },
-            {
-              "path": "apps/storefront/src/components/ProductCard.astro",
-              "content_description": "Product image, title, price, sold-out badge"
-            },
-            {
-              "path": "apps/storefront/src/components/ProductGrid.astro",
-              "content_description": "Responsive grid layout for product cards"
-            }
-          ],
-          "acceptance_criteria": [
-            "BaseLayout renders with header/footer",
-            "ProductCard displays product info",
-            "ProductGrid is responsive (1-4 columns)"
-          ]
-        },
-        {
-          "id": "2.4",
-          "category": "backend",
-          "title": "Create Merchant API client",
-          "description": "TypeScript client for calling Merchant.dev API",
-          "files_to_create": [
-            {
-              "path": "packages/api/src/merchant-client.ts",
-              "content_description": "Typed fetch wrapper for Merchant API endpoints"
-            },
-            {
-              "path": "packages/api/src/types.ts",
-              "content_description": "TypeScript types for Product, Variant, Cart, Order"
-            }
-          ],
-          "api_methods": [
-            "getProducts(): Product[]",
-            "getProduct(id): Product",
-            "createCart(): Cart",
-            "addToCart(cartId, variantId, quantity): Cart",
-            "checkout(cartId): CheckoutSession"
-          ],
-          "acceptance_criteria": [
-            "Client is fully typed",
-            "All CRUD operations work",
-            "Error handling implemented"
-          ]
-        },
-        {
-          "id": "2.5",
-          "category": "frontend",
-          "title": "Build homepage",
-          "description": "Create homepage showcasing current drop and featured products",
-          "files_to_create": [
-            {
-              "path": "apps/storefront/src/pages/index.astro",
-              "content_description": "Hero section, current drop preview, featured products"
-            }
-          ],
-          "sections": [
-            "Hero with brand message and CTA",
-            "Current drop banner with countdown (if applicable)",
-            "Featured products grid",
-            "Newsletter signup",
-            "About/story teaser"
-          ],
-          "acceptance_criteria": [
-            "Homepage renders all sections",
-            "Products fetched from Merchant API",
-            "Responsive on mobile/tablet/desktop"
-          ]
-        },
-        {
-          "id": "2.6",
-          "category": "frontend",
-          "title": "Build product listing page",
-          "description": "Page showing all products in a drop",
-          "files_to_create": [
-            {
-              "path": "apps/storefront/src/pages/shop/index.astro",
-              "content_description": "Product grid with filters"
-            },
-            {
-              "path": "apps/storefront/src/pages/shop/[drop].astro",
-              "content_description": "Products filtered by drop"
-            }
-          ],
-          "acceptance_criteria": [
-            "Products load from API",
-            "Grid displays correctly",
-            "Sold-out products marked"
-          ]
-        },
-        {
-          "id": "2.7",
-          "category": "frontend",
-          "title": "Build product detail page",
-          "description": "Individual product page with variants and add-to-cart",
-          "files_to_create": [
-            {
-              "path": "apps/storefront/src/pages/product/[id].astro",
-              "content_description": "Product images, description, variant selector, add to cart"
-            },
-            {
-              "path": "apps/storefront/src/components/VariantSelector.tsx",
-              "content_description": "React component for selecting product variants"
-            },
-            {
-              "path": "apps/storefront/src/components/AddToCart.tsx",
-              "content_description": "React component for add to cart button with quantity"
-            }
-          ],
-          "acceptance_criteria": [
-            "Product details display correctly",
-            "Variant selection works",
-            "Add to cart updates cart state",
-            "Sold out variants disabled"
-          ]
-        },
-        {
-          "id": "2.8",
-          "category": "frontend",
-          "title": "Implement shopping cart",
-          "description": "Cart drawer/page with cart management",
-          "files_to_create": [
-            {
-              "path": "apps/storefront/src/components/CartDrawer.tsx",
-              "content_description": "Slide-out cart with items, quantities, totals"
-            },
-            {
-              "path": "apps/storefront/src/components/CartIcon.tsx",
-              "content_description": "Header cart icon with item count badge"
-            },
-            {
-              "path": "apps/storefront/src/stores/cart.ts",
-              "content_description": "Nanostores cart state management"
-            }
-          ],
-          "state_management": "nanostores (lightweight, Astro-native)",
-          "acceptance_criteria": [
-            "Cart persists across page navigation",
-            "Items can be added/removed/updated",
-            "Cart totals calculate correctly",
-            "Checkout button redirects to Stripe"
-          ]
-        },
-        {
-          "id": "2.9",
-          "category": "integration",
-          "title": "Implement Stripe checkout flow",
-          "description": "Connect cart to Stripe Checkout",
-          "files_to_create": [
-            {
-              "path": "apps/storefront/src/pages/checkout/success.astro",
-              "content_description": "Order confirmation page"
-            },
-            {
-              "path": "apps/storefront/src/pages/checkout/cancel.astro",
-              "content_description": "Checkout cancelled page"
-            }
-          ],
-          "flow": [
-            "User clicks checkout",
-            "Frontend calls Merchant API /v1/carts/:id/checkout",
-            "API creates Stripe Checkout session",
-            "User redirects to Stripe hosted page",
-            "On success, redirect to /checkout/success",
-            "Webhook updates order status"
-          ],
-          "acceptance_criteria": [
-            "Checkout creates Stripe session",
-            "User can complete payment in Stripe",
-            "Success page shows order details",
-            "Cart clears after successful checkout"
-          ]
-        }
-      ]
+    "testing": {
+      "name": "Testing & Quality Assurance",
+      "description": "Unit tests, integration tests, E2E tests, and visual regression testing"
     },
-    {
-      "id": "phase-3",
-      "name": "Custom Admin CMS",
-      "tasks": [
-        {
-          "id": "3.1",
-          "category": "infrastructure",
-          "title": "Create admin Astro project",
-          "description": "Initialize admin app with Astro + React",
-          "commands": [
-            "cd apps && pnpm create astro@latest admin -- --template minimal --typescript strict",
-            "cd apps/admin && pnpm astro add tailwind react"
-          ],
-          "acceptance_criteria": [
-            "Admin project at apps/admin",
-            "Separate from storefront",
-            "Shares packages/ui components"
-          ]
-        },
-        {
-          "id": "3.2",
-          "category": "backend",
-          "title": "Implement admin authentication",
-          "description": "Secure admin routes with authentication",
-          "options": [
-            {
-              "name": "Clerk",
-              "pros": "Easy setup, social login, good UI",
-              "cons": "Paid at scale"
-            },
-            {
-              "name": "Lucia",
-              "pros": "Free, flexible, D1 compatible",
-              "cons": "More setup work"
-            }
-          ],
-          "recommended": "Lucia for cost control",
-          "files_to_create": [
-            {
-              "path": "packages/auth/src/lucia.ts",
-              "content_description": "Lucia auth configuration with D1 adapter"
-            },
-            {
-              "path": "apps/admin/src/middleware/auth.ts",
-              "content_description": "Middleware to protect admin routes"
-            },
-            {
-              "path": "apps/admin/src/pages/login.astro",
-              "content_description": "Admin login page"
-            }
-          ],
-          "acceptance_criteria": [
-            "Admin routes require authentication",
-            "Login/logout works",
-            "Session persists across requests"
-          ]
-        },
-        {
-          "id": "3.3",
-          "category": "admin",
-          "title": "Build admin dashboard",
-          "description": "Overview page with stats and recent activity (Iheanyi-style)",
-          "files_to_create": [
-            {
-              "path": "apps/admin/src/pages/index.astro",
-              "content_description": "Dashboard with Quick Stats cards and Recent Activity list"
-            },
-            {
-              "path": "apps/admin/src/components/StatCard.tsx",
-              "content_description": "Reusable stat display card"
-            },
-            {
-              "path": "apps/admin/src/components/ActivityFeed.tsx",
-              "content_description": "Recent orders/products activity list"
-            }
-          ],
-          "dashboard_elements": [
-            "Quick Stats: Total Products, Total Orders, Revenue (30d), Active Drop",
-            "Recent Activity: Last 10 orders/product updates with timestamps"
-          ],
-          "acceptance_criteria": [
-            "Dashboard loads with real stats from API",
-            "Clean, minimal design matching inspiration",
-            "Responsive layout"
-          ]
-        },
-        {
-          "id": "3.4",
-          "category": "admin",
-          "title": "Build products management",
-          "description": "CRUD interface for products and variants",
-          "files_to_create": [
-            {
-              "path": "apps/admin/src/pages/products/index.astro",
-              "content_description": "Products list with search and filters"
-            },
-            {
-              "path": "apps/admin/src/pages/products/new.astro",
-              "content_description": "Create new product form"
-            },
-            {
-              "path": "apps/admin/src/pages/products/[id].astro",
-              "content_description": "Edit product page"
-            },
-            {
-              "path": "apps/admin/src/components/ProductForm.tsx",
-              "content_description": "React form for product details"
-            },
-            {
-              "path": "apps/admin/src/components/VariantForm.tsx",
-              "content_description": "Form for adding/editing variants"
-            },
-            {
-              "path": "apps/admin/src/components/ImageUploader.tsx",
-              "content_description": "Drag-drop image upload to R2"
-            }
-          ],
-          "acceptance_criteria": [
-            "Can create/edit/delete products",
-            "Can add/edit/remove variants",
-            "Image upload works to R2",
-            "Form validation in place"
-          ]
-        },
-        {
-          "id": "3.5",
-          "category": "admin",
-          "title": "Build inventory management",
-          "description": "View and adjust inventory levels",
-          "files_to_create": [
-            {
-              "path": "apps/admin/src/pages/inventory/index.astro",
-              "content_description": "Inventory list with stock levels"
-            },
-            {
-              "path": "apps/admin/src/components/InventoryAdjuster.tsx",
-              "content_description": "Component to adjust stock with reason"
-            }
-          ],
-          "inventory_features": [
-            "View on_hand, reserved, available per SKU",
-            "Adjust stock with reason (restock, damaged, correction, return)",
-            "Low stock alerts"
-          ],
-          "acceptance_criteria": [
-            "Inventory displays correctly",
-            "Can adjust stock levels",
-            "Adjustment reasons recorded"
-          ]
-        },
-        {
-          "id": "3.6",
-          "category": "admin",
-          "title": "Build orders management",
-          "description": "View and manage customer orders",
-          "files_to_create": [
-            {
-              "path": "apps/admin/src/pages/orders/index.astro",
-              "content_description": "Orders list with status filters"
-            },
-            {
-              "path": "apps/admin/src/pages/orders/[id].astro",
-              "content_description": "Order detail page"
-            },
-            {
-              "path": "apps/admin/src/components/OrderStatusUpdater.tsx",
-              "content_description": "Component to update fulfillment status"
-            }
-          ],
-          "order_states": [
-            "pending",
-            "paid",
-            "processing",
-            "shipped",
-            "delivered",
-            "refunded",
-            "canceled"
-          ],
-          "acceptance_criteria": [
-            "Orders list with pagination",
-            "Can view order details",
-            "Can update fulfillment status",
-            "Can process refunds via Stripe"
-          ]
-        }
-      ]
+    "security": {
+      "name": "Security Enhancements",
+      "description": "Authentication, authorization, and security hardening"
     },
-    {
-      "id": "phase-4",
-      "name": "Drops System",
-      "tasks": [
-        {
-          "id": "4.1",
-          "category": "backend",
-          "title": "Extend D1 schema for drops",
-          "description": "Add drops table and link to products",
-          "files_to_create": [
-            {
-              "path": "merchant/migrations/0002_add_drops.sql",
-              "content_description": "CREATE TABLE drops with id, name, description, start_date, end_date, status"
-            },
-            {
-              "path": "merchant/migrations/0003_product_drop_link.sql",
-              "content_description": "ALTER products ADD drop_id REFERENCES drops(id)"
-            }
-          ],
-          "schema": {
-            "drops": {
-              "id": "TEXT PRIMARY KEY",
-              "name": "TEXT NOT NULL",
-              "description": "TEXT",
-              "slug": "TEXT UNIQUE NOT NULL",
-              "start_date": "TEXT (ISO date)",
-              "end_date": "TEXT (ISO date)",
-              "status": "TEXT (draft|scheduled|active|ended)",
-              "created_at": "TEXT",
-              "updated_at": "TEXT"
-            }
-          },
-          "acceptance_criteria": [
-            "Migrations run successfully",
-            "Drops table created",
-            "Products can be linked to drops"
-          ]
-        },
-        {
-          "id": "4.2",
-          "category": "backend",
-          "title": "Add drops API routes",
-          "description": "CRUD endpoints for drops in Merchant",
-          "files_to_create": [
-            {
-              "path": "merchant/src/routes/drops.ts",
-              "content_description": "Hono routes for GET/POST/PUT/DELETE drops"
-            }
-          ],
-          "endpoints": [
-            "GET /v1/drops - List all drops",
-            "GET /v1/drops/:id - Get single drop",
-            "GET /v1/drops/:slug/products - Get products in drop",
-            "POST /v1/drops - Create drop (admin)",
-            "PUT /v1/drops/:id - Update drop (admin)",
-            "DELETE /v1/drops/:id - Delete drop (admin)"
-          ],
-          "acceptance_criteria": [
-            "All endpoints implemented",
-            "Admin endpoints require authentication",
-            "Products filter by drop works"
-          ]
-        },
-        {
-          "id": "4.3",
-          "category": "admin",
-          "title": "Build drops admin UI",
-          "description": "Admin interface for managing drops",
-          "files_to_create": [
-            {
-              "path": "apps/admin/src/pages/drops/index.astro",
-              "content_description": "List of all drops with status badges"
-            },
-            {
-              "path": "apps/admin/src/pages/drops/new.astro",
-              "content_description": "Create new drop form"
-            },
-            {
-              "path": "apps/admin/src/pages/drops/[id].astro",
-              "content_description": "Edit drop and assign products"
-            },
-            {
-              "path": "apps/admin/src/components/DropForm.tsx",
-              "content_description": "Form for drop details and scheduling"
-            },
-            {
-              "path": "apps/admin/src/components/ProductAssigner.tsx",
-              "content_description": "Drag-drop interface to assign products to drop"
-            }
-          ],
-          "acceptance_criteria": [
-            "Can create/edit/delete drops",
-            "Can schedule drops with start/end dates",
-            "Can assign products to drops",
-            "Status updates correctly (draft→scheduled→active→ended)"
-          ]
-        },
-        {
-          "id": "4.4",
-          "category": "frontend",
-          "title": "Update storefront for drops",
-          "description": "Show products by drop, handle sold-out state",
-          "files_to_modify": [
-            {
-              "path": "apps/storefront/src/pages/shop/[drop].astro",
-              "changes": "Fetch products by drop slug"
-            },
-            {
-              "path": "apps/storefront/src/pages/index.astro",
-              "changes": "Show current active drop"
-            },
-            {
-              "path": "apps/storefront/src/components/ProductCard.astro",
-              "changes": "Add sold-out badge when available=0"
-            }
-          ],
-          "acceptance_criteria": [
-            "Drop pages show correct products",
-            "Sold-out products clearly marked",
-            "Past drops viewable but not purchasable",
-            "Active drop highlighted on homepage"
-          ]
-        }
-      ]
+    "performance": {
+      "name": "Performance Optimization",
+      "description": "Page load speed, bundle size, and runtime performance"
     },
-    {
-      "id": "phase-5",
-      "name": "Waitlist & Notifications",
-      "tasks": [
-        {
-          "id": "5.1",
-          "category": "backend",
-          "title": "Create waitlist database schema",
-          "description": "Store waitlist signups in D1",
-          "files_to_create": [
-            {
-              "path": "merchant/migrations/0004_waitlist.sql",
-              "content_description": "CREATE TABLE waitlist_entries"
-            }
-          ],
-          "schema": {
-            "waitlist_entries": {
-              "id": "TEXT PRIMARY KEY",
-              "email": "TEXT NOT NULL",
-              "drop_id": "TEXT REFERENCES drops(id)",
-              "subscribed_at": "TEXT",
-              "notified_at": "TEXT NULL",
-              "unsubscribed": "INTEGER DEFAULT 0"
-            }
-          },
-          "acceptance_criteria": [
-            "Table created",
-            "Email uniqueness per drop enforced",
-            "Can query by drop"
-          ]
-        },
-        {
-          "id": "5.2",
-          "category": "backend",
-          "title": "Build waitlist API endpoints",
-          "description": "API for subscribing to drop notifications",
-          "files_to_create": [
-            {
-              "path": "merchant/src/routes/waitlist.ts",
-              "content_description": "POST /v1/waitlist, DELETE /v1/waitlist/:id"
-            }
-          ],
-          "endpoints": [
-            "POST /v1/waitlist - Subscribe email to drop",
-            "DELETE /v1/waitlist/:id - Unsubscribe",
-            "GET /v1/waitlist?drop_id=X - List subscribers (admin)"
-          ],
-          "acceptance_criteria": [
-            "Can subscribe to waitlist",
-            "Duplicate emails rejected",
-            "Can unsubscribe"
-          ]
-        },
-        {
-          "id": "5.3",
-          "category": "frontend",
-          "title": "Build waitlist signup UI",
-          "description": "Storefront component for joining waitlist",
-          "files_to_create": [
-            {
-              "path": "apps/storefront/src/components/WaitlistForm.tsx",
-              "content_description": "Email input with submit for upcoming drops"
-            },
-            {
-              "path": "apps/storefront/src/pages/drops/[slug]/waitlist.astro",
-              "content_description": "Dedicated waitlist page for scheduled drops"
-            }
-          ],
-          "acceptance_criteria": [
-            "Waitlist form on scheduled drop pages",
-            "Success/error messages displayed",
-            "Form validates email format"
-          ]
-        },
-        {
-          "id": "5.4",
-          "category": "integration",
-          "title": "Configure AWS SES",
-          "description": "Set up email sending infrastructure",
-          "manual_steps": [
-            "Create SES identity for sending domain",
-            "Verify domain with DNS records",
-            "Create IAM user with SES send permissions",
-            "Get access key and secret"
-          ],
-          "files_to_create": [
-            {
-              "path": "packages/email/src/ses-client.ts",
-              "content_description": "AWS SDK v3 SES client configuration"
-            }
-          ],
-          "acceptance_criteria": [
-            "Domain verified in SES",
-            "Can send test email",
-            "IAM credentials stored securely"
-          ]
-        },
-        {
-          "id": "5.5",
-          "category": "frontend",
-          "title": "Create email templates",
-          "description": "Build email templates with React Email",
-          "commands": [
-            "cd packages/email && pnpm add react-email @react-email/components"
-          ],
-          "files_to_create": [
-            {
-              "path": "packages/email/src/templates/drop-launch.tsx",
-              "content_description": "Email announcing drop is live"
-            },
-            {
-              "path": "packages/email/src/templates/order-confirmation.tsx",
-              "content_description": "Email confirming order placed"
-            },
-            {
-              "path": "packages/email/src/templates/shipping-update.tsx",
-              "content_description": "Email with shipping tracking info"
-            }
-          ],
-          "acceptance_criteria": [
-            "Templates render correctly",
-            "Preview available in dev",
-            "All dynamic content works"
-          ]
-        },
-        {
-          "id": "5.6",
-          "category": "backend",
-          "title": "Implement notification triggers",
-          "description": "Send emails on key events",
-          "triggers": [
-            {
-              "event": "Drop goes active",
-              "action": "Send drop-launch email to all waitlist subscribers"
-            },
-            {
-              "event": "Order placed (Stripe webhook)",
-              "action": "Send order-confirmation email"
-            },
-            {
-              "event": "Order shipped (admin action)",
-              "action": "Send shipping-update email"
-            }
-          ],
-          "files_to_create": [
-            {
-              "path": "merchant/src/services/notifications.ts",
-              "content_description": "Functions to send each email type"
-            },
-            {
-              "path": "merchant/src/cron/drop-notifications.ts",
-              "content_description": "Scheduled job to check for drops becoming active"
-            }
-          ],
-          "acceptance_criteria": [
-            "Emails send on each trigger",
-            "Failed sends logged/retried",
-            "Unsubscribed users not emailed"
-          ]
-        }
-      ]
+    "api": {
+      "name": "API & Backend Improvements",
+      "description": "Backend enhancements, new endpoints, and reliability"
     },
-    {
-      "id": "phase-6",
-      "name": "Blog",
-      "tasks": [
-        {
-          "id": "6.1",
-          "category": "content",
-          "title": "Set up Astro Content Collections for blog",
-          "description": "Configure MDX blog posts in storefront",
-          "files_to_create": [
-            {
-              "path": "apps/storefront/src/content/config.ts",
-              "content_description": "Define blog and lookbook collections with schemas"
-            },
-            {
-              "path": "apps/storefront/src/content/blog/.gitkeep",
-              "content_description": "Directory for blog MDX files"
-            },
-            {
-              "path": "apps/storefront/src/content/lookbooks/.gitkeep",
-              "content_description": "Directory for lookbook MDX files"
-            }
-          ],
-          "schema": {
-            "blog": {
-              "title": "string",
-              "description": "string",
-              "date": "date",
-              "author": "string",
-              "tags": "string[]",
-              "image": "string (optional)",
-              "draft": "boolean"
-            },
-            "lookbook": {
-              "title": "string",
-              "drop": "reference to drop",
-              "date": "date",
-              "images": "string[]",
-              "draft": "boolean"
-            }
-          },
-          "acceptance_criteria": [
-            "Content collections configured",
-            "Sample posts render",
-            "TypeScript types generated"
-          ]
-        },
-        {
-          "id": "6.2",
-          "category": "frontend",
-          "title": "Build blog listing and detail pages",
-          "description": "Public blog pages on storefront",
-          "files_to_create": [
-            {
-              "path": "apps/storefront/src/pages/blog/index.astro",
-              "content_description": "Blog posts listing with previews"
-            },
-            {
-              "path": "apps/storefront/src/pages/blog/[...slug].astro",
-              "content_description": "Individual blog post page"
-            },
-            {
-              "path": "apps/storefront/src/layouts/BlogPost.astro",
-              "content_description": "Layout for blog posts with metadata"
-            }
-          ],
-          "acceptance_criteria": [
-            "Blog index shows all published posts",
-            "Individual posts render MDX correctly",
-            "Draft posts hidden from listing",
-            "SEO meta tags present"
-          ]
-        },
-        {
-          "id": "6.3",
-          "category": "frontend",
-          "title": "Build lookbook pages",
-          "description": "Visual campaign/lookbook pages",
-          "files_to_create": [
-            {
-              "path": "apps/storefront/src/pages/lookbook/index.astro",
-              "content_description": "Lookbook gallery"
-            },
-            {
-              "path": "apps/storefront/src/pages/lookbook/[...slug].astro",
-              "content_description": "Individual lookbook page"
-            },
-            {
-              "path": "apps/storefront/src/layouts/Lookbook.astro",
-              "content_description": "Full-bleed image-heavy layout"
-            }
-          ],
-          "acceptance_criteria": [
-            "Lookbooks display large images beautifully",
-            "Can link to products/drops",
-            "Responsive image handling"
-          ]
-        },
-        {
-          "id": "6.4",
-          "category": "admin",
-          "title": "Build blog admin",
-          "description": "Admin interface for creating/editing blog posts",
-          "files_to_create": [
-            {
-              "path": "apps/admin/src/pages/blog/index.astro",
-              "content_description": "Blog posts list with status"
-            },
-            {
-              "path": "apps/admin/src/pages/blog/new.astro",
-              "content_description": "Create new blog post"
-            },
-            {
-              "path": "apps/admin/src/pages/blog/[id].astro",
-              "content_description": "Edit blog post"
-            },
-            {
-              "path": "apps/admin/src/components/MDXEditor.tsx",
-              "content_description": "Rich text editor with MDX preview"
-            }
-          ],
-          "editor_features": [
-            "Bold, italic, headings",
-            "Links, images",
-            "Code blocks",
-            "Split/preview modes",
-            "Save as draft or publish"
-          ],
-          "acceptance_criteria": [
-            "Can create/edit blog posts",
-            "MDX editor works with preview",
-            "Can save drafts",
-            "Publishing updates storefront"
-          ]
-        }
-      ]
+    "storefront": {
+      "name": "Storefront Features",
+      "description": "Customer-facing feature enhancements"
     },
-    {
-      "id": "phase-7",
-      "name": "Advanced Features",
-      "tasks": [
-        {
-          "id": "7.1",
-          "category": "backend",
-          "title": "Implement discount codes",
-          "description": "Promotional codes for checkout",
-          "files_to_create": [
-            {
-              "path": "merchant/migrations/0005_discounts.sql",
-              "content_description": "CREATE TABLE discount_codes"
-            },
-            {
-              "path": "merchant/src/routes/discounts.ts",
-              "content_description": "CRUD for discount codes"
-            },
-            {
-              "path": "apps/admin/src/pages/discounts/index.astro",
-              "content_description": "Manage discount codes"
-            }
-          ],
-          "schema": {
-            "discount_codes": {
-              "id": "TEXT PRIMARY KEY",
-              "code": "TEXT UNIQUE NOT NULL",
-              "type": "TEXT (percentage|fixed)",
-              "value": "INTEGER (cents or percentage)",
-              "min_order": "INTEGER (cents, optional)",
-              "max_uses": "INTEGER (optional)",
-              "uses": "INTEGER DEFAULT 0",
-              "valid_from": "TEXT",
-              "valid_until": "TEXT",
-              "active": "INTEGER DEFAULT 1"
-            }
-          },
-          "checkout_integration": "Use Stripe Coupons for actual discount application",
-          "acceptance_criteria": [
-            "Can create discount codes in admin",
-            "Codes validate at checkout",
-            "Discounts apply correctly",
-            "Usage limits enforced"
-          ]
-        },
-        {
-          "id": "7.2",
-          "category": "integration",
-          "title": "Enable multi-currency",
-          "description": "Accept payments in different currencies",
-          "approach": "Use Stripe Checkout's automatic currency detection",
-          "configuration": [
-            "Enable multiple currencies in Stripe dashboard",
-            "Set product prices in base currency (USD)",
-            "Stripe converts based on customer's location"
-          ],
-          "files_to_modify": [
-            {
-              "path": "merchant/src/routes/checkout.ts",
-              "changes": "Add currency parameter to Stripe session creation"
-            }
-          ],
-          "acceptance_criteria": [
-            "Checkout shows local currency",
-            "Conversion happens automatically",
-            "Orders record original currency"
-          ]
-        },
-        {
-          "id": "7.3",
-          "category": "admin",
-          "title": "Build analytics dashboard",
-          "description": "Sales and traffic analytics for admin",
-          "files_to_create": [
-            {
-              "path": "apps/admin/src/pages/analytics/index.astro",
-              "content_description": "Analytics dashboard with charts"
-            },
-            {
-              "path": "apps/admin/src/components/SalesChart.tsx",
-              "content_description": "Revenue over time chart"
-            },
-            {
-              "path": "apps/admin/src/components/TopProducts.tsx",
-              "content_description": "Best selling products table"
-            }
-          ],
-          "metrics": [
-            "Total revenue (period)",
-            "Number of orders",
-            "Average order value",
-            "Top selling products",
-            "Revenue by drop"
-          ],
-          "data_source": "Query orders table in D1",
-          "acceptance_criteria": [
-            "Dashboard shows key metrics",
-            "Can filter by date range",
-            "Charts render correctly"
-          ]
-        },
-        {
-          "id": "7.4",
-          "category": "frontend",
-          "title": "Implement optional user accounts",
-          "description": "Allow customers to create accounts",
-          "files_to_create": [
-            {
-              "path": "apps/storefront/src/pages/account/login.astro",
-              "content_description": "Customer login page"
-            },
-            {
-              "path": "apps/storefront/src/pages/account/register.astro",
-              "content_description": "Account creation page"
-            },
-            {
-              "path": "apps/storefront/src/pages/account/orders.astro",
-              "content_description": "Order history page"
-            },
-            {
-              "path": "merchant/migrations/0006_customer_accounts.sql",
-              "content_description": "Add password hash to customers table"
-            }
-          ],
-          "features": [
-            "Register with email/password",
-            "Login/logout",
-            "View order history",
-            "Link guest orders to account by email"
-          ],
-          "acceptance_criteria": [
-            "Customers can register",
-            "Login works and persists",
-            "Order history shows past orders",
-            "Guest checkout still works"
-          ]
-        }
-      ]
+    "admin": {
+      "name": "Admin Features",
+      "description": "Admin dashboard feature enhancements"
     },
-    {
-      "id": "phase-8",
-      "name": "Launch Preparation",
-      "tasks": [
-        {
-          "id": "8.1",
-          "category": "quality",
-          "title": "Security audit",
-          "description": "Review and harden security",
-          "checklist": [
-            "All admin routes require authentication",
-            "API keys properly scoped (pk_ vs sk_)",
-            "HTTPS enforced everywhere",
-            "CSP headers configured",
-            "Input validation on all forms",
-            "SQL injection prevention verified",
-            "XSS prevention verified",
-            "Stripe webhook signatures validated",
-            "Rate limiting enabled",
-            "Secrets not in code/git"
-          ],
-          "acceptance_criteria": [
-            "All checklist items verified",
-            "No vulnerabilities found",
-            "Security headers present"
-          ]
-        },
-        {
-          "id": "8.2",
-          "category": "quality",
-          "title": "Performance optimization",
-          "description": "Optimize for fast page loads",
-          "optimizations": [
-            "Image optimization (WebP, proper sizing)",
-            "Lazy loading for images below fold",
-            "Static page generation where possible",
-            "Edge caching with Cloudflare",
-            "Bundle size analysis and reduction",
-            "Core Web Vitals optimization"
-          ],
-          "tools": ["Lighthouse audits", "WebPageTest", "Cloudflare Analytics"],
-          "acceptance_criteria": [
-            "Lighthouse performance > 90",
-            "LCP < 2.5s",
-            "FID < 100ms",
-            "CLS < 0.1"
-          ]
-        },
-        {
-          "id": "8.3",
-          "category": "quality",
-          "title": "SEO optimization",
-          "description": "Ensure search engine visibility",
-          "tasks": [
-            "Meta titles and descriptions on all pages",
-            "Open Graph tags for social sharing",
-            "Structured data (Product, Organization)",
-            "XML sitemap generation",
-            "robots.txt configuration",
-            "Canonical URLs"
-          ],
-          "files_to_create": [
-            {
-              "path": "apps/storefront/src/components/SEO.astro",
-              "content_description": "Reusable SEO component"
-            },
-            {
-              "path": "apps/storefront/public/robots.txt",
-              "content_description": "Search engine crawl rules"
-            }
-          ],
-          "acceptance_criteria": [
-            "All pages have unique titles/descriptions",
-            "Structured data validates",
-            "Sitemap accessible and correct"
-          ]
-        },
-        {
-          "id": "8.4",
-          "category": "infrastructure",
-          "title": "Error monitoring setup",
-          "description": "Add error tracking for production",
-          "recommended": "Sentry (free tier)",
-          "files_to_create": [
-            {
-              "path": "apps/storefront/src/lib/sentry.ts",
-              "content_description": "Sentry client initialization"
-            }
-          ],
-          "acceptance_criteria": [
-            "Sentry project created",
-            "Client-side errors captured",
-            "Server errors captured",
-            "Source maps uploaded"
-          ]
-        },
-        {
-          "id": "8.5",
-          "category": "infrastructure",
-          "title": "Production deployment",
-          "description": "Deploy to production with live credentials",
-          "steps": [
-            "Verify all environment variables set",
-            "Switch Stripe to live mode",
-            "Move SES out of sandbox",
-            "Configure custom domain",
-            "Enable Cloudflare proxying",
-            "Test complete purchase flow",
-            "Monitor error rates"
-          ],
-          "acceptance_criteria": [
-            "Site live at custom domain",
-            "SSL certificate active",
-            "Real payment works",
-            "Emails send correctly",
-            "No errors in monitoring"
-          ]
-        }
-      ]
+    "devops": {
+      "name": "DevOps & Infrastructure",
+      "description": "CI/CD, deployment, and monitoring"
+    },
+    "content": {
+      "name": "Content & Lookbook",
+      "description": "Blog and lookbook enhancements"
+    },
+    "product-management": {
+      "name": "Product Management Enhancements",
+      "description": "Improve product creation workflow with image uploads, accessibility alt text, tags, and drop assignment",
+      "source": "User feedback on admin product creation limitations"
+    },
+    "newsletter": {
+      "name": "Newsletter & Subscriptions",
+      "description": "Newsletter subscription system with double opt-in, blog-to-newsletter workflow, and subscriber management",
+      "source": "User requirement for general newsletter subscriptions separate from drop waitlists"
+    },
+    "navigation": {
+      "name": "Navigation & Routing Fixes",
+      "description": "Fix broken links (/drops, /about), update navigation structure, and create missing pages",
+      "source": "User report of broken links and navigation issues"
+    },
+    "assets": {
+      "name": "Image Assets & Branding",
+      "description": "Upload brand images, logos, product photos to R2; create favicon set; configure brand assets across site",
+      "source": "User-provided images in Downloads/dear_margeaux_pics folder"
+    },
+    "lookbook-admin": {
+      "name": "Lookbook Admin",
+      "description": "Create admin interface for managing lookbook galleries with image uploads",
+      "source": "Missing admin UI for lookbook management"
+    },
+    "initial-content": {
+      "name": "Initial Content Setup",
+      "description": "Create Drop 1 products, blog posts, and lookbook with real images and content",
+      "source": "Populate site with actual brand content for launch"
     }
-  ],
-  "file_structure": {
-    "root": "dear_margeaux/",
-    "directories": [
-      {
-        "path": "apps/storefront",
-        "description": "Astro storefront for customers"
-      },
-      {
-        "path": "apps/admin",
-        "description": "Astro + React admin CMS"
-      },
-      {
-        "path": "packages/api",
-        "description": "Shared API client and types"
-      },
-      {
-        "path": "packages/ui",
-        "description": "Shared UI components"
-      },
-      {
-        "path": "packages/email",
-        "description": "React Email templates"
-      },
-      {
-        "path": "packages/auth",
-        "description": "Authentication utilities"
-      },
-      {
-        "path": "merchant",
-        "description": "Merchant.dev commerce backend"
-      },
-      {
-        "path": "docs",
-        "description": "Project documentation"
-      }
-    ]
   },
-  "environment_variables": {
-    "merchant": [
-      "CLOUDFLARE_ACCOUNT_ID",
-      "CLOUDFLARE_API_TOKEN",
-      "D1_DATABASE_ID",
-      "R2_BUCKET_NAME",
-      "STRIPE_SECRET_KEY",
-      "STRIPE_WEBHOOK_SECRET",
-      "ADMIN_API_KEY"
-    ],
-    "storefront": ["PUBLIC_MERCHANT_API_URL", "PUBLIC_STRIPE_PUBLISHABLE_KEY"],
-    "admin": ["MERCHANT_API_URL", "MERCHANT_ADMIN_KEY", "SESSION_SECRET"],
-    "email": [
-      "AWS_ACCESS_KEY_ID",
-      "AWS_SECRET_ACCESS_KEY",
-      "AWS_REGION",
-      "SES_FROM_EMAIL"
-    ]
-  },
-  "dependencies": {
-    "storefront": [
-      "astro",
-      "@astrojs/tailwind",
-      "@astrojs/react",
-      "nanostores",
-      "@nanostores/react",
-      "react",
-      "react-dom"
-    ],
-    "admin": [
-      "astro",
-      "@astrojs/tailwind",
-      "@astrojs/react",
-      "react",
-      "react-dom",
-      "lucia",
-      "@lucia-auth/adapter-sqlite"
-    ],
-    "merchant": ["hono", "drizzle-orm", "stripe", "zod"],
-    "email": ["@aws-sdk/client-ses", "react-email", "@react-email/components"]
-  },
-  "commands": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "lint": "turbo run lint",
-    "deploy:merchant": "cd merchant && wrangler deploy",
-    "deploy:storefront": "cd apps/storefront && wrangler pages deploy dist",
-    "deploy:admin": "cd apps/admin && wrangler pages deploy dist",
-    "db:migrate": "cd merchant && wrangler d1 migrations apply dear-margeaux-db",
-    "email:preview": "cd packages/email && pnpm email dev"
-  }
+  "tasks": [
+    {
+      "id": "email-1",
+      "category": "email",
+      "description": "Sign up for Resend and get API key",
+      "steps": [
+        "Go to https://resend.com and create an account",
+        "Navigate to API Keys section in dashboard",
+        "Create a new API key with send permissions",
+        "Copy the API key for the next step"
+      ],
+      "passes": false
+    },
+    {
+      "id": "email-2",
+      "category": "email",
+      "description": "Add Resend API key to Cloudflare secrets",
+      "steps": [
+        "Open terminal in the merchant directory",
+        "Run: wrangler secret put RESEND_API_KEY",
+        "Paste the API key when prompted",
+        "Verify secret was added successfully"
+      ],
+      "passes": false
+    },
+    {
+      "id": "email-3",
+      "category": "email",
+      "description": "Update Env type to include RESEND_API_KEY",
+      "steps": [
+        "Open merchant/src/types.ts",
+        "Find the Env interface/type definition",
+        "Add RESEND_API_KEY: string; to the interface",
+        "Save the file and verify no TypeScript errors"
+      ],
+      "passes": true
+    },
+    {
+      "id": "email-4",
+      "category": "email",
+      "description": "Implement sendEmailViaResend function",
+      "steps": [
+        "Open merchant/src/lib/notifications.ts",
+        "Uncomment the ResendEmailOptions interface",
+        "Uncomment the ResendResponse interface",
+        "Uncomment the sendEmailViaResend async function",
+        "Verify the function compiles without errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "email-5",
+      "category": "email",
+      "description": "Implement order confirmation HTML template",
+      "steps": [
+        "Open merchant/src/lib/notifications.ts",
+        "Uncomment the buildOrderConfirmationHtml function",
+        "Verify the template has correct brand colors (#8B4513)",
+        "Test that the formatPrice helper works correctly"
+      ],
+      "passes": false
+    },
+    {
+      "id": "email-6",
+      "category": "email",
+      "description": "Implement shipping update HTML template",
+      "steps": [
+        "Open merchant/src/lib/notifications.ts",
+        "Uncomment the buildShippingUpdateHtml function",
+        "Verify tracking info section renders correctly",
+        "Verify the Track Your Package button has correct URL"
+      ],
+      "passes": false
+    },
+    {
+      "id": "email-7",
+      "category": "email",
+      "description": "Implement drop launch HTML template",
+      "steps": [
+        "Open merchant/src/lib/notifications.ts",
+        "Uncomment the buildDropLaunchHtml function",
+        "Verify terracotta accent color (#E2725B) is used",
+        "Verify featured image renders when provided"
+      ],
+      "passes": false
+    },
+    {
+      "id": "email-8",
+      "category": "email",
+      "description": "Update sendOrderConfirmationEmail to use Resend",
+      "steps": [
+        "Replace logEmailStub call with sendEmailViaResend",
+        "Call buildOrderConfirmationHtml to generate HTML",
+        "Pass env parameter to sendEmailViaResend",
+        "Test with a mock order to verify email sends"
+      ],
+      "passes": false
+    },
+    {
+      "id": "email-9",
+      "category": "email",
+      "description": "Update sendShippingUpdateEmail to use Resend",
+      "steps": [
+        "Replace logEmailStub call with sendEmailViaResend",
+        "Call buildShippingUpdateHtml to generate HTML",
+        "Pass tracking info to the template builder",
+        "Test with a mock order to verify email sends"
+      ],
+      "passes": false
+    },
+    {
+      "id": "email-10",
+      "category": "email",
+      "description": "Update sendDropLaunchToSubscriber to use Resend",
+      "steps": [
+        "Replace logEmailStub call with sendEmailViaResend",
+        "Call buildDropLaunchHtml to generate HTML",
+        "Pass featured image URL to template builder",
+        "Add env parameter to the function signature"
+      ],
+      "passes": false
+    },
+    {
+      "id": "email-11",
+      "category": "email",
+      "description": "Configure Resend sending domain",
+      "steps": [
+        "Log into Resend dashboard",
+        "Go to Domains section",
+        "Add dearmargeaux.com domain",
+        "Add DNS records to your domain registrar",
+        "Wait for domain verification (may take up to 48 hours)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "email-12",
+      "category": "email",
+      "description": "Test order confirmation email end-to-end",
+      "steps": [
+        "Create a test order through the checkout flow",
+        "Verify order confirmation email is received",
+        "Check email renders correctly in Gmail/Outlook",
+        "Verify all order details are correct in email"
+      ],
+      "passes": false
+    },
+    {
+      "id": "email-13",
+      "category": "email",
+      "description": "Test shipping update email end-to-end",
+      "steps": [
+        "Update an order status to 'shipped' in admin",
+        "Add tracking number and carrier info",
+        "Verify shipping email is received by customer",
+        "Verify tracking link works correctly"
+      ],
+      "passes": false
+    },
+    {
+      "id": "email-14",
+      "category": "email",
+      "description": "Test drop launch email end-to-end",
+      "steps": [
+        "Create a scheduled drop with waitlist subscribers",
+        "Activate the drop (change status to active)",
+        "Verify all waitlist subscribers receive email",
+        "Verify notified_at is updated in waitlist_entries"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-1",
+      "category": "testing",
+      "description": "Add unit tests for API client",
+      "steps": [
+        "Create test file packages/api/src/__tests__/merchant-client.test.ts",
+        "Mock global fetch function",
+        "Write tests for all CRUD operations (getProducts, getProduct, createProduct, etc.)",
+        "Test error handling for 400, 401, 403, 404, 409 responses",
+        "Test network error scenarios",
+        "Add tests to CI pipeline"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-2",
+      "category": "testing",
+      "description": "Add unit tests for cart store",
+      "steps": [
+        "Create test file apps/storefront/src/stores/__tests__/cart.test.ts",
+        "Test addToCart function",
+        "Test updateCartItemQuantity function",
+        "Test removeFromCart function",
+        "Test clearCart function",
+        "Test computed values ($cartCount, $cartSubtotal, $isCartEmpty)",
+        "Test localStorage persistence"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-3",
+      "category": "testing",
+      "description": "Add integration tests for admin API routes",
+      "steps": [
+        "Set up test infrastructure for Astro API routes",
+        "Create tests for /api/products routes",
+        "Create tests for /api/orders routes",
+        "Create tests for /api/inventory routes",
+        "Create tests for /api/drops routes",
+        "Create tests for /api/blog routes",
+        "Mock MerchantClient for isolated testing"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-4",
+      "category": "testing",
+      "description": "Add E2E tests with Playwright",
+      "steps": [
+        "Install and configure Playwright",
+        "Write E2E tests for authentication flows (login, logout, register)",
+        "Write E2E tests for checkout flow",
+        "Write E2E tests for drop browsing",
+        "Write E2E tests for cart operations",
+        "Write E2E tests for admin product management",
+        "Configure CI to run E2E tests"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-5",
+      "category": "testing",
+      "description": "Add visual regression tests",
+      "steps": [
+        "Choose visual testing tool (Playwright screenshots or Storybook)",
+        "Set up visual testing infrastructure",
+        "Add tests for ProductCard component",
+        "Add tests for CartDrawer states",
+        "Add tests for StatCard and ActivityFeed",
+        "Add tests for email templates",
+        "Add tests for blog and lookbook layouts",
+        "Configure baseline image management"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-6",
+      "category": "testing",
+      "description": "Add unit tests for waitlist routes",
+      "steps": [
+        "Create test file merchant/src/routes/__tests__/waitlist.test.ts",
+        "Mock D1 database responses",
+        "Test subscribe endpoint",
+        "Test unsubscribe endpoint",
+        "Test list subscribers endpoint",
+        "Test duplicate email rejection"
+      ],
+      "passes": false
+    },
+    {
+      "id": "test-7",
+      "category": "testing",
+      "description": "Add integration tests for email sending",
+      "steps": [
+        "Create mock Resend client for testing",
+        "Test drop launch notification sending",
+        "Test order confirmation email",
+        "Test shipping update email",
+        "Verify email content and recipients",
+        "Test error handling when Resend fails"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sec-1",
+      "category": "security",
+      "description": "Add rate limiting to login endpoint",
+      "steps": [
+        "Choose rate limiting strategy (IP-based, sliding window)",
+        "Implement rate limiter middleware for login route",
+        "Configure limits (e.g., 5 attempts per 15 minutes)",
+        "Add lockout mechanism after repeated failures",
+        "Return appropriate error messages",
+        "Log rate limit events for monitoring"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sec-2",
+      "category": "security",
+      "description": "Add email verification for customer accounts",
+      "steps": [
+        "Create email verification token table in D1",
+        "Generate verification token on registration",
+        "Create email-verification.tsx React Email template",
+        "Send verification email on signup",
+        "Create /account/verify endpoint",
+        "Add unverified flag to customer accounts",
+        "Restrict certain actions for unverified accounts"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sec-3",
+      "category": "security",
+      "description": "Implement password reset flow",
+      "steps": [
+        "Create password reset token table in D1",
+        "Create /account/forgot-password page",
+        "Generate secure reset token",
+        "Create password-reset.tsx React Email template",
+        "Send reset email with secure link",
+        "Create /account/reset-password/[token] page",
+        "Implement token validation and password update",
+        "Expire token after use or 1 hour"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sec-4",
+      "category": "security",
+      "description": "Add two-factor authentication (2FA)",
+      "steps": [
+        "Add TOTP secret column to admin_users table",
+        "Implement TOTP generation and verification",
+        "Create 2FA setup page in admin settings",
+        "Generate QR code for authenticator apps",
+        "Add 2FA verification step to login flow",
+        "Provide backup codes for recovery",
+        "Allow disabling 2FA with re-authentication"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sec-5",
+      "category": "security",
+      "description": "Configure stricter CORS for production",
+      "steps": [
+        "Define allowed origins list (storefront, admin domains)",
+        "Update Hono CORS middleware configuration",
+        "Set appropriate Access-Control-Allow headers",
+        "Test CORS with actual domain configuration",
+        "Document CORS configuration for deployment"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sec-6",
+      "category": "security",
+      "description": "Add HSTS preload header",
+      "steps": [
+        "Add Strict-Transport-Security header",
+        "Set max-age to at least 1 year",
+        "Include includeSubDomains directive",
+        "Verify all subdomains support HTTPS",
+        "Submit domain to HSTS preload list"
+      ],
+      "passes": false
+    },
+    {
+      "id": "perf-1",
+      "category": "performance",
+      "description": "Self-host Inter font",
+      "steps": [
+        "Download Inter font files (woff2 format)",
+        "Place font files in public/fonts/ directory",
+        "Create @font-face declarations in CSS",
+        "Remove Google Fonts CDN links",
+        "Add font-display: swap for performance",
+        "Test font loading across browsers"
+      ],
+      "passes": false
+    },
+    {
+      "id": "perf-2",
+      "category": "performance",
+      "description": "Add bundle size analysis",
+      "steps": [
+        "Install bundle analyzer tool",
+        "Configure Astro build with analysis",
+        "Create pnpm run analyze script",
+        "Document current bundle sizes",
+        "Set up size limits for CI checks",
+        "Identify large dependencies for optimization"
+      ],
+      "passes": false
+    },
+    {
+      "id": "perf-3",
+      "category": "performance",
+      "description": "Run Lighthouse audit and optimize",
+      "steps": [
+        "Run Lighthouse audit on deployed site",
+        "Document current scores",
+        "Fix identified performance issues",
+        "Optimize LCP (Largest Contentful Paint)",
+        "Reduce CLS (Cumulative Layout Shift)",
+        "Minimize FID (First Input Delay)",
+        "Re-run audit to verify improvements"
+      ],
+      "passes": false
+    },
+    {
+      "id": "api-1",
+      "category": "api",
+      "description": "Add count endpoints to Merchant API",
+      "steps": [
+        "Create GET /v1/products/count endpoint",
+        "Create GET /v1/orders/count endpoint with date filters",
+        "Create GET /v1/customers/count endpoint",
+        "Create GET /v1/inventory/count endpoint",
+        "Add optional filters (status, date range)",
+        "Update MerchantClient with count methods"
+      ],
+      "passes": false
+    },
+    {
+      "id": "api-2",
+      "category": "api",
+      "description": "Add date range params to getOrders API",
+      "steps": [
+        "Add start_date and end_date query params to GET /v1/orders",
+        "Implement date filtering in SQL query",
+        "Validate date format (ISO 8601)",
+        "Update ListOrdersParams type",
+        "Update MerchantClient.getOrders method",
+        "Update admin analytics to use server-side filtering"
+      ],
+      "passes": false
+    },
+    {
+      "id": "api-3",
+      "category": "api",
+      "description": "Add retry logic for transient failures",
+      "steps": [
+        "Create retry utility function",
+        "Implement exponential backoff algorithm",
+        "Configure max retries (default: 3)",
+        "Configure retry delay (default: 1s base)",
+        "Only retry on network errors and 5xx responses",
+        "Add option to disable retry per request"
+      ],
+      "passes": false
+    },
+    {
+      "id": "api-4",
+      "category": "api",
+      "description": "Add request/response logging",
+      "steps": [
+        "Create logging middleware for Hono",
+        "Log request method, path, status code",
+        "Log request duration",
+        "Redact sensitive data (API keys, passwords)",
+        "Configure log level (debug/info/error)",
+        "Optional: send logs to external service"
+      ],
+      "passes": false
+    },
+    {
+      "id": "api-5",
+      "category": "api",
+      "description": "Add email retry mechanism",
+      "steps": [
+        "Create email queue table in D1",
+        "Store failed emails with retry count",
+        "Implement retry cron job",
+        "Add exponential backoff between retries",
+        "Move to dead letter after max retries",
+        "Log all retry attempts"
+      ],
+      "passes": false
+    },
+    {
+      "id": "api-6",
+      "category": "api",
+      "description": "Add email rate limiting per store",
+      "steps": [
+        "Define rate limit (e.g., 1000 emails/hour per store)",
+        "Track email count per store",
+        "Implement rate limit check before sending",
+        "Return error when limit exceeded",
+        "Log rate limit events",
+        "Add admin endpoint to view usage"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sf-1",
+      "category": "storefront",
+      "description": "Add product image lightbox",
+      "steps": [
+        "Choose lightbox library or build custom",
+        "Create ImageLightbox.tsx component",
+        "Add click handler to product images",
+        "Implement zoom functionality",
+        "Add navigation between images",
+        "Support keyboard navigation (arrows, escape)",
+        "Add touch/swipe support for mobile"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sf-2",
+      "category": "storefront",
+      "description": "Add social sharing buttons",
+      "steps": [
+        "Create ShareButtons.tsx component",
+        "Add Twitter share link with product info",
+        "Add Facebook share link",
+        "Add Pinterest pin button with image",
+        "Add copy link functionality",
+        "Style buttons to match design system"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sf-3",
+      "category": "storefront",
+      "description": "Add discount code input to cart",
+      "steps": [
+        "Add discount code input field to CartDrawer",
+        "Create applyDiscount function in cart store",
+        "Call Merchant API to validate and apply code",
+        "Show discount amount in cart totals",
+        "Show error for invalid codes",
+        "Allow removing applied discount"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sf-4",
+      "category": "storefront",
+      "description": "Add cart quantity validation against inventory",
+      "steps": [
+        "Fetch inventory on product page load",
+        "Store available quantity in product data",
+        "Validate quantity against inventory in AddToCart",
+        "Validate quantity in cart drawer",
+        "Show warning when inventory low",
+        "Disable add if inventory exhausted"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sf-5",
+      "category": "storefront",
+      "description": "Add countdown timer for scheduled drops",
+      "steps": [
+        "Create CountdownTimer.tsx component",
+        "Calculate time remaining from drop start_date",
+        "Display days, hours, minutes, seconds",
+        "Update timer every second",
+        "Handle timezone correctly",
+        "Show 'Live Now!' when drop starts",
+        "Add to scheduled drop pages"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sf-6",
+      "category": "storefront",
+      "description": "Add RSS feed for blog",
+      "steps": [
+        "Install @astrojs/rss package",
+        "Create apps/storefront/src/pages/blog/rss.xml.ts",
+        "Configure feed metadata (title, description, site)",
+        "Include all published blog posts",
+        "Add link to RSS feed in head",
+        "Add RSS icon to blog page header"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sf-7",
+      "category": "storefront",
+      "description": "Add related posts to blog",
+      "steps": [
+        "Create getRelatedPosts utility function",
+        "Match posts by tags",
+        "Limit to 3 related posts",
+        "Create RelatedPosts.astro component",
+        "Add to BlogPost.astro layout",
+        "Style cards to match design"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sf-8",
+      "category": "storefront",
+      "description": "Add tag-based blog filtering",
+      "steps": [
+        "Create /blog/tag/[tag].astro page",
+        "Generate static paths for all tags",
+        "Filter posts by tag in getStaticPaths",
+        "Add tag links to blog listing",
+        "Add tag links to blog post pages",
+        "Show active tag in filter UI"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sf-9",
+      "category": "storefront",
+      "description": "Add social login options",
+      "steps": [
+        "Set up Google OAuth credentials",
+        "Set up Apple Sign In credentials",
+        "Add OAuth endpoints to Merchant API",
+        "Create social login buttons on login page",
+        "Handle OAuth callback and user creation",
+        "Link social accounts to existing customers"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sf-10",
+      "category": "storefront",
+      "description": "Add saved addresses feature",
+      "steps": [
+        "Create /account/addresses page",
+        "List saved addresses",
+        "Add address form component",
+        "Implement add/edit/delete address",
+        "Set default address option",
+        "Pre-fill checkout with default address"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sf-11",
+      "category": "storefront",
+      "description": "Add dark mode support",
+      "steps": [
+        "Define dark mode color palette",
+        "Add dark mode CSS custom properties",
+        "Create theme toggle component",
+        "Store preference in localStorage",
+        "Respect system preference",
+        "Update all components for dark mode"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-1",
+      "category": "admin",
+      "description": "Add bulk operations for products",
+      "steps": [
+        "Add checkboxes to product list rows",
+        "Add 'Select All' checkbox in header",
+        "Create bulk action dropdown menu",
+        "Implement bulk delete with confirmation",
+        "Implement bulk status change (active/draft)",
+        "Show progress indicator for bulk operations"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-2",
+      "category": "admin",
+      "description": "Add product duplication",
+      "steps": [
+        "Add 'Duplicate' button to product actions",
+        "Copy product data with new ID",
+        "Copy all variants with new IDs",
+        "Append ' (Copy)' to duplicated title",
+        "Set duplicated product status to draft",
+        "Navigate to edit page for duplicate"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-3",
+      "category": "admin",
+      "description": "Add undo for delete operations",
+      "steps": [
+        "Implement soft delete (deleted_at timestamp)",
+        "Show undo toast notification on delete",
+        "Implement undo action within 30 seconds",
+        "Create scheduled cleanup job for hard delete",
+        "Update list queries to exclude soft-deleted"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-4",
+      "category": "admin",
+      "description": "Add pagination for large lists",
+      "steps": [
+        "Create Pagination.tsx component",
+        "Add page state to list pages",
+        "Update API calls with pagination params",
+        "Display current page and total pages",
+        "Add next/previous navigation",
+        "Configure page size (default: 20)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-5",
+      "category": "admin",
+      "description": "Add inventory history/audit log",
+      "steps": [
+        "Create inventory_adjustments table in D1",
+        "Log all adjustments with timestamp, reason, admin_id",
+        "Create /inventory/[sku]/history page",
+        "Display adjustment history list",
+        "Show who made each adjustment",
+        "Add date range filter"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-6",
+      "category": "admin",
+      "description": "Add low stock alerts configuration",
+      "steps": [
+        "Add low_stock_threshold column to variants table",
+        "Add threshold input to variant form",
+        "Create low stock notification list",
+        "Highlight low stock items on inventory page",
+        "Optional: send email alerts when threshold reached"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-7",
+      "category": "admin",
+      "description": "Add reorder point alerts",
+      "steps": [
+        "Add reorder_point column to variants table",
+        "Add reorder point input to variant form",
+        "Create reorder alerts list in admin",
+        "Show badge count on inventory nav",
+        "Optional: send email when reorder point reached"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-8",
+      "category": "admin",
+      "description": "Add export to CSV for inventory",
+      "steps": [
+        "Create exportToCSV utility function",
+        "Add 'Export' button to inventory page",
+        "Generate CSV with all inventory columns",
+        "Trigger browser download",
+        "Include date in filename"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-9",
+      "category": "admin",
+      "description": "Add order notes/comments",
+      "steps": [
+        "Create order_notes table in D1",
+        "Add notes section to order detail page",
+        "Create add note form",
+        "Display notes with timestamp and admin name",
+        "Allow editing/deleting own notes"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-10",
+      "category": "admin",
+      "description": "Add partial refund amount input",
+      "steps": [
+        "Add amount input to refund dialog",
+        "Validate amount <= order total",
+        "Update refund API to accept partial amount",
+        "Pass amount to Stripe refund API",
+        "Show partial refund in order history"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-11",
+      "category": "admin",
+      "description": "Add email notification on order status changes",
+      "steps": [
+        "Create order-status-update.tsx email template",
+        "Trigger email on status change to processing",
+        "Trigger email on status change to delivered",
+        "Include order details in email",
+        "Add tracking info for shipped status",
+        "Log email sends on order"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-12",
+      "category": "admin",
+      "description": "Add drop cover image support",
+      "steps": [
+        "Add cover_image column to drops table",
+        "Add image upload to drop form",
+        "Upload image to R2 bucket",
+        "Display cover image in drop list",
+        "Display cover image on storefront drop pages"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-13",
+      "category": "admin",
+      "description": "Add drag-and-drop product reordering in drops",
+      "steps": [
+        "Add position column to product-drop relationship",
+        "Install drag-and-drop library",
+        "Implement drag handles on product cards",
+        "Update position on drop",
+        "Save positions to API",
+        "Respect position in storefront display"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-14",
+      "category": "admin",
+      "description": "Add sent notifications view",
+      "steps": [
+        "Create email_sends table in D1",
+        "Log all sent emails with type, recipient, timestamp",
+        "Create /notifications page in admin",
+        "Display sent notifications list",
+        "Add type and date filters",
+        "Show delivery status (sent, failed)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-15",
+      "category": "admin",
+      "description": "Add blog image upload to R2",
+      "steps": [
+        "Add image upload button to MDXEditor",
+        "Upload image to R2 bucket",
+        "Insert markdown image with R2 URL",
+        "Show image preview in editor",
+        "Handle upload errors gracefully"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-16",
+      "category": "admin",
+      "description": "Add export to CSV for analytics",
+      "steps": [
+        "Add 'Export' button to analytics page",
+        "Generate CSV with orders data",
+        "Include date range in export",
+        "Trigger browser download",
+        "Include summary stats row"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-17",
+      "category": "admin",
+      "description": "Upgrade to proper charting library",
+      "steps": [
+        "Choose charting library (recharts recommended)",
+        "Install library dependencies",
+        "Replace SalesChart.tsx implementation",
+        "Add line chart for revenue trend",
+        "Add tooltip with detailed data",
+        "Ensure responsive behavior"
+      ],
+      "passes": false
+    },
+    {
+      "id": "admin-18",
+      "category": "admin",
+      "description": "Add real-time WebSocket updates",
+      "steps": [
+        "Set up Cloudflare Durable Objects for WebSocket",
+        "Create WebSocket endpoint in Merchant API",
+        "Connect admin dashboard to WebSocket",
+        "Push order events in real-time",
+        "Update activity feed without refresh",
+        "Handle reconnection gracefully"
+      ],
+      "passes": false
+    },
+    {
+      "id": "devops-1",
+      "category": "devops",
+      "description": "Add CI/CD with GitHub Actions",
+      "steps": [
+        "Create .github/workflows/ci.yml",
+        "Run type checks on PR",
+        "Run lint on PR",
+        "Run unit tests on PR",
+        "Run E2E tests on PR",
+        "Create deploy workflow for main branch",
+        "Deploy Merchant API to Workers",
+        "Deploy storefront to Pages",
+        "Deploy admin to Pages"
+      ],
+      "passes": false
+    },
+    {
+      "id": "devops-2",
+      "category": "devops",
+      "description": "Add staging environment",
+      "steps": [
+        "Create staging D1 database",
+        "Create staging R2 bucket",
+        "Create staging Stripe account (test mode)",
+        "Configure staging environment variables",
+        "Create staging deployment workflow",
+        "Document staging URLs"
+      ],
+      "passes": false
+    },
+    {
+      "id": "devops-3",
+      "category": "devops",
+      "description": "Add email send monitoring and alerting",
+      "steps": [
+        "Track email send success/failure counts",
+        "Set up alerts for high failure rates",
+        "Create email delivery dashboard",
+        "Log Resend webhook events (bounces, complaints)",
+        "Configure webhook endpoint for Resend notifications",
+        "Alert on bounce rate threshold"
+      ],
+      "passes": false
+    },
+    {
+      "id": "content-1",
+      "category": "content",
+      "description": "Add lookbook image lightbox",
+      "steps": [
+        "Reuse ImageLightbox component from storefront",
+        "Add click handlers to lookbook gallery images",
+        "Support navigation between images",
+        "Add touch/swipe for mobile",
+        "Add keyboard navigation"
+      ],
+      "passes": false
+    },
+    {
+      "id": "content-2",
+      "category": "content",
+      "description": "Add lookbook image lazy loading",
+      "steps": [
+        "Add loading='lazy' to gallery images",
+        "Implement intersection observer for load trigger",
+        "Add skeleton placeholder while loading",
+        "Test scroll performance with many images"
+      ],
+      "passes": false
+    },
+    {
+      "id": "content-3",
+      "category": "content",
+      "description": "Add social sharing to lookbook",
+      "steps": [
+        "Add share buttons to lookbook layout",
+        "Configure Open Graph meta for sharing",
+        "Add Pinterest pin button with image",
+        "Test share previews on each platform"
+      ],
+      "passes": false
+    },
+    {
+      "id": "content-4",
+      "category": "content",
+      "description": "Add MDX component preview in editor",
+      "steps": [
+        "Define supported MDX components",
+        "Implement component rendering in preview",
+        "Handle component errors gracefully",
+        "Add toolbar buttons for inserting components"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-1",
+      "category": "product-management",
+      "description": "Add featured image and variant image fields to database and types",
+      "steps": [
+        "Open packages/api/src/types.ts and add featured_image_url, featured_image_alt to Product interface",
+        "Add image_alt to Variant interface",
+        "Create merchant/migrations/0XX_product_images.sql",
+        "Add featured_image_url TEXT and featured_image_alt TEXT columns to products table",
+        "Add image_alt TEXT column to variants table",
+        "Run migrations with wrangler d1 migrations apply",
+        "Verify columns exist in database"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-2",
+      "category": "product-management",
+      "description": "Update Merchant API to handle product and variant image fields",
+      "steps": [
+        "Open merchant/src/routes/products.ts",
+        "Update createProduct to accept featured_image_url and featured_image_alt",
+        "Update updateProduct to handle image fields",
+        "Update getProduct and listProducts to return image fields",
+        "Update variant endpoints to handle image_alt field",
+        "Test with curl or API client"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-6",
+      "category": "product-management",
+      "description": "Add tags field to Product schema",
+      "steps": [
+        "Open packages/api/src/types.ts",
+        "Add tags?: string[] to Product interface",
+        "Update CreateProductParams to include tags",
+        "Update UpdateProductParams to include tags",
+        "Verify TypeScript compiles without errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-7",
+      "category": "product-management",
+      "description": "Create product_tags table in database",
+      "steps": [
+        "Open merchant/src/db/schema.sql",
+        "Create product_tags table with id, product_id, tag columns",
+        "Add foreign key constraint to products table",
+        "Add unique constraint on (product_id, tag) pair",
+        "Run migration for existing database"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-8",
+      "category": "product-management",
+      "description": "Update Merchant API to handle product tags",
+      "steps": [
+        "Open merchant/src/routes/products.ts",
+        "Update createProduct to insert tags into product_tags table",
+        "Update updateProduct to sync tags (delete old, insert new)",
+        "Update getProduct to join and return tags array",
+        "Update listProducts to include tags in response"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-9",
+      "category": "product-management",
+      "description": "Create TagInput component for admin",
+      "steps": [
+        "Create apps/admin/src/components/TagInput.tsx",
+        "Build input field that creates tags on Enter or comma",
+        "Display tags as removable chips/badges",
+        "Add X button to remove individual tags",
+        "Support keyboard navigation for accessibility"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-10",
+      "category": "product-management",
+      "description": "Integrate TagInput into ProductForm",
+      "steps": [
+        "Open apps/admin/src/components/ProductForm.tsx",
+        "Import TagInput component",
+        "Add tags section below description field",
+        "Wire up onChange handler to update form state",
+        "Pre-populate tags when editing existing product"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-11",
+      "category": "product-management",
+      "description": "Add drop_id field to Product schema",
+      "steps": [
+        "Open packages/api/src/types.ts",
+        "Add drop_id?: string to Product interface",
+        "Update CreateProductParams to include drop_id",
+        "Update UpdateProductParams to include drop_id",
+        "Verify TypeScript compiles without errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-12",
+      "category": "product-management",
+      "description": "Update Merchant API to handle product drop assignment",
+      "steps": [
+        "Open merchant/src/routes/products.ts",
+        "Update createProduct to accept and store drop_id",
+        "Update updateProduct to handle drop_id changes",
+        "Validate drop_id exists in drops table before assigning",
+        "Return drop info in getProduct response"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-13",
+      "category": "product-management",
+      "description": "Create DropSelector component for admin",
+      "steps": [
+        "Create apps/admin/src/components/DropSelector.tsx",
+        "Fetch available drops from API on mount",
+        "Build dropdown/select with drop names",
+        "Include 'No drop' option for unassigned products",
+        "Show drop status (active, scheduled, ended) as badge"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-14",
+      "category": "product-management",
+      "description": "Integrate DropSelector into ProductForm",
+      "steps": [
+        "Open apps/admin/src/components/ProductForm.tsx",
+        "Import DropSelector component",
+        "Add drop assignment section in form",
+        "Wire up onChange handler to update form state",
+        "Pre-select current drop when editing existing product"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-15",
+      "category": "product-management",
+      "description": "Add alt text field to variant images",
+      "steps": [
+        "Open packages/api/src/types.ts",
+        "Add image_alt?: string to Variant interface",
+        "Update merchant/src/db/schema.sql to add image_alt column",
+        "Update variant API endpoints to handle image_alt",
+        "Run migration for existing database"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-16",
+      "category": "product-management",
+      "description": "Update VariantForm with image upload and alt text",
+      "steps": [
+        "Open apps/admin/src/components/VariantForm.tsx",
+        "Replace image URL text input with ImageUploader component",
+        "Add alt text input field below image uploader",
+        "Make alt text required when image is uploaded",
+        "Show image preview with alt text overlay"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-17",
+      "category": "product-management",
+      "description": "Display product images on storefront with alt text",
+      "steps": [
+        "Update storefront ProductCard component to use featured_image_url",
+        "Add alt attribute with featured_image_alt value",
+        "Update product detail page to display featured image",
+        "Ensure variant images also use alt text",
+        "Test with screen reader for accessibility"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-18",
+      "category": "product-management",
+      "description": "Add product filtering by tags on storefront",
+      "steps": [
+        "Create /shop/tag/[tag].astro page in storefront",
+        "Fetch products filtered by tag from API",
+        "Display tag filter UI on shop page",
+        "Show active tag as selected state",
+        "Add tag links on product cards"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-1",
+      "category": "newsletter",
+      "description": "Create newsletter_subscribers table in D1",
+      "steps": [
+        "Create migration file merchant/migrations/0XX_newsletter_subscribers.sql",
+        "Define table with columns: id, store_id, email, verified, verification_token, subscribed_at, verified_at, unsubscribed_at, source, created_at, updated_at",
+        "Add unique constraint on (store_id, email)",
+        "Add index on email for fast lookups",
+        "Run migration with wrangler d1 migrations apply"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-2",
+      "category": "newsletter",
+      "description": "Create newsletter_sends table in D1 for tracking",
+      "steps": [
+        "Create migration file for newsletter_sends table",
+        "Define columns: id, store_id, blog_slug, subject, sent_at, recipient_count, created_at",
+        "Add index on blog_slug for looking up sends by post",
+        "Add index on sent_at for chronological queries",
+        "Run migration"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-3",
+      "category": "newsletter",
+      "description": "Create newsletter subscription API endpoint",
+      "steps": [
+        "Create merchant/src/routes/newsletter.ts",
+        "Implement POST /v1/newsletter/subscribe endpoint",
+        "Validate email format and normalize to lowercase",
+        "Generate verification token (uuid)",
+        "Insert subscriber with verified=false",
+        "Return success response (don't reveal if email exists)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-4",
+      "category": "newsletter",
+      "description": "Create double opt-in verification email template",
+      "steps": [
+        "Create buildNewsletterVerificationHtml function in notifications.ts",
+        "Design branded HTML email with Dear Margeaux colors (#8B4513, #E2725B)",
+        "Include verification link with token parameter",
+        "Add clear CTA button 'Confirm Subscription'",
+        "Include text explaining why they received this email"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-5",
+      "category": "newsletter",
+      "description": "Send verification email on subscribe",
+      "steps": [
+        "Create sendNewsletterVerificationEmail function in notifications.ts",
+        "Call buildNewsletterVerificationHtml for email content",
+        "Send via Resend API",
+        "Log email send attempt",
+        "Handle and log any send failures"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-6",
+      "category": "newsletter",
+      "description": "Create verification confirmation endpoint",
+      "steps": [
+        "Implement GET /v1/newsletter/verify?token=xxx endpoint",
+        "Look up subscriber by verification_token",
+        "Update verified=true and verified_at timestamp",
+        "Clear verification_token after use",
+        "Return success JSON or redirect to success page"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-7",
+      "category": "newsletter",
+      "description": "Create storefront verification success page",
+      "steps": [
+        "Create apps/storefront/src/pages/newsletter/verified.astro",
+        "Design confirmation page with success message",
+        "Include link back to homepage and blog",
+        "Match site branding and layout"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-8",
+      "category": "newsletter",
+      "description": "Create one-click unsubscribe endpoint",
+      "steps": [
+        "Implement GET /v1/newsletter/unsubscribe?email=xxx&token=xxx",
+        "Validate email and token combination",
+        "Set unsubscribed_at timestamp on subscriber record",
+        "Return success page confirming unsubscription",
+        "Do not delete record (soft unsubscribe for compliance)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-9",
+      "category": "newsletter",
+      "description": "Create storefront unsubscribe confirmation page",
+      "steps": [
+        "Create apps/storefront/src/pages/newsletter/unsubscribed.astro",
+        "Design page confirming successful unsubscription",
+        "Include optional feedback form or resubscribe link",
+        "Match site branding"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-10",
+      "category": "newsletter",
+      "description": "Create branded newsletter email template",
+      "steps": [
+        "Create buildNewsletterEmailHtml function in notifications.ts",
+        "Design HTML template with Dear Margeaux branding",
+        "Include header with logo, featured image, title, excerpt",
+        "Add prominent 'Read More' CTA button linking to blog post",
+        "Include footer with unsubscribe link (required by law)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-11",
+      "category": "newsletter",
+      "description": "Add 'Send as Newsletter' toggle to BlogForm",
+      "steps": [
+        "Open apps/admin/src/components/BlogForm.tsx",
+        "Add sendAsNewsletter boolean state (default: false)",
+        "Show toggle only when changing draft→published",
+        "Add checkbox: 'Also send as newsletter to X subscribers'",
+        "Fetch and display active subscriber count from API"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-12",
+      "category": "newsletter",
+      "description": "Create send newsletter API endpoint",
+      "steps": [
+        "Create POST /v1/newsletter/send endpoint in Merchant API",
+        "Accept blog_slug parameter",
+        "Fetch all verified, non-unsubscribed subscribers",
+        "Batch send emails (respect rate limits)",
+        "Record send in newsletter_sends table",
+        "Return send count and status"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-13",
+      "category": "newsletter",
+      "description": "Integrate newsletter send into blog publish flow",
+      "steps": [
+        "Update apps/admin/src/pages/api/blog/[slug].ts",
+        "After updating post to published status, check sendAsNewsletter flag",
+        "If true, call POST /v1/newsletter/send with blog slug",
+        "Show success/error toast with send count",
+        "Log newsletter send in admin activity"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-14",
+      "category": "newsletter",
+      "description": "Add rate limiting to subscribe endpoint",
+      "steps": [
+        "Implement IP-based rate limiting (5 requests per hour per IP)",
+        "Store rate limit data in KV or D1",
+        "Return 429 Too Many Requests when limit exceeded",
+        "Include Retry-After header in response"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-15",
+      "category": "newsletter",
+      "description": "Add invisible reCAPTCHA to subscribe forms",
+      "steps": [
+        "Sign up for Google reCAPTCHA v3",
+        "Add reCAPTCHA script to storefront layout",
+        "Integrate reCAPTCHA with footer newsletter form",
+        "Send reCAPTCHA token with subscribe request",
+        "Verify token server-side before processing subscription"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-16",
+      "category": "newsletter",
+      "description": "Create admin Subscribers page",
+      "steps": [
+        "Create apps/admin/src/pages/subscribers/index.astro",
+        "Add 'Subscribers' item to admin sidebar navigation",
+        "Fetch subscribers list from API",
+        "Display table with email, status, subscribed_at, source columns",
+        "Add search input to filter by email"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-17",
+      "category": "newsletter",
+      "description": "Add subscriber list API endpoint",
+      "steps": [
+        "Implement GET /v1/newsletter/subscribers (admin only)",
+        "Support pagination with cursor",
+        "Support filtering by verified/unsubscribed status",
+        "Support search by email",
+        "Return subscriber count in response"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-18",
+      "category": "newsletter",
+      "description": "Add manual subscriber add functionality",
+      "steps": [
+        "Add 'Add Subscriber' button to admin subscribers page",
+        "Create AddSubscriberForm component",
+        "Implement POST /v1/newsletter/subscribers/add (admin only)",
+        "Allow adding with optional skip_verification flag",
+        "Show success/error feedback"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-19",
+      "category": "newsletter",
+      "description": "Add manual subscriber remove functionality",
+      "steps": [
+        "Add 'Remove' action to subscriber table rows",
+        "Implement DELETE /v1/newsletter/subscribers/:id (admin only)",
+        "Show confirmation dialog before removal",
+        "Soft delete (set unsubscribed_at) rather than hard delete",
+        "Show success toast after removal"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-20",
+      "category": "newsletter",
+      "description": "Add subscriber export to CSV",
+      "steps": [
+        "Add 'Export' button to admin subscribers page",
+        "Implement GET /v1/newsletter/subscribers/export (admin only)",
+        "Generate CSV with email, status, subscribed_at columns",
+        "Trigger browser download",
+        "Include date in filename"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-21",
+      "category": "newsletter",
+      "description": "Add newsletter send history page",
+      "steps": [
+        "Create apps/admin/src/pages/subscribers/history.astro",
+        "Add 'Send History' tab or link on subscribers page",
+        "Fetch newsletter_sends from API",
+        "Display table with post title, sent_at, recipient_count",
+        "Link post title to blog post"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-22",
+      "category": "newsletter",
+      "description": "Wire up footer newsletter form to API",
+      "steps": [
+        "Update apps/storefront/src/components/Footer.astro newsletter form",
+        "Add client-side JavaScript to handle form submit",
+        "POST to /v1/newsletter/subscribe endpoint",
+        "Show success message: 'Check your email to confirm'",
+        "Show error message on failure"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-23",
+      "category": "newsletter",
+      "description": "Add newsletter signup to blog listing page",
+      "steps": [
+        "Update apps/storefront/src/pages/blog/index.astro",
+        "Add newsletter signup section after post listing",
+        "Style to match blog page design",
+        "Wire up form submission to subscribe API",
+        "Show inline success/error feedback"
+      ],
+      "passes": false
+    },
+    {
+      "id": "newsletter-24",
+      "category": "newsletter",
+      "description": "Add newsletter signup to individual blog posts",
+      "steps": [
+        "Update blog post layout apps/storefront/src/layouts/BlogPost.astro or [...slug].astro",
+        "Add newsletter CTA section at end of post content",
+        "Use consistent styling with other signup forms",
+        "Wire up form submission",
+        "Show inline feedback"
+      ],
+      "passes": false
+    },
+    {
+      "id": "nav-1",
+      "category": "navigation",
+      "description": "Create /drops index page",
+      "steps": [
+        "Create apps/storefront/src/pages/drops/index.astro",
+        "Fetch all drops from API (active, scheduled, ended)",
+        "Display drops as cards with name, description, status badge",
+        "For scheduled drops: show countdown timer and waitlist form",
+        "For active drops: show 'Shop Now' CTA",
+        "For ended drops: show 'View Archive' link"
+      ],
+      "passes": false
+    },
+    {
+      "id": "nav-2",
+      "category": "navigation",
+      "description": "Create CountdownTimer component for drops page",
+      "steps": [
+        "Create apps/storefront/src/components/CountdownTimer.tsx",
+        "Accept targetDate prop",
+        "Calculate and display days, hours, minutes, seconds",
+        "Update every second using setInterval",
+        "Handle timezone conversion properly",
+        "Show 'Live Now!' when countdown reaches zero"
+      ],
+      "passes": false
+    },
+    {
+      "id": "nav-3",
+      "category": "navigation",
+      "description": "Add inline waitlist form to drops page",
+      "steps": [
+        "Import and integrate WaitlistForm component on drops page",
+        "Show form only for scheduled drops",
+        "Pass drop_id to waitlist subscribe endpoint",
+        "Show success message on subscription",
+        "Style consistently with drops page design"
+      ],
+      "passes": false
+    },
+    {
+      "id": "nav-4",
+      "category": "navigation",
+      "description": "Create /drops/archive page",
+      "steps": [
+        "Create apps/storefront/src/pages/drops/archive.astro",
+        "Fetch drops with status='ended' from API",
+        "Display ended drops as cards with name, dates, product count",
+        "Link each card to /shop/[drop-slug] for shoppable archive",
+        "Show 'Sold Out' badge on products with no inventory"
+      ],
+      "passes": false
+    },
+    {
+      "id": "nav-5",
+      "category": "navigation",
+      "description": "Update footer navigation links",
+      "steps": [
+        "Open apps/storefront/src/components/Footer.astro",
+        "Change 'About' link to 'Journal' linking to /blog (consistent with header)",
+        "Verify /drops link points to new /drops index page",
+        "Verify /drops/archive link points to new archive page",
+        "Test all footer links work correctly"
+      ],
+      "passes": false
+    },
+    {
+      "id": "nav-6",
+      "category": "navigation",
+      "description": "Update header with logo image, Journal link, and Lookbook link",
+      "steps": [
+        "Open apps/storefront/src/components/Header.astro",
+        "Replace <span>Dear Margeaux</span> with <img> using logo-main.webp URL from R2",
+        "Set appropriate height (h-8 or h-10) with alt='Dear Margeaux'",
+        "Add 'Journal' navigation item linking to /blog (after Drops)",
+        "Add 'Lookbook' navigation item linking to /lookbook (after Journal)",
+        "Update mobile menu with all new links",
+        "Remove or update 'About' link since it now redirects to blog",
+        "Style all items consistently"
+      ],
+      "passes": false
+    },
+    {
+      "id": "nav-7",
+      "category": "navigation",
+      "description": "Remove 'Stay in the Know' section from homepage",
+      "steps": [
+        "Open apps/storefront/src/pages/index.astro",
+        "Remove the Newsletter Section (lines ~292-318)",
+        "Footer 'Stay in the Loop' remains for newsletter signup",
+        "Verify page layout still looks good without the section",
+        "Test responsive behavior"
+      ],
+      "passes": false
+    },
+    {
+      "id": "nav-8",
+      "category": "navigation",
+      "description": "Update 'Our Story' section link to specific blog post",
+      "steps": [
+        "Open apps/storefront/src/pages/index.astro",
+        "Change href='/about' to href='/blog/about-dear-margeaux'",
+        "Optionally update 'Learn More' text to 'Read Our Story'",
+        "This link will work once the pinned About post is created"
+      ],
+      "passes": false
+    },
+    {
+      "id": "nav-9",
+      "category": "navigation",
+      "description": "Add 'pinned' field to blog content schema",
+      "steps": [
+        "Open apps/storefront/src/content/config.ts",
+        "Add pinned: z.boolean().default(false) to blog schema",
+        "Update TypeScript types if needed",
+        "Verify schema change doesn't break existing posts"
+      ],
+      "passes": false
+    },
+    {
+      "id": "nav-10",
+      "category": "navigation",
+      "description": "Update blog listing to show pinned posts first",
+      "steps": [
+        "Open apps/storefront/src/pages/blog/index.astro",
+        "Modify post sorting: pinned posts first, then by date",
+        "Optionally add visual indicator for pinned posts",
+        "Test with a pinned post to verify ordering"
+      ],
+      "passes": false
+    },
+    {
+      "id": "nav-11",
+      "category": "navigation",
+      "description": "Add 'pinned' field to BlogForm in admin",
+      "steps": [
+        "Open apps/admin/src/components/BlogForm.tsx",
+        "Add pinned boolean state",
+        "Add toggle/checkbox for 'Pin this post'",
+        "Include helper text: 'Pinned posts appear first in the blog'",
+        "Include pinned in form submission data"
+      ],
+      "passes": false
+    },
+    {
+      "id": "nav-12",
+      "category": "navigation",
+      "description": "Update admin blog API to handle pinned field",
+      "steps": [
+        "Open apps/admin/src/pages/api/blog/index.ts",
+        "Add pinned field to frontmatter generation",
+        "Update parseMDX to read pinned field",
+        "Update POST handler to accept pinned parameter",
+        "Update apps/admin/src/pages/api/blog/[slug].ts similarly"
+      ],
+      "passes": false
+    },
+    {
+      "id": "nav-14",
+      "category": "navigation",
+      "description": "Remove or redirect legacy /about route",
+      "steps": [
+        "Check if apps/storefront/src/pages/about.astro exists",
+        "If exists, either delete it or redirect to /blog/about-dear-margeaux",
+        "If creating redirect, use Astro.redirect() in the page",
+        "Test that /about either 404s cleanly or redirects properly"
+      ],
+      "passes": false
+    },
+    {
+      "id": "nav-15",
+      "category": "navigation",
+      "description": "Test all navigation flows end-to-end",
+      "steps": [
+        "Start dev server and navigate through all main routes",
+        "Verify logo image displays in header",
+        "Verify /drops shows drops listing with countdown for scheduled",
+        "Verify /drops/archive shows ended drops",
+        "Verify /blog shows posts with pinned 'About' post first",
+        "Verify 'Journal' header link works and links to /blog",
+        "Verify 'Lookbook' header link works and links to /lookbook",
+        "Verify 'Our Story' section links to about blog post",
+        "Verify footer 'Journal' link works (consistent with header)",
+        "Verify newsletter signup in footer and blog pages works"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-19",
+      "category": "product-management",
+      "description": "Create unified ProductFormComplete component with all fields",
+      "steps": [
+        "Create apps/admin/src/components/ProductFormComplete.tsx",
+        "Include all product fields: title, description, status",
+        "Add featured image upload section using ImageUploader component",
+        "Add featured image alt text input for accessibility",
+        "Add 'Default Variant' section with SKU, price, variant title fields",
+        "Add variant image upload section",
+        "Add variant image alt text input",
+        "Support both create and edit modes via optional product prop"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-20",
+      "category": "product-management",
+      "description": "Add price input field to ProductFormComplete",
+      "steps": [
+        "Add price input with dollar sign prefix ($)",
+        "Use type='number' with step='0.01' for cents precision",
+        "Convert dollars to cents on form submission (multiply by 100)",
+        "Convert cents to dollars when editing existing variant (divide by 100)",
+        "Add validation: price must be positive number",
+        "Display formatted price preview below input"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-21",
+      "category": "product-management",
+      "description": "Add SKU input field to ProductFormComplete",
+      "steps": [
+        "Add SKU input field with uppercase transformation",
+        "Add validation: SKU required, alphanumeric with hyphens/underscores only",
+        "Add helper text explaining SKU purpose",
+        "Auto-generate SKU suggestion from product title if empty",
+        "Show validation error for invalid SKU format"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-22",
+      "category": "product-management",
+      "description": "Integrate ImageUploader for product featured image",
+      "steps": [
+        "Import ImageUploader component into ProductFormComplete",
+        "Add image upload section with label 'Featured Image'",
+        "Wire onUpload callback to store image URL in form state",
+        "Display image preview after successful upload",
+        "Add remove/replace image functionality",
+        "Store URL in featured_image_url field"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-23",
+      "category": "product-management",
+      "description": "Integrate ImageUploader for variant image",
+      "steps": [
+        "Add second ImageUploader for variant image in Default Variant section",
+        "Label as 'Variant Image' to distinguish from featured image",
+        "Wire onUpload callback to store in variant image_url field",
+        "Display image preview after upload",
+        "Add remove/replace functionality",
+        "Make variant image optional (featured image can be used as fallback)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-24",
+      "category": "product-management",
+      "description": "Create product with default variant in single API call",
+      "steps": [
+        "Update apps/admin/src/pages/api/products/index.ts POST handler",
+        "Accept extended payload with variant fields: sku, price_cents, variant_title, image_url",
+        "After creating product, automatically create first variant if variant fields provided",
+        "Return complete product object with variants array populated",
+        "Handle partial variant data gracefully (allow product-only creation)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-25",
+      "category": "product-management",
+      "description": "Update /products/new page to use ProductFormComplete",
+      "steps": [
+        "Open apps/admin/src/pages/products/new.astro",
+        "Replace CreateProduct component with new ProductFormComplete",
+        "Update page description to reflect full product creation capability",
+        "Remove text saying 'add variants after creating'",
+        "Test creating product with title, description, price, SKU, and images"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-26",
+      "category": "product-management",
+      "description": "Update ProductEditor to show editable featured image",
+      "steps": [
+        "Open apps/admin/src/components/ProductEditor.tsx",
+        "Add featured image display and edit section to Product Details",
+        "Show current featured image with edit/replace button",
+        "Integrate ImageUploader for changing featured image",
+        "Add alt text input field below image",
+        "Save featured image changes via PATCH /api/products/:id"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-28",
+      "category": "product-management",
+      "description": "Update VariantForm with ImageUploader component",
+      "steps": [
+        "Open apps/admin/src/components/VariantForm.tsx",
+        "Replace image URL text input with ImageUploader component",
+        "Add image_alt field for accessibility",
+        "Show image preview after upload",
+        "Keep URL input as fallback/alternative for external URLs",
+        "Add toggle between upload and URL input modes"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-33",
+      "category": "product-management",
+      "description": "Display product images on storefront product cards",
+      "steps": [
+        "Open apps/storefront/src/components/ProductCard.astro",
+        "Update to use product.featured_image_url if available",
+        "Fall back to first variant image_url if no featured image",
+        "Use featured_image_alt or variant image_alt for alt attribute",
+        "Provide sensible default alt text if none specified",
+        "Test with products that have/don't have images"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-34",
+      "category": "product-management",
+      "description": "Display product images on storefront product detail page",
+      "steps": [
+        "Open apps/storefront/src/pages/product/[id].astro",
+        "Display featured image prominently at top",
+        "Show variant images in gallery/selector",
+        "Use proper alt text for all images",
+        "Handle missing images gracefully with placeholder",
+        "Ensure images are responsive and optimized"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-35",
+      "category": "product-management",
+      "description": "Test complete product creation flow end-to-end",
+      "steps": [
+        "Start admin dev server",
+        "Navigate to /products/new",
+        "Fill in all fields: title, description, price, SKU, images",
+        "Submit form and verify product created with variant",
+        "Navigate to product edit page and verify all data displays",
+        "Edit product fields and verify changes save correctly",
+        "View product on storefront and verify images display"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-36",
+      "category": "product-management",
+      "description": "Add multiple variants support to ProductFormComplete",
+      "steps": [
+        "Change 'Default Variant' section to 'Variants' with array state",
+        "Display list of variant cards with SKU, title, price, image for each",
+        "Add 'Add Another Variant' button below variant list",
+        "Each variant card should be collapsible/expandable",
+        "Require at least one variant before form submission",
+        "Show variant count badge in section header"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-37",
+      "category": "product-management",
+      "description": "Create VariantCard component for inline variant editing",
+      "steps": [
+        "Create apps/admin/src/components/VariantCard.tsx",
+        "Display compact view: SKU, title, price, thumbnail",
+        "Expand to show full edit form on click",
+        "Include all variant fields: SKU, title, price, image upload, alt text",
+        "Add delete button with confirmation",
+        "Add drag handle for reordering (optional)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-38",
+      "category": "product-management",
+      "description": "Implement add/remove variant in ProductFormComplete",
+      "steps": [
+        "Create addVariant function that appends empty variant to array",
+        "Create removeVariant function that removes by index",
+        "Prevent removing last variant (minimum 1 required)",
+        "Auto-focus SKU field when new variant is added",
+        "Show confirmation dialog before removing variant with data"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-39",
+      "category": "product-management",
+      "description": "Validate all variants before product submission",
+      "steps": [
+        "Validate each variant has required fields: SKU, title, price",
+        "Check for duplicate SKUs across variants",
+        "Highlight specific variant with validation error",
+        "Show summary of errors at top of form",
+        "Prevent submission until all variants are valid"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-40",
+      "category": "product-management",
+      "description": "Update product creation API to accept multiple variants",
+      "steps": [
+        "Update apps/admin/src/pages/api/products/index.ts POST handler",
+        "Change variant fields to variants array in request body",
+        "Loop through variants array and create each variant",
+        "Use database transaction to ensure all-or-nothing creation",
+        "Return product with all created variants in response"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-41",
+      "category": "product-management",
+      "description": "Add variant templates for common patterns",
+      "steps": [
+        "Add 'Quick Add' dropdown with common variant patterns",
+        "Include templates: Sizes (XS-XL), Colors (common colors), Size+Color matrix",
+        "Template populates variant titles and auto-generates SKUs",
+        "User can edit generated variants before saving",
+        "Store custom templates in localStorage for reuse"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-42",
+      "category": "product-management",
+      "description": "Add bulk price update for variants",
+      "steps": [
+        "Add 'Set All Prices' button above variant list",
+        "Show modal/popover with single price input",
+        "Apply entered price to all variants on confirm",
+        "Optionally allow percentage adjustment (+10%, -5%)",
+        "Show preview of price changes before applying"
+      ],
+      "passes": false
+    },
+    {
+      "id": "pm-43",
+      "category": "product-management",
+      "description": "Test multiple variants creation flow",
+      "steps": [
+        "Create product with 3+ variants of different prices",
+        "Verify all variants saved with correct data",
+        "Edit product and add more variants",
+        "Remove a variant and verify deletion",
+        "Check storefront displays all variants correctly",
+        "Test variant selection on product detail page"
+      ],
+      "passes": false
+    },
+    {
+      "id": "assets-1",
+      "category": "assets",
+      "description": "Pre-process product images for upload",
+      "steps": [
+        "Read all 7 product images from ~/Downloads/dear_margeaux_pics/",
+        "Resize images to max 1200px width maintaining aspect ratio",
+        "Compress images to reduce file size (target <200KB each)",
+        "Convert to WebP format for optimal web performance",
+        "Save processed images to scratchpad directory with consistent naming: prod-1.webp through prod-7.webp"
+      ],
+      "passes": false
+    },
+    {
+      "id": "assets-2",
+      "category": "assets",
+      "description": "Pre-process blog and lookbook images",
+      "steps": [
+        "Process 'dear_margeaux - blog image.jpg' → blog-about.webp",
+        "Process 'dear_margeaux lookbook.jpg' → lookbook-1.webp",
+        "Process 'dear_margeaux lookbook and blog.jpg' → lookbook-2.webp",
+        "Process 'dear_margeaux image branding and lookbook.jpg' → branding-hero.webp",
+        "Resize to max 1600px width for blog/lookbook (larger than products)",
+        "Compress and convert to WebP"
+      ],
+      "passes": false
+    },
+    {
+      "id": "assets-3",
+      "category": "assets",
+      "description": "Pre-process logo images",
+      "steps": [
+        "Process 'dear_margeaux main logo.jpg' → logo-main.webp (preserve quality)",
+        "Process 'dear_margeaux - light logo.jpg' → logo-light.webp",
+        "Process 'dear_margeaux light logo bold.jpg' → logo-light-bold.webp",
+        "Create PNG versions for contexts requiring transparency support",
+        "Resize logos to standard header height (48-64px height)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "assets-4",
+      "category": "assets",
+      "description": "Generate full favicon set from logo",
+      "steps": [
+        "Use 'dear_margeaux - light logo.jpg' as favicon source",
+        "Generate favicon.ico (multi-size: 16x16, 32x32, 48x48)",
+        "Generate favicon-16x16.png",
+        "Generate favicon-32x32.png",
+        "Generate apple-touch-icon.png (180x180)",
+        "Generate android-chrome-192x192.png",
+        "Generate android-chrome-512x512.png",
+        "Create site.webmanifest file with icon references"
+      ],
+      "passes": false
+    },
+    {
+      "id": "assets-5",
+      "category": "assets",
+      "description": "Upload processed images to Cloudflare R2",
+      "steps": [
+        "Ensure R2 bucket and API credentials are configured",
+        "Upload product images to products/ folder in R2",
+        "Upload blog images to blog/ folder in R2",
+        "Upload lookbook images to lookbook/ folder in R2",
+        "Upload branding images to branding/ folder in R2",
+        "Upload logo files to branding/ folder in R2",
+        "Verify all uploads successful and URLs accessible"
+      ],
+      "passes": false
+    },
+    {
+      "id": "assets-6",
+      "category": "assets",
+      "description": "Install favicon files in storefront",
+      "steps": [
+        "Copy favicon.ico to apps/storefront/public/",
+        "Copy favicon-16x16.png to apps/storefront/public/",
+        "Copy favicon-32x32.png to apps/storefront/public/",
+        "Copy apple-touch-icon.png to apps/storefront/public/",
+        "Copy android-chrome-*.png to apps/storefront/public/",
+        "Copy site.webmanifest to apps/storefront/public/",
+        "Update apps/storefront/src/layouts/BaseLayout.astro with favicon links"
+      ],
+      "passes": false
+    },
+    {
+      "id": "assets-7",
+      "category": "assets",
+      "description": "Add logo to footer",
+      "steps": [
+        "Open apps/storefront/src/components/Footer.astro",
+        "Add logo image to brand column (use logo-light.webp for dark backgrounds if applicable)",
+        "Size appropriately for footer context",
+        "Ensure logo links to homepage",
+        "Test visual consistency with header"
+      ],
+      "passes": false
+    },
+    {
+      "id": "assets-8",
+      "category": "assets",
+      "description": "Update Our Story section with branding image",
+      "steps": [
+        "Open apps/storefront/src/pages/index.astro",
+        "Find 'Our Story' section with placeholder image",
+        "Replace placeholder with branding-hero.webp URL from R2",
+        "Add descriptive alt text for accessibility",
+        "Verify image displays correctly and maintains layout"
+      ],
+      "passes": false
+    },
+    {
+      "id": "lookbook-admin-1",
+      "category": "lookbook-admin",
+      "description": "Create lookbook admin listing page",
+      "steps": [
+        "Create apps/admin/src/pages/lookbook/index.astro",
+        "Add 'Lookbook' item to admin sidebar navigation",
+        "Fetch and display list of existing lookbooks",
+        "Show title, date, image count, draft status for each",
+        "Add 'Create Lookbook' button linking to /lookbook/new"
+      ],
+      "passes": false
+    },
+    {
+      "id": "lookbook-admin-2",
+      "category": "lookbook-admin",
+      "description": "Create lookbook form component",
+      "steps": [
+        "Create apps/admin/src/components/LookbookForm.tsx",
+        "Add fields: title, description, date, draft toggle",
+        "Add associated drop selector (optional)",
+        "Include ImageUploader for cover image",
+        "Support both create and edit modes"
+      ],
+      "passes": false
+    },
+    {
+      "id": "lookbook-admin-3",
+      "category": "lookbook-admin",
+      "description": "Create lookbook gallery manager component",
+      "steps": [
+        "Create apps/admin/src/components/LookbookGallery.tsx",
+        "Display flat grid of uploaded images",
+        "Add ImageUploader for adding new images to gallery",
+        "Support drag-to-reorder images",
+        "Add delete button for each image",
+        "Show image count and upload progress"
+      ],
+      "passes": false
+    },
+    {
+      "id": "lookbook-admin-4",
+      "category": "lookbook-admin",
+      "description": "Create lookbook editor page",
+      "steps": [
+        "Create apps/admin/src/pages/lookbook/new.astro",
+        "Create apps/admin/src/pages/lookbook/[slug].astro for editing",
+        "Combine LookbookForm and LookbookGallery components",
+        "Wire up save/publish functionality",
+        "Handle navigation and success/error states"
+      ],
+      "passes": false
+    },
+    {
+      "id": "lookbook-admin-5",
+      "category": "lookbook-admin",
+      "description": "Create lookbook API endpoints",
+      "steps": [
+        "Create apps/admin/src/pages/api/lookbook/index.ts (GET list, POST create)",
+        "Create apps/admin/src/pages/api/lookbook/[slug].ts (GET, PATCH, DELETE)",
+        "Store lookbook data as MDX files in apps/storefront/src/content/lookbook/",
+        "Generate MDX frontmatter with title, date, images array, draft status",
+        "Handle image array updates (add/remove/reorder)"
+      ],
+      "passes": false
+    },
+    {
+      "id": "lookbook-admin-6",
+      "category": "lookbook-admin",
+      "description": "Test lookbook admin workflow",
+      "steps": [
+        "Create new lookbook via admin UI",
+        "Upload multiple images to gallery",
+        "Reorder images and verify order persists",
+        "Edit lookbook details and save",
+        "Verify lookbook appears correctly on storefront /lookbook page"
+      ],
+      "passes": false
+    },
+    {
+      "id": "initial-content-1",
+      "category": "initial-content",
+      "description": "Create 'The Debut' drop in database",
+      "steps": [
+        "Use admin panel or API to create new drop",
+        "Set name: 'The Debut'",
+        "Set description: 'Our inaugural collection of handcrafted luxury bags'",
+        "Set status to 'active'",
+        "Set start_date to current date",
+        "Note the drop_id for product assignment"
+      ],
+      "passes": false
+    },
+    {
+      "id": "initial-content-2",
+      "category": "initial-content",
+      "description": "Create product: The Colette",
+      "steps": [
+        "Create product via admin with title 'The Colette'",
+        "Use product image 1 as featured image (R2 URL)",
+        "Set price: $395",
+        "Generate SKU: COLETTE-001",
+        "Set description: 'A refined everyday companion. The Colette features clean lines and supple leather, designed for the woman who values understated elegance.'",
+        "Assign to 'The Debut' drop",
+        "Set status: active"
+      ],
+      "passes": false
+    },
+    {
+      "id": "initial-content-3",
+      "category": "initial-content",
+      "description": "Create product: The Amélie",
+      "steps": [
+        "Create product via admin with title 'The Amélie'",
+        "Use product image 2 as featured image",
+        "Set price: $450",
+        "Generate SKU: AMELIE-001",
+        "Set description: 'Effortlessly chic with a touch of Parisian flair. The Amélie combines timeless silhouette with modern functionality.'",
+        "Assign to 'The Debut' drop",
+        "Set status: active"
+      ],
+      "passes": false
+    },
+    {
+      "id": "initial-content-4",
+      "category": "initial-content",
+      "description": "Create product: The Giselle",
+      "steps": [
+        "Create product via admin with title 'The Giselle'",
+        "Use product image 3 as featured image",
+        "Set price: $525",
+        "Generate SKU: GISELLE-001",
+        "Set description: 'Graceful and sophisticated. The Giselle is crafted for those special moments when presence matters.'",
+        "Assign to 'The Debut' drop",
+        "Set status: active"
+      ],
+      "passes": false
+    },
+    {
+      "id": "initial-content-5",
+      "category": "initial-content",
+      "description": "Create product: The Margot",
+      "steps": [
+        "Create product via admin with title 'The Margot'",
+        "Use product image 4 as featured image",
+        "Set price: $475",
+        "Generate SKU: MARGOT-001",
+        "Set description: 'Our namesake piece. The Margot embodies everything Dear Margeaux stands for—timeless beauty, exceptional craftsmanship, and quiet luxury.'",
+        "Assign to 'The Debut' drop",
+        "Set status: active"
+      ],
+      "passes": false
+    },
+    {
+      "id": "initial-content-6",
+      "category": "initial-content",
+      "description": "Create product: The Vivienne",
+      "steps": [
+        "Create product via admin with title 'The Vivienne'",
+        "Use product image 5 as featured image",
+        "Set price: $595",
+        "Generate SKU: VIVIENNE-001",
+        "Set description: 'Bold yet refined. The Vivienne makes a statement without saying a word, perfect for the confident woman.'",
+        "Assign to 'The Debut' drop",
+        "Set status: active"
+      ],
+      "passes": false
+    },
+    {
+      "id": "initial-content-7",
+      "category": "initial-content",
+      "description": "Create product: The Eloise",
+      "steps": [
+        "Create product via admin with title 'The Eloise'",
+        "Use product image 6 as featured image",
+        "Set price: $345",
+        "Generate SKU: ELOISE-001",
+        "Set description: 'Delicate and dreamy. The Eloise is a petite treasure for evenings out and intimate gatherings.'",
+        "Assign to 'The Debut' drop",
+        "Set status: active"
+      ],
+      "passes": false
+    },
+    {
+      "id": "initial-content-8",
+      "category": "initial-content",
+      "description": "Create product: The Céline",
+      "steps": [
+        "Create product via admin with title 'The Céline'",
+        "Use product image 7 as featured image",
+        "Set price: $425",
+        "Generate SKU: CELINE-001",
+        "Set description: 'Structured sophistication meets everyday practicality. The Céline transitions seamlessly from day to evening.'",
+        "Assign to 'The Debut' drop",
+        "Set status: active"
+      ],
+      "passes": false
+    },
+    {
+      "id": "initial-content-9",
+      "category": "initial-content",
+      "description": "Set initial inventory for all products",
+      "steps": [
+        "Set inventory for each product variant via admin inventory page",
+        "Set on_hand quantity: 10-25 units per product (limited drop feel)",
+        "The Colette: 20 units",
+        "The Amélie: 15 units",
+        "The Giselle: 12 units",
+        "The Margot: 18 units (namesake, slightly more)",
+        "The Vivienne: 10 units (premium, more exclusive)",
+        "The Eloise: 25 units (entry price point)",
+        "The Céline: 15 units"
+      ],
+      "passes": false
+    },
+    {
+      "id": "initial-content-10",
+      "category": "initial-content",
+      "description": "Create 'About Dear Margeaux' blog post",
+      "steps": [
+        "Navigate to admin /blog/new",
+        "Set title: 'About Dear Margeaux'",
+        "Set slug: 'about-dear-margeaux'",
+        "Set pinned: true (feature post)",
+        "Use blog-about.webp as featured image",
+        "Write brand story content: founding vision, craftsmanship ethos, French-inspired aesthetic",
+        "Set draft: false to publish",
+        "Verify post appears first on /blog page"
+      ],
+      "passes": false
+    },
+    {
+      "id": "initial-content-11",
+      "category": "initial-content",
+      "description": "Create 'The Debut' lookbook",
+      "steps": [
+        "Navigate to admin /lookbook/new",
+        "Set title: 'The Debut'",
+        "Set description: 'A visual journey through our inaugural collection'",
+        "Set date to current date",
+        "Upload lookbook images: lookbook-1.webp, lookbook-2.webp, branding-hero.webp",
+        "Set draft: false to publish",
+        "Verify lookbook appears on /lookbook page"
+      ],
+      "passes": false
+    },
+    {
+      "id": "initial-content-12",
+      "category": "initial-content",
+      "description": "Verify homepage displays products correctly",
+      "steps": [
+        "Navigate to storefront homepage",
+        "Verify 'Featured Products' section shows products from 'The Debut' drop",
+        "Verify product images load from Cloudflare R2",
+        "Verify product names (The Colette, The Amélie, etc.) display correctly",
+        "Verify prices display correctly",
+        "Click 'Shop Now' and verify it navigates to /shop"
+      ],
+      "passes": false
+    },
+    {
+      "id": "initial-content-13",
+      "category": "initial-content",
+      "description": "Verify shop page displays all products",
+      "steps": [
+        "Navigate to /shop",
+        "Verify all 7 products from 'The Debut' are displayed",
+        "Verify product cards show images, names, and prices",
+        "Verify drop filter shows 'The Debut' option",
+        "Click on a product to view detail page",
+        "Verify product detail page shows full description and image"
+      ],
+      "passes": false
+    },
+    {
+      "id": "initial-content-14",
+      "category": "initial-content",
+      "description": "Test complete purchase flow",
+      "steps": [
+        "Add product to cart from product detail page",
+        "View cart and verify product details",
+        "Proceed to checkout",
+        "Verify Stripe checkout session is created with correct price",
+        "Complete test purchase with Stripe test card",
+        "Verify order confirmation page displays"
+      ],
+      "passes": false
+    },
+    {
+      "id": "initial-content-15",
+      "category": "initial-content",
+      "description": "Final visual QA across site",
+      "steps": [
+        "Verify logo image displays in header (logo-main.webp)",
+        "Verify logo displays in footer (logo-light.webp)",
+        "Verify favicon appears in browser tab",
+        "Verify all navigation links work (Shop, Drops, Lookbook, Journal)",
+        "Verify 'About' link redirects to /blog/about-dear-margeaux",
+        "Verify 'Our Story' section has branding image",
+        "Verify blog page shows 'About Dear Margeaux' post as pinned first",
+        "Verify lookbook page shows 'The Debut' lookbook with images",
+        "Test on mobile viewport for responsive layout",
+        "Verify consistent 'Journal' naming across header and footer"
+      ],
+      "passes": false
+    }
+  ]
 }

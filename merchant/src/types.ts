@@ -11,6 +11,8 @@ export type Env = {
   // R2 images
   IMAGES?: R2Bucket;
   IMAGES_URL?: string;
+  // Resend email service
+  RESEND_API_KEY?: string;
 };
 
 export type Store = {

@@ -24,6 +24,7 @@
     "node": ">=20"
   },
   "devDependencies": {
+    "@rollup/rollup-linux-arm64-gnu": "^4.55.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",

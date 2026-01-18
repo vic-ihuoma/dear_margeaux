@@ -7,6 +7,9 @@ settings:
 importers:
   .:
     devDependencies:
+      '@rollup/rollup-linux-arm64-gnu':
+        specifier: ^4.55.1
+        version: 4.55.1
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -12163,8 +12166,7 @@ snapshots:
   '@rollup/rollup-linux-arm-musleabihf@4.55.1':
     optional: true
 
-  '@rollup/rollup-linux-arm64-gnu@4.55.1':
-    optional: true
+  '@rollup/rollup-linux-arm64-gnu@4.55.1': {}
 
   '@rollup/rollup-linux-arm64-musl@4.55.1':
     optional: true
