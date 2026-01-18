@@ -1671,7 +1671,7 @@
         "Optionally update 'Learn More' text to 'Read Our Story'",
         "This link will work once the pinned About post is created"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "nav-9",

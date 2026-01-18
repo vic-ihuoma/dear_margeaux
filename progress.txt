@@ -114,3 +114,27 @@ Removed the duplicate newsletter signup section from the homepage. The footer's 
 ### Next Steps
 - nav-8: Update 'Our Story' section link to specific blog post
 - Other navigation tasks (nav-1 through nav-6) for drops page and header updates
+
+## 2026-01-18: nav-8 - Update 'Our Story' section link to blog post
+
+### Task Completed
+Updated the 'Our Story' section on the homepage to link to the future 'About Dear Margeaux' blog post instead of the /about page.
+
+### Key Decisions
+- Changed href from `/about` to `/blog/about-dear-margeaux`
+- Updated link text from 'Learn More' to 'Read Our Story' for better context
+- This link will work once the pinned About post is created (initial-content-10 task)
+
+### Files Changed
+- `apps/storefront/src/pages/index.astro` - Updated 'Our Story' section link (lines 281-286)
+
+### Test Results
+- Typecheck: PASSED (0 errors, 3 hints across all packages)
+- Lint: PASSED (0 errors, 165 pre-existing warnings)
+- Unit Tests: PASSED (18 tests in 2 files)
+- Build: PASSED (28 pages built successfully)
+
+### Next Steps
+- nav-9 through nav-12: Add 'pinned' field to blog system
+- nav-14: Remove or redirect legacy /about route
+- Other navigation tasks (nav-1 through nav-6) for drops page creation
