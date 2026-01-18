@@ -2240,3 +2240,46 @@ All unit tests implemented:
 - sf-8: Add tag-based blog filtering (natural next step - allows clicking tag to see all posts with that tag)
 - Consider adding a "Read more from the author" section if multiple authors
 - Consider caching related posts computation in larger blogs (currently SSG handles this)
+
+## [newsletter-21]: Add newsletter send history page
+**Status:** PASSED
+**Tests Written:**
+- GET /v1/newsletter/sends returns 403 for non-admin users
+- GET /v1/newsletter/sends returns empty array when no sends exist
+- GET /v1/newsletter/sends returns newsletter sends with all fields
+- GET /v1/newsletter/sends respects limit and offset parameters
+- GET /v1/newsletter/sends enforces maximum limit of 100
+- GET /v1/newsletter/sends filters sends by store_id
+- GET /v1/newsletter/sends orders sends by sent_at DESC
+
+**Test Results:**
+- All 481 merchant tests pass (7 new)
+- All 116 API package tests pass
+- All 129 storefront tests pass
+- Total: 726 tests passing
+
+**Type Check:** PASSED (merchant and admin both compile without errors)
+**Lint:** PASSED (prettier formatted all new files)
+**Browser Tests:** N/A (task has visual tests but dev server not available in CI environment)
+
+**Findings:**
+- Created a complete newsletter send history feature:
+  1. New API endpoint GET /v1/newsletter/sends with pagination
+  2. Admin proxy route at /api/newsletter/sends
+  3. History page at /subscribers/history with table display
+  4. Send History button added to subscribers index page
+- The newsletter_sends table was already in place (migration 016)
+- Used offset-based pagination for simplicity (vs cursor-based)
+- Blog post links navigate to admin edit page for convenience
+
+**Files Changed:**
+- merchant/src/routes/newsletter.ts: Added GET /sends endpoint
+- merchant/tests/routes/newsletter.test.ts: Added 7 unit tests
+- apps/admin/src/pages/api/newsletter/sends.ts: New proxy route
+- apps/admin/src/pages/subscribers/history.astro: New history page
+- apps/admin/src/pages/subscribers/index.astro: Added Send History link
+
+**Recommendations:**
+- Consider adding date range filters to the sends endpoint
+- Could add click tracking/open rate metrics in future
+- Visual tests should be run when dev server is available

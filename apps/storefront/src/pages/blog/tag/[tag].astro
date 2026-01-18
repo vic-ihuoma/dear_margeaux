@@ -1,25 +1,35 @@
 ---
 import { getCollection } from 'astro:content';
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getAllTags } from '../../lib/blog';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getAllTags, getPostsByTag } from '../../../lib/blog';
 
-// Get all published blog posts, sorted by date (newest first)
-const allPosts = await getCollection('blog', ({ data }) => {
-  // In production, filter out drafts
-  return import.meta.env.PROD ? !data.draft : true;
-});
+export async function getStaticPaths() {
+  const allPosts = await getCollection('blog', ({ data }) => {
+    // In production, filter out drafts
+    return import.meta.env.PROD ? !data.draft : true;
+  });
 
-// Sort posts: pinned posts first, then by date (newest first)
-const posts = allPosts.sort((a, b) => {
-  // Pinned posts come first
-  if (a.data.pinned && !b.data.pinned) return -1;
-  if (!a.data.pinned && b.data.pinned) return 1;
-  // Then sort by date (newest first)
-  return b.data.date.valueOf() - a.data.date.valueOf();
-});
+  // Get all unique tags
+  const tags = getAllTags(allPosts);
 
-// Get all unique tags for the filter bar
-const allTags = getAllTags(allPosts);
+  // Generate a page for each tag
+  return tags.map((tag) => ({
+    params: { tag },
+    props: {
+      posts: getPostsByTag(allPosts, tag),
+      allTags: tags,
+      currentTag: tag,
+    },
+  }));
+}
+
+interface Props {
+  posts: Awaited<ReturnType<typeof getCollection<'blog'>>>;
+  allTags: string[];
+  currentTag: string;
+}
+
+const { posts, allTags, currentTag } = Astro.props;
 
 // Format date helper
 function formatDate(date: Date): string {
@@ -29,11 +39,16 @@ function formatDate(date: Date): string {
     day: 'numeric',
   });
 }
+
+// Capitalize first letter of tag for display
+function capitalizeTag(tag: string): string {
+  return tag.charAt(0).toUpperCase() + tag.slice(1);
+}
 ---
 
 <BaseLayout
-  title="Blog"
-  description="News, stories, and behind-the-scenes from Dear Margeaux"
+  title={`${capitalizeTag(currentTag)} Posts`}
+  description={`Blog posts tagged with "${currentTag}" from Dear Margeaux`}
   rssUrl="/blog/rss.xml"
 >
   <!-- Page Header -->
@@ -68,30 +83,68 @@ function formatDate(date: Date): string {
   </section>
 
   <!-- Tag Filter Bar -->
-  {
-    allTags.length > 0 && (
-      <section class="py-6 border-b border-border">
-        <div class="container mx-auto px-4 max-w-4xl">
-          <div class="flex flex-wrap items-center gap-3">
-            <span class="text-sm font-medium text-text-secondary">
-              Filter by tag:
-            </span>
-            <span class="px-3 py-1.5 text-sm font-medium rounded-full bg-primary text-text-inverse">
-              All
-            </span>
-            {allTags.map((tag) => (
-              <a
-                href={`/blog/tag/${tag}`}
-                class="px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-normal capitalize text-text-secondary hover:text-text hover:bg-secondary"
-              >
-                {tag}
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-    )
-  }
+  <section class="py-6 border-b border-border">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="text-sm font-medium text-text-secondary"
+          >Filter by tag:</span
+        >
+        <a
+          href="/blog"
+          class="px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-normal text-text-secondary hover:text-text hover:bg-secondary"
+        >
+          All
+        </a>
+        {
+          allTags.map((tag) => (
+            <a
+              href={`/blog/tag/${tag}`}
+              class:list={[
+                'px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-normal capitalize',
+                tag === currentTag
+                  ? 'bg-primary text-text-inverse'
+                  : 'text-text-secondary hover:text-text hover:bg-secondary',
+              ]}
+              aria-current={tag === currentTag ? 'page' : undefined}
+            >
+              {tag}
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Filtered Results Header -->
+  <section class="py-6 bg-background-tertiary">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div class="flex items-center justify-between">
+        <p class="text-text-secondary">
+          <span class="font-medium text-text">{posts.length}</span>
+          {posts.length === 1 ? 'post' : 'posts'} tagged with
+          <span class="font-medium text-accent capitalize">"{currentTag}"</span>
+        </p>
+        <a
+          href="/blog"
+          class="text-sm text-primary hover:text-primary-600 transition-colors duration-normal flex items-center gap-1"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+          Clear filter
+        </a>
+      </div>
+    </div>
+  </section>
 
   <!-- Blog Posts Grid -->
   <section class="py-12 md:py-16">
@@ -144,13 +197,22 @@ function formatDate(date: Date): string {
                     {post.data.tags.length > 0 && (
                       <>
                         <span class="text-text-muted">·</span>
-                        <a
-                          href={`/blog/tag/${post.data.tags[0].toLowerCase()}`}
-                          class="text-accent capitalize hover:text-primary transition-colors duration-normal"
-                          onclick="event.stopPropagation()"
-                        >
-                          {post.data.tags[0]}
-                        </a>
+                        <div class="flex flex-wrap gap-2">
+                          {post.data.tags.map((tag) => (
+                            <a
+                              href={`/blog/tag/${tag.toLowerCase()}`}
+                              class:list={[
+                                'capitalize hover:text-primary transition-colors duration-normal',
+                                tag.toLowerCase() === currentTag
+                                  ? 'text-primary font-medium'
+                                  : 'text-accent',
+                              ]}
+                              onclick="event.stopPropagation()"
+                            >
+                              {tag}
+                            </a>
+                          ))}
+                        </div>
                       </>
                     )}
                   </div>
@@ -203,15 +265,15 @@ function formatDate(date: Date): string {
                 />
               </svg>
             </div>
-            <h2 class="text-xl font-semibold text-text mb-2">No posts yet</h2>
+            <h2 class="text-xl font-semibold text-text mb-2">No posts found</h2>
             <p class="text-text-secondary mb-6">
-              Check back soon for stories and updates
+              No posts have been tagged with "{currentTag}" yet
             </p>
             <a
-              href="/"
+              href="/blog"
               class="inline-flex px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
             >
-              Back to Home
+              View all posts
             </a>
           </div>
         )

@@ -2892,3 +2892,60 @@ NOTES:
 - History page uses offset-based pagination (simpler than cursor for chronological data)
 - Blog post links go to /blog/{slug}/edit for easy editing
 - Empty state suggests publishing blog posts with newsletter option
+
+================================================================================
+ITERATION: 2026-01-18
+TASK: sf-8 - Add tag-based blog filtering
+================================================================================
+
+COMPLETED WORK:
+- Created getAllTags utility function in apps/storefront/src/lib/blog.ts
+  - Returns all unique tags from blog posts (lowercase, sorted alphabetically)
+  - Excludes draft posts
+  - Handles deduplication of case-variant tags (e.g., "Fashion", "FASHION" -> "fashion")
+
+- Created getPostsByTag utility function in apps/storefront/src/lib/blog.ts
+  - Filters posts by tag (case-insensitive matching)
+  - Excludes draft posts
+  - Sorts results by date (newest first)
+
+- Created /blog/tag/[tag].astro page at apps/storefront/src/pages/blog/tag/[tag].astro
+  - Uses getStaticPaths to generate pages for all unique tags
+  - Displays tag filter bar with all tags, current tag highlighted
+  - Shows filtered results header with post count and "Clear filter" link
+  - Same blog post card layout as main blog listing
+  - Newsletter CTA section at bottom
+
+- Updated blog index page (apps/storefront/src/pages/blog/index.astro)
+  - Added tag filter bar showing all available tags
+  - "All" tab shown as active (highlighted with primary bg)
+  - Tags link to /blog/tag/[tag] pages
+  - Tag in post meta section is now a clickable link
+
+- Updated BlogPost.astro layout (apps/storefront/src/layouts/BlogPost.astro)
+  - Tag badges at top of article are now clickable links
+  - Links point to /blog/tag/[tag] pages
+  - Added hover state styling for tag links
+
+- Added 13 unit tests for new blog utility functions
+  - getAllTags: 7 tests (unique tags, lowercase normalization, alphabetical sort, draft exclusion, empty cases, deduplication)
+  - getPostsByTag: 6 tests (filtering, case-insensitivity, date sorting, draft exclusion, empty cases)
+
+FILES CHANGED:
+- apps/storefront/src/lib/blog.ts (added getAllTags, getPostsByTag functions)
+- apps/storefront/src/pages/blog/tag/[tag].astro (new file)
+- apps/storefront/src/pages/blog/index.astro (added tag filter bar)
+- apps/storefront/src/layouts/BlogPost.astro (made tags clickable links)
+- apps/storefront/tests/lib/blog.test.ts (added 13 tests for new functions)
+- prd.json (marked sf-8 as passed)
+
+TEST RESULTS:
+- All 142 tests pass in storefront package (13 new + 129 existing)
+- TypeScript type check: PASSED (0 errors)
+- Lint: PASSED for new code (only pre-existing warnings in other packages)
+
+NOTES:
+- Tags are normalized to lowercase for URL consistency
+- Active tag in filter bar has primary background color
+- Tag page shows clear count of matching posts
+- Easy navigation back to all posts via "Clear filter" link

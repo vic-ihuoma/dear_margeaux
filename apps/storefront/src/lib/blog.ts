@@ -16,6 +16,45 @@ function countMatchingTags(postA: BlogPost, postB: BlogPost): number {
 }
 
 /**
+ * Get all unique tags from a collection of blog posts
+ *
+ * @param posts - Array of blog posts
+ * @returns Array of unique tags (lowercase, sorted alphabetically)
+ */
+export function getAllTags(posts: BlogPost[]): string[] {
+  const tagSet = new Set<string>();
+
+  for (const post of posts) {
+    // Skip drafts
+    if (post.data.draft) continue;
+
+    for (const tag of post.data.tags) {
+      tagSet.add(tag.toLowerCase());
+    }
+  }
+
+  return Array.from(tagSet).sort();
+}
+
+/**
+ * Get posts filtered by tag
+ *
+ * @param posts - Array of blog posts
+ * @param tag - Tag to filter by (case-insensitive)
+ * @returns Array of posts with the specified tag, sorted by date (newest first)
+ */
+export function getPostsByTag(posts: BlogPost[], tag: string): BlogPost[] {
+  const normalizedTag = tag.toLowerCase();
+
+  return posts
+    .filter((post) => {
+      if (post.data.draft) return false;
+      return post.data.tags.some((t) => t.toLowerCase() === normalizedTag);
+    })
+    .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+}
+
+/**
  * Get related posts based on matching tags
  *
  * Posts are scored by number of matching tags and sorted by:

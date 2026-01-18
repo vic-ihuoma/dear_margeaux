@@ -1,8 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { getRelatedPosts, type BlogPost } from '../../src/lib/blog';
+import {
+  getRelatedPosts,
+  getAllTags,
+  getPostsByTag,
+  type BlogPost,
+} from '../../src/lib/blog';
 
 /**
- * Tests for the getRelatedPosts utility function
+ * Tests for blog utility functions
  */
 
 // Helper to create mock blog posts with the CollectionEntry structure
@@ -311,5 +316,168 @@ describe('getRelatedPosts', () => {
 
       expect(related).toHaveLength(1);
     });
+  });
+});
+
+describe('getAllTags', () => {
+  it('returns all unique tags from posts', () => {
+    const posts = [
+      createMockPost('post-1', ['fashion', 'news'], new Date('2026-01-15')),
+      createMockPost('post-2', ['tech', 'fashion'], new Date('2026-01-14')),
+      createMockPost('post-3', ['news', 'brand'], new Date('2026-01-13')),
+    ];
+
+    const tags = getAllTags(posts);
+
+    expect(tags).toHaveLength(4);
+    expect(tags).toContain('fashion');
+    expect(tags).toContain('news');
+    expect(tags).toContain('tech');
+    expect(tags).toContain('brand');
+  });
+
+  it('normalizes tags to lowercase', () => {
+    const posts = [
+      createMockPost('post-1', ['Fashion', 'NEWS'], new Date('2026-01-15')),
+      createMockPost('post-2', ['fashion', 'Tech'], new Date('2026-01-14')),
+    ];
+
+    const tags = getAllTags(posts);
+
+    expect(tags).toHaveLength(3);
+    expect(tags).toContain('fashion');
+    expect(tags).toContain('news');
+    expect(tags).toContain('tech');
+    // Should not have uppercase versions
+    expect(tags).not.toContain('Fashion');
+    expect(tags).not.toContain('NEWS');
+  });
+
+  it('returns tags sorted alphabetically', () => {
+    const posts = [
+      createMockPost('post-1', ['zebra', 'apple'], new Date('2026-01-15')),
+      createMockPost('post-2', ['banana', 'cat'], new Date('2026-01-14')),
+    ];
+
+    const tags = getAllTags(posts);
+
+    expect(tags).toEqual(['apple', 'banana', 'cat', 'zebra']);
+  });
+
+  it('excludes tags from draft posts', () => {
+    const posts = [
+      createMockPost('published', ['fashion'], new Date('2026-01-15'), false),
+      createMockPost('draft', ['secret-tag'], new Date('2026-01-14'), true),
+    ];
+
+    const tags = getAllTags(posts);
+
+    expect(tags).toHaveLength(1);
+    expect(tags).toContain('fashion');
+    expect(tags).not.toContain('secret-tag');
+  });
+
+  it('returns empty array when no posts have tags', () => {
+    const posts = [
+      createMockPost('post-1', [], new Date('2026-01-15')),
+      createMockPost('post-2', [], new Date('2026-01-14')),
+    ];
+
+    const tags = getAllTags(posts);
+
+    expect(tags).toHaveLength(0);
+  });
+
+  it('returns empty array when posts array is empty', () => {
+    const tags = getAllTags([]);
+
+    expect(tags).toHaveLength(0);
+  });
+
+  it('deduplicates tags from same post', () => {
+    const posts = [
+      createMockPost(
+        'post-1',
+        ['fashion', 'Fashion', 'FASHION'],
+        new Date('2026-01-15')
+      ),
+    ];
+
+    const tags = getAllTags(posts);
+
+    expect(tags).toHaveLength(1);
+    expect(tags).toContain('fashion');
+  });
+});
+
+describe('getPostsByTag', () => {
+  it('returns posts with matching tag', () => {
+    const posts = [
+      createMockPost('post-1', ['fashion', 'news'], new Date('2026-01-15')),
+      createMockPost('post-2', ['tech'], new Date('2026-01-14')),
+      createMockPost('post-3', ['fashion', 'brand'], new Date('2026-01-13')),
+    ];
+
+    const filtered = getPostsByTag(posts, 'fashion');
+
+    expect(filtered).toHaveLength(2);
+    expect(filtered.map((p) => p.slug)).toContain('post-1');
+    expect(filtered.map((p) => p.slug)).toContain('post-3');
+    expect(filtered.map((p) => p.slug)).not.toContain('post-2');
+  });
+
+  it('is case-insensitive when matching tags', () => {
+    const posts = [
+      createMockPost('post-1', ['Fashion'], new Date('2026-01-15')),
+      createMockPost('post-2', ['FASHION'], new Date('2026-01-14')),
+      createMockPost('post-3', ['fashion'], new Date('2026-01-13')),
+    ];
+
+    const filtered = getPostsByTag(posts, 'FaShIoN');
+
+    expect(filtered).toHaveLength(3);
+  });
+
+  it('sorts results by date (newest first)', () => {
+    const posts = [
+      createMockPost('oldest', ['fashion'], new Date('2026-01-10')),
+      createMockPost('newest', ['fashion'], new Date('2026-01-20')),
+      createMockPost('middle', ['fashion'], new Date('2026-01-15')),
+    ];
+
+    const filtered = getPostsByTag(posts, 'fashion');
+
+    expect(filtered[0].slug).toBe('newest');
+    expect(filtered[1].slug).toBe('middle');
+    expect(filtered[2].slug).toBe('oldest');
+  });
+
+  it('excludes draft posts', () => {
+    const posts = [
+      createMockPost('published', ['fashion'], new Date('2026-01-15'), false),
+      createMockPost('draft', ['fashion'], new Date('2026-01-14'), true),
+    ];
+
+    const filtered = getPostsByTag(posts, 'fashion');
+
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].slug).toBe('published');
+  });
+
+  it('returns empty array when no posts match tag', () => {
+    const posts = [
+      createMockPost('post-1', ['tech'], new Date('2026-01-15')),
+      createMockPost('post-2', ['news'], new Date('2026-01-14')),
+    ];
+
+    const filtered = getPostsByTag(posts, 'fashion');
+
+    expect(filtered).toHaveLength(0);
+  });
+
+  it('returns empty array when posts array is empty', () => {
+    const filtered = getPostsByTag([], 'fashion');
+
+    expect(filtered).toHaveLength(0);
   });
 });
