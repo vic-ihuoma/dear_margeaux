@@ -1593,3 +1593,41 @@ Additional test coverage:
 - newsletter-8: Create one-click unsubscribe endpoint
 - newsletter-9: Create storefront unsubscribe confirmation page
 - newsletter-10: Create newsletter email template for blog-to-newsletter workflow
+
+## [newsletter-8]: Create one-click unsubscribe endpoint
+**Status:** PASSED
+**Tests Written:** 10 unit tests in merchant/tests/routes/newsletter.test.ts
+**Test Results:** 391 tests passed (merchant - 10 new unsubscribe tests + 381 existing)
+**Type Check:** PASSED - 0 errors across all packages
+**Lint:** PASSED - 0 errors (234 pre-existing warnings for `any` types and console usage in other files)
+**Browser Tests:** N/A - no visual tests in PRD for this task (API endpoint only)
+**Pre-commit Hooks:** Pending (commit in progress)
+**Findings:**
+- Created GET /v1/newsletter/unsubscribe endpoint in merchant/src/routes/newsletter.ts (lines 131-206)
+- Endpoint accepts two query parameters: email and token
+- Token validation supports two formats:
+  - verification_token (for unverified subscribers or those who haven't verified yet)
+  - unsub-{id} format (for verified subscribers whose token was cleared)
+- Sets unsubscribed_at timestamp (soft delete) - record is NOT deleted for compliance
+- Returns generic error message to prevent email enumeration attacks
+- Handles already-unsubscribed users gracefully (returns success without updating)
+- Normalizes email to lowercase for consistent lookup
+- Logs successful unsubscribes with `[NEWSLETTER] Unsubscribed: email`
+**PRD Coverage:**
+All unit tests implemented:
+- GET /v1/newsletter/unsubscribe returns success for valid email/token ✓
+- unsubscribed_at timestamp is set ✓
+- Invalid token returns error ✓
+- Record is not deleted (soft unsubscribe) ✓
+Additional test coverage:
+- Returns 400 when email parameter is missing ✓
+- Returns 400 when token parameter is missing ✓
+- Handles already unsubscribed user gracefully ✓
+- Normalizes email to lowercase ✓
+- Returns error for non-existent email ✓
+- Accepts unsub-{id} token format ✓
+**Recommendations:**
+- newsletter-9: Create storefront unsubscribe confirmation page
+- newsletter-10: Create branded newsletter email template
+- Consider adding the unsub-{id} token to verification email for verified subscribers
+

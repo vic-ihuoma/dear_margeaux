@@ -543,4 +543,251 @@ describe('Newsletter Routes', () => {
       expect(body.email).toBe('verified@example.com');
     });
   });
+
+  describe('GET /v1/newsletter/unsubscribe - One-click unsubscribe', () => {
+    it('returns success for valid email and token', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: subscriber found with matching verification_token
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-123',
+          email: 'test@example.com',
+          verified: 1,
+          verification_token: 'valid-token-123',
+          unsubscribed_at: null,
+        },
+      ]);
+
+      const res = await app.request(
+        '/v1/newsletter/unsubscribe?email=test@example.com&token=valid-token-123',
+        { method: 'GET' }
+      );
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+      expect(body.message).toContain('unsubscribed');
+      expect(body.email).toBe('test@example.com');
+    });
+
+    it('sets unsubscribed_at timestamp', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: subscriber found
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-123',
+          email: 'test@example.com',
+          verified: 1,
+          verification_token: 'valid-token-123',
+          unsubscribed_at: null,
+        },
+      ]);
+
+      await app.request('/v1/newsletter/unsubscribe?email=test@example.com&token=valid-token-123', {
+        method: 'GET',
+      });
+
+      // Check that UPDATE was called with unsubscribed_at timestamp
+      expect(mockDbRun).toHaveBeenCalledWith(
+        expect.stringContaining('SET unsubscribed_at = ?'),
+        expect.arrayContaining(['2026-01-18T12:00:00.000Z']) // The mocked now()
+      );
+    });
+
+    it('returns error for invalid token', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: subscriber found but with different token
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-123',
+          email: 'test@example.com',
+          verified: 1,
+          verification_token: 'correct-token',
+          unsubscribed_at: null,
+        },
+      ]);
+
+      const res = await app.request(
+        '/v1/newsletter/unsubscribe?email=test@example.com&token=wrong-token',
+        { method: 'GET' }
+      );
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('invalid_request');
+      expect(body.message).toContain('Invalid');
+    });
+
+    it('returns error for non-existent email', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: no subscriber found
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const res = await app.request(
+        '/v1/newsletter/unsubscribe?email=unknown@example.com&token=any-token',
+        { method: 'GET' }
+      );
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('invalid_request');
+      expect(body.message).toContain('Invalid');
+    });
+
+    it('record is not deleted (soft unsubscribe)', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: subscriber found
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-123',
+          email: 'test@example.com',
+          verified: 1,
+          verification_token: 'valid-token',
+          unsubscribed_at: null,
+        },
+      ]);
+
+      await app.request('/v1/newsletter/unsubscribe?email=test@example.com&token=valid-token', {
+        method: 'GET',
+      });
+
+      // Should call UPDATE, NOT DELETE
+      expect(mockDbRun).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE newsletter_subscribers'),
+        expect.any(Array)
+      );
+      expect(mockDbRun).not.toHaveBeenCalledWith(
+        expect.stringContaining('DELETE'),
+        expect.any(Array)
+      );
+    });
+
+    it('returns 400 when email parameter is missing', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/unsubscribe?token=some-token', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('invalid_request');
+      expect(body.message).toContain('Email');
+    });
+
+    it('returns 400 when token parameter is missing', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/unsubscribe?email=test@example.com', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('invalid_request');
+      expect(body.message).toContain('Token');
+    });
+
+    it('handles already unsubscribed user gracefully', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: subscriber already unsubscribed
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-123',
+          email: 'test@example.com',
+          verified: 1,
+          verification_token: 'valid-token',
+          unsubscribed_at: '2026-01-17T12:00:00.000Z',
+        },
+      ]);
+
+      const res = await app.request(
+        '/v1/newsletter/unsubscribe?email=test@example.com&token=valid-token',
+        { method: 'GET' }
+      );
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+      expect(body.message).toContain('already');
+
+      // Should NOT call UPDATE since already unsubscribed
+      expect(mockDbRun).not.toHaveBeenCalled();
+    });
+
+    it('normalizes email to lowercase', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: subscriber found
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-123',
+          email: 'test@example.com',
+          verified: 1,
+          verification_token: 'valid-token',
+          unsubscribed_at: null,
+        },
+      ]);
+
+      await app.request('/v1/newsletter/unsubscribe?email=TEST@EXAMPLE.COM&token=valid-token', {
+        method: 'GET',
+      });
+
+      // Check that query used lowercase email
+      expect(mockDbQuery).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT'),
+        expect.arrayContaining(['test@example.com'])
+      );
+    });
+
+    it('accepts unsub-{id} token format', async () => {
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: verified subscriber with cleared verification_token
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-123',
+          email: 'test@example.com',
+          verified: 1,
+          verification_token: null, // Cleared after verification
+          unsubscribed_at: null,
+        },
+      ]);
+
+      const res = await app.request(
+        '/v1/newsletter/unsubscribe?email=test@example.com&token=unsub-sub-123',
+        { method: 'GET' }
+      );
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+    });
+  });
 });

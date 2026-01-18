@@ -2249,3 +2249,29 @@ The page already exists at `apps/storefront/src/pages/newsletter/verified.astro`
 ### Next Steps
 - newsletter-8: Create one-click unsubscribe endpoint
 - newsletter-9: Create storefront unsubscribe confirmation page
+
+## 2026-01-18: newsletter-8 - Create one-click unsubscribe endpoint
+
+### Task Completed
+Implemented GET /v1/newsletter/unsubscribe endpoint that allows newsletter subscribers to unsubscribe via a one-click link.
+
+### Key Decisions
+- Token validation accepts two formats: verification_token (for pending subscribers) and unsub-{id} (for verified subscribers whose token was cleared)
+- Soft delete approach: sets unsubscribed_at timestamp, does NOT delete record (GDPR/CAN-SPAM compliance)
+- Returns generic error messages to prevent email enumeration attacks
+- Handles already-unsubscribed users gracefully by returning success without re-updating
+
+### Files Changed
+- `merchant/src/routes/newsletter.ts` - Added GET /v1/newsletter/unsubscribe endpoint (lines 131-206)
+- `merchant/tests/routes/newsletter.test.ts` - Added 10 unit tests for unsubscribe endpoint (lines 547-796)
+- `prd.json` - Set passes: true for newsletter-8
+
+### Test Results
+- Type Check: PASSED (0 errors)
+- Lint: PASSED (0 errors, pre-existing warnings only)
+- Unit Tests: 391 PASSED (10 new + 381 existing)
+
+### Next Steps
+- newsletter-9: Create storefront unsubscribe confirmation page (/newsletter/unsubscribed.astro)
+- newsletter-10: Create branded newsletter email template
+
