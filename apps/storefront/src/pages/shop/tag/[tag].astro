@@ -2,6 +2,7 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import ProductCard from '../../../components/ProductCard.astro';
 import ProductGrid from '../../../components/ProductGrid.astro';
+import CollapsibleFilter from '../../../components/CollapsibleFilter.astro';
 import type { InventoryItem, TagInfo } from '@dear-margeaux/api';
 import type { GetStaticPaths } from 'astro';
 
@@ -263,37 +264,36 @@ const displayTag =
   {
     allTags.length > 0 && (
       <section class="border-b border-border bg-background">
-        <div class="container mx-auto px-4 max-w-6xl">
-          <div class="flex items-center gap-4 py-4 overflow-x-auto">
-            <span class="text-sm font-medium text-text-secondary shrink-0">
-              Filter by:
-            </span>
-            <div class="flex gap-2 flex-wrap">
-              <a
-                href="/shop"
-                class="px-4 py-2 text-sm font-medium rounded-full border border-border text-text hover:bg-background-secondary transition-colors duration-normal"
-              >
-                All
-              </a>
-              {allTags.map((t) => {
-                const isActive = t.tag === normalizedTag;
-                return (
-                  <a
-                    href={`/shop/tag/${encodeURIComponent(t.tag)}`}
-                    class:list={[
-                      'px-4 py-2 text-sm font-medium rounded-full transition-colors duration-normal',
-                      isActive
-                        ? 'bg-primary text-text-inverse'
-                        : 'border border-border text-text hover:bg-background-secondary',
-                    ]}
-                  >
-                    {t.tag}
-                    <span class="ml-1 text-xs opacity-70">({t.count})</span>
-                  </a>
-                );
-              })}
-            </div>
-          </div>
+        <div class="container mx-auto px-4 max-w-6xl py-4">
+          <CollapsibleFilter
+            label="Filter by tag"
+            id="shop-tag-filter"
+            defaultOpen={true}
+          >
+            <a
+              href="/shop"
+              class="px-4 py-2 text-sm font-medium rounded-full border border-border text-text hover:bg-background-secondary transition-colors duration-normal"
+            >
+              All
+            </a>
+            {allTags.map((t) => {
+              const isActive = t.tag === normalizedTag;
+              return (
+                <a
+                  href={`/shop/tag/${encodeURIComponent(t.tag)}`}
+                  class:list={[
+                    'px-4 py-2 text-sm font-medium rounded-full transition-colors duration-normal',
+                    isActive
+                      ? 'bg-primary text-text-inverse'
+                      : 'border border-border text-text hover:bg-background-secondary',
+                  ]}
+                >
+                  {t.tag}
+                  <span class="ml-1 text-xs opacity-70">({t.count})</span>
+                </a>
+              );
+            })}
+          </CollapsibleFilter>
         </div>
       </section>
     )

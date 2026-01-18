@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import NewsletterForm from '../../components/NewsletterForm';
+import CollapsibleFilter from '../../components/CollapsibleFilter.astro';
 import { getAllTags } from '../../lib/blog';
 
 // API configuration for newsletter form
@@ -75,12 +76,9 @@ function formatDate(date: Date): string {
   <!-- Tag Filter Bar -->
   {
     allTags.length > 0 && (
-      <section class="py-6 border-b border-border">
+      <section class="py-4 border-b border-border">
         <div class="container mx-auto px-4 max-w-4xl">
-          <div class="flex flex-wrap items-center gap-3">
-            <span class="text-sm font-medium text-text-secondary">
-              Filter by tag:
-            </span>
+          <CollapsibleFilter label="Filter by tag" id="blog-tags">
             <span class="px-3 py-1.5 text-sm font-medium rounded-full bg-primary text-text-inverse">
               All
             </span>
@@ -92,7 +90,7 @@ function formatDate(date: Date): string {
                 {tag}
               </a>
             ))}
-          </div>
+          </CollapsibleFilter>
         </div>
       </section>
     )

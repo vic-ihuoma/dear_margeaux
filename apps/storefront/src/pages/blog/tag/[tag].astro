@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import CollapsibleFilter from '../../../components/CollapsibleFilter.astro';
 import { getAllTags, getPostsByTag } from '../../../lib/blog';
 
 export async function getStaticPaths() {
@@ -83,12 +84,13 @@ function capitalizeTag(tag: string): string {
   </section>
 
   <!-- Tag Filter Bar -->
-  <section class="py-6 border-b border-border">
+  <section class="py-4 border-b border-border">
     <div class="container mx-auto px-4 max-w-4xl">
-      <div class="flex flex-wrap items-center gap-3">
-        <span class="text-sm font-medium text-text-secondary"
-          >Filter by tag:</span
-        >
+      <CollapsibleFilter
+        label="Filter by tag"
+        id="blog-tag-filter"
+        defaultOpen={true}
+      >
         <a
           href="/blog"
           class="px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-normal text-text-secondary hover:text-text hover:bg-secondary"
@@ -111,7 +113,7 @@ function capitalizeTag(tag: string): string {
             </a>
           ))
         }
-      </div>
+      </CollapsibleFilter>
     </div>
   </section>
 
