@@ -268,3 +268,32 @@
 **Recommendations:**
 - nav-15: Test all navigation flows end-to-end
 - initial-content-10: Create pinned 'About Dear Margeaux' blog post to make redirect destination functional
+
+## [test-2]: Add unit tests for cart store
+**Status:** PASSED
+**Tests Written:** 53 unit tests in apps/storefront/tests/stores/cart.test.ts
+**Test Results:** 53 tests passed (storefront), 18 tests passed (merchant), 71 total
+**Type Check:** PASSED - 0 errors across all 7 packages
+**Lint:** PASSED - 0 errors (pre-existing warnings only)
+**Browser Tests:** SKIPPED - unit tests only, no UI changes
+**Pre-commit Hooks:** Pending (commit in progress)
+**Findings:**
+- Created Vitest configuration for storefront app (vitest.config.ts)
+- Added vitest, jsdom, @vitest/coverage-v8 as dev dependencies
+- Added test, test:watch, test:coverage scripts to package.json
+- Created comprehensive test suite covering:
+  - **addToCart tests (8):** Empty cart, existing item increment, max quantity cap (10), custom quantity, multiple items, localStorage persistence, cart drawer opening
+  - **updateCartItemQuantity tests (5):** Quantity updates, rejects <1 and >10, persistence, non-existent item handling
+  - **removeFromCart tests (4):** By variant ID, non-existent item, persistence, sequential removal
+  - **clearCart tests (3):** Removes all items, clears localStorage, resets API cart ID
+  - **Computed value tests ($cartCount, $cartSubtotal, $isCartEmpty) (12):** All reactive behaviors tested
+  - **localStorage persistence tests (4):** Init loading, corrupted data handling, empty storage, non-array data
+  - **Cart drawer control tests (3):** openCart, closeCart, toggleCart
+  - **Currency function tests (14):** setCurrency, detectCurrency, formatPrice, getCurrencySymbol, getSupportedCurrencies
+- Tests use proper mocking for localStorage and navigator APIs
+- jsdom environment enables browser API simulation
+**Recommendations:**
+- test-1: Add unit tests for API client (packages/api)
+- test-3: Add integration tests for admin API routes
+- Consider adding test:coverage script to CI pipeline
+- Future: Add tests for other stores (auth, etc.) as needed

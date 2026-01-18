@@ -320,3 +320,57 @@ Created a 301 permanent redirect from `/about` to `/blog/about-dear-margeaux` to
 ### Next Steps
 - nav-15: Test all navigation flows end-to-end
 - initial-content-10: Create pinned 'About Dear Margeaux' blog post
+
+## 2026-01-18: test-2 - Add unit tests for cart store
+
+### Task Completed
+Created comprehensive unit tests for the cart store in the storefront app using Vitest. Added 53 tests covering all cart store functionality.
+
+### Key Decisions
+- Added Vitest as the test framework for storefront (matching merchant's test setup)
+- Used jsdom environment for browser API simulation (localStorage, window, navigator)
+- Created tests directory structure at `apps/storefront/tests/stores/`
+- Mocked localStorage and navigator APIs for proper test isolation
+- Tests cover: addToCart, updateCartItemQuantity, removeFromCart, clearCart, computed values, localStorage persistence, cart drawer controls, currency functions
+
+### Files Created
+- `apps/storefront/vitest.config.ts` - Vitest configuration with jsdom environment
+- `apps/storefront/tests/stores/cart.test.ts` - 53 unit tests for cart store
+
+### Files Changed
+- `apps/storefront/package.json` - Added vitest, jsdom, @vitest/coverage-v8 dev dependencies, added test scripts
+- `prd.json` - Set passes: true for test-2
+
+### Test Results
+- Storefront Tests: PASSED (53 tests)
+- Merchant Tests: PASSED (18 tests in 2 files)
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, pre-existing warnings only)
+- Build: PASSED (31 pages built)
+
+### Test Coverage Summary
+Tests cover all PRD requirements:
+- addToCart adds new item to empty cart ✓
+- addToCart increments quantity for existing item ✓
+- addToCart stores variant ID and product info ✓
+- addToCart persists to localStorage ✓
+- updateCartItemQuantity updates quantity for existing item ✓
+- updateCartItemQuantity rejects quantities outside 1-10 range ✓
+- removeFromCart removes item by variant ID ✓
+- removeFromCart handles non-existent item gracefully ✓
+- clearCart removes all items ✓
+- clearCart clears localStorage ✓
+- $cartCount returns total item count ✓
+- $cartCount handles quantities greater than 1 ✓
+- $cartSubtotal calculates correct total ✓
+- $cartSubtotal handles empty cart ✓
+- $isCartEmpty returns true when empty ✓
+- $isCartEmpty returns false when items exist ✓
+- Cart loads from localStorage on init ✓
+- Cart handles corrupted localStorage data ✓
+- Additional tests for currency functions, formatPrice, getCurrencySymbol
+
+### Next Steps
+- test-1: Add unit tests for API client
+- test-3: Add integration tests for admin API routes
+- Other testing tasks (test-4 through test-7)
