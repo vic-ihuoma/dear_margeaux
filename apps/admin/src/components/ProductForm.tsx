@@ -1,10 +1,12 @@
 import { useState, useCallback, type FormEvent } from 'react';
 import type { Product, ProductStatus } from '@dear-margeaux/api';
+import { TagInput } from './TagInput';
 
 export interface ProductFormData {
   title: string;
   description: string;
   status: ProductStatus;
+  tags: string[];
 }
 
 /** The data shape that ProductForm submits */
@@ -12,6 +14,7 @@ export interface ProductFormSubmitData {
   title: string;
   description?: string;
   status: ProductStatus;
+  tags?: string[];
 }
 
 export interface ProductFormProps {
@@ -38,6 +41,7 @@ export function ProductForm({
     title: product?.title || '',
     description: product?.description || '',
     status: product?.status || 'draft',
+    tags: product?.tags || [],
   });
 
   const [formErrors, setFormErrors] = useState<
@@ -72,6 +76,7 @@ export function ProductForm({
       title: formData.title.trim(),
       description: formData.description.trim() || undefined,
       status: formData.status,
+      tags: formData.tags.length > 0 ? formData.tags : undefined,
     });
   };
 
@@ -160,6 +165,17 @@ export function ProductForm({
           {formData.description.length}/5000 characters
         </p>
       </div>
+
+      {/* Tags */}
+      <TagInput
+        id="tags"
+        label="Tags"
+        value={formData.tags}
+        onChange={(tags) => setFormData({ ...formData, tags })}
+        placeholder="Add tags (press Enter or comma to add)"
+        disabled={isSubmitting}
+        maxTags={10}
+      />
 
       {/* Status */}
       <div>

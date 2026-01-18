@@ -1008,3 +1008,41 @@ All unit tests implemented:
 - pm-10: Integrate TagInput into ProductForm
 - Add React Testing Library to admin package for interactive component testing
 - Consider debouncing tag creation for rapid typing
+
+---
+
+## pm-10: Integrate TagInput into ProductForm
+
+**PRD Requirements:**
+- Open apps/admin/src/components/ProductForm.tsx
+- Import TagInput component
+- Add tags section below description field
+- Wire up onChange handler to update form state
+- Pre-populate tags when editing existing product
+
+**Typecheck:** PASSED (0 errors, 73 files in admin)
+**Lint:** PASSED (pre-existing warnings only)
+**Unit Tests:** PASSED (96 tests in admin)
+**Browser Tests:** Documented in PRD as visual tests with agent-browser
+**Pre-commit Hooks:** Pending (commit in progress)
+
+**Findings:**
+- Imported TagInput from './TagInput'
+- Added `tags: string[]` to ProductFormData interface for form state
+- Added `tags?: string[]` to ProductFormSubmitData interface for submit payload
+- Initialized form state with `tags: product?.tags || []` to pre-populate on edit
+- Placed TagInput component between Description and Status sections
+- Configured TagInput props:
+  - id="tags" for accessibility
+  - label="Tags" for field label
+  - value={formData.tags} for controlled input
+  - onChange={(tags) => setFormData({ ...formData, tags })} for state updates
+  - placeholder for user guidance
+  - disabled={isSubmitting} to match form state
+  - maxTags={10} for reasonable limit
+- Updated handleSubmit to include tags: only sends if tags.length > 0 (undefined otherwise)
+
+**Recommendations:**
+- pm-11: Add drop_id field to Product schema
+- Consider adding tag suggestions/autocomplete based on existing tags
+- Consider adding tag validation (blocked words, format restrictions)
