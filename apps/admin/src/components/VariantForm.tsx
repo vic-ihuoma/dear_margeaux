@@ -1,11 +1,13 @@
 import { useState, useCallback, type FormEvent } from 'react';
 import type { Variant } from '@dear-margeaux/api';
+import { ImageUploader } from './ImageUploader';
 
 export interface VariantFormData {
   sku: string;
   title: string;
   price: string;
   image_url: string;
+  image_alt: string;
 }
 
 /** The data shape that VariantForm submits */
@@ -14,6 +16,7 @@ export interface VariantFormSubmitData {
   title: string;
   price_cents: number;
   image_url?: string;
+  image_alt?: string;
 }
 
 export interface VariantFormProps {
@@ -27,6 +30,8 @@ export interface VariantFormProps {
   isSubmitting?: boolean;
   /** Error message to display */
   error?: string | null;
+  /** Handler function for image upload - required for ImageUploader */
+  uploadHandler?: (file: File) => Promise<{ url: string; key: string }>;
 }
 
 export function VariantForm({
@@ -35,12 +40,14 @@ export function VariantForm({
   onCancel,
   isSubmitting = false,
   error,
+  uploadHandler,
 }: VariantFormProps) {
   const [formData, setFormData] = useState<VariantFormData>({
     sku: variant?.sku || '',
     title: variant?.title || '',
     price: variant ? (variant.price_cents / 100).toFixed(2) : '',
     image_url: variant?.image_url || '',
+    image_alt: variant?.image_alt || '',
   });
 
   const [formErrors, setFormErrors] = useState<
@@ -70,22 +77,14 @@ export function VariantForm({
       }
     }
 
-    if (formData.image_url && !isValidUrl(formData.image_url)) {
-      errors.image_url = 'Please enter a valid URL';
+    // Validate alt text is required when image is uploaded
+    if (formData.image_url && !formData.image_alt.trim()) {
+      errors.image_alt = 'Alt text is required when an image is uploaded';
     }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   }, [formData]);
-
-  const isValidUrl = (url: string): boolean => {
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
-    }
-  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -101,7 +100,20 @@ export function VariantForm({
       title: formData.title.trim(),
       price_cents: priceCents,
       image_url: formData.image_url.trim() || undefined,
+      image_alt: formData.image_alt.trim() || undefined,
     });
+  };
+
+  const handleImageUpload = (url: string) => {
+    setFormData({ ...formData, image_url: url });
+    // Clear any image_url errors when a new image is uploaded
+    if (formErrors.image_url) {
+      setFormErrors({ ...formErrors, image_url: undefined });
+    }
+  };
+
+  const handleImageRemove = () => {
+    setFormData({ ...formData, image_url: '', image_alt: '' });
   };
 
   return (
@@ -230,45 +242,99 @@ export function VariantForm({
         )}
       </div>
 
-      {/* Image URL */}
-      <div>
-        <label
-          htmlFor="variant-image"
-          className="block text-sm font-medium text-text-primary mb-1"
-        >
-          Image URL
-        </label>
-        <input
-          type="url"
-          id="variant-image"
-          name="image_url"
-          value={formData.image_url}
-          onChange={(e) =>
-            setFormData({ ...formData, image_url: e.target.value })
-          }
-          className={`block w-full rounded-lg border ${
-            formErrors.image_url
-              ? 'border-status-error focus:border-status-error focus:ring-status-error'
-              : 'border-border focus:border-primary-500 focus:ring-primary-500'
-          } bg-background-primary py-2 px-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1`}
-          placeholder="https://example.com/image.jpg"
-          disabled={isSubmitting}
-        />
-        {formErrors.image_url && (
-          <p className="mt-1 text-xs text-status-error">
-            {formErrors.image_url}
-          </p>
-        )}
-        {formData.image_url && isValidUrl(formData.image_url) && (
-          <div className="mt-2">
-            <img
-              src={formData.image_url}
-              alt="Preview"
-              className="h-20 w-20 rounded-lg object-cover border border-border"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
+      {/* Variant Image Section */}
+      <div className="space-y-4">
+        <div>
+          <span className="block text-sm font-medium text-text-primary mb-1">
+            Variant Image
+          </span>
+          {uploadHandler ? (
+            <ImageUploader
+              value={formData.image_url || null}
+              onUpload={handleImageUpload}
+              onRemove={handleImageRemove}
+              isUploading={isSubmitting}
+              uploadHandler={uploadHandler}
             />
+          ) : (
+            // Fallback to URL input if no upload handler is provided
+            <div>
+              <label htmlFor="variant-image" className="sr-only">
+                Variant Image URL
+              </label>
+              <input
+                type="url"
+                id="variant-image"
+                name="image_url"
+                value={formData.image_url}
+                onChange={(e) =>
+                  setFormData({ ...formData, image_url: e.target.value })
+                }
+                className="block w-full rounded-lg border border-border focus:border-primary-500 focus:ring-primary-500 bg-background-primary py-2 px-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1"
+                placeholder="https://example.com/image.jpg"
+                disabled={isSubmitting}
+              />
+              {formData.image_url && (
+                <div className="mt-2 relative inline-block">
+                  <img
+                    src={formData.image_url}
+                    alt={formData.image_alt || 'Variant preview'}
+                    className="h-32 w-32 rounded-lg object-cover border border-border"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                  {formData.image_alt && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 rounded-b-lg truncate">
+                      {formData.image_alt}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Alt Text Input - shown when image is uploaded */}
+        {formData.image_url && (
+          <div>
+            <label
+              htmlFor="variant-image-alt"
+              className="block text-sm font-medium text-text-primary mb-1"
+            >
+              Image Alt Text <span className="text-status-error">*</span>
+            </label>
+            <input
+              type="text"
+              id="variant-image-alt"
+              name="image_alt"
+              value={formData.image_alt}
+              onChange={(e) =>
+                setFormData({ ...formData, image_alt: e.target.value })
+              }
+              className={`block w-full rounded-lg border ${
+                formErrors.image_alt
+                  ? 'border-status-error focus:border-status-error focus:ring-status-error'
+                  : 'border-border focus:border-primary-500 focus:ring-primary-500'
+              } bg-background-primary py-2 px-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1`}
+              placeholder="Describe the image for accessibility"
+              disabled={isSubmitting}
+            />
+            {formErrors.image_alt && (
+              <p className="mt-1 text-xs text-status-error">
+                {formErrors.image_alt}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-text-muted">
+              Describe the image for screen readers and accessibility
+            </p>
+          </div>
+        )}
+
+        {/* Image preview with alt text overlay when using ImageUploader */}
+        {uploadHandler && formData.image_url && formData.image_alt && (
+          <div className="text-xs text-text-muted bg-background-tertiary rounded-lg p-2">
+            <span className="font-medium">Alt text:</span> {formData.image_alt}
           </div>
         )}
       </div>

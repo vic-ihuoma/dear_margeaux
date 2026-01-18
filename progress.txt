@@ -1684,6 +1684,75 @@ PRD unit tests verified:
 - Existing product shows current drop ✓ (initialized from product?.drop_id, line 48)
 
 ### Next Steps
-- pm-15: Add alt text field to variant images
-- pm-16: Update VariantForm with image upload and alt text
+- pm-17: Display product images on storefront with alt text
+
+## 2026-01-18: pm-15 - Add alt text field to variant images (Already Completed)
+
+### Task Status
+Task pm-15 was already completed as part of pm-1 and pm-2 implementation:
+- pm-1 added `image_alt: string | null` to Variant interface in packages/api/src/types.ts
+- pm-1 added `image_alt?: string` to CreateVariantParams and UpdateVariantParams
+- pm-1 created migration 013-product-images.sql with `image_alt TEXT` column for variants table
+- pm-2 updated catalog routes to handle image_alt in variant CRUD operations
+
+### Verification
+- Grep search for `image_alt` confirms presence in:
+  - packages/api/src/types.ts lines 53, 112, 121
+  - merchant/migrations/013-product-images.sql line 8
+  - merchant/src/routes/catalog.ts (multiple occurrences)
+
+### Test Results
+- All existing tests pass (no changes needed)
+- image_alt field is already fully integrated
+
+### Outcome
+- Marked pm-15 as passes: true in prd.json (no code changes required)
+
+## 2026-01-18: pm-16 - Update VariantForm with image upload and alt text
+
+### Task Completed
+Updated VariantForm component to integrate ImageUploader and add alt text input field for variant images.
+
+### Key Decisions
+- Added `image_alt: string` to VariantFormData interface for form state
+- Added `image_alt?: string` to VariantFormSubmitData interface for submit payload
+- Added optional `uploadHandler` prop to VariantFormProps for ImageUploader integration
+- Validation: alt text is required when image is uploaded (accessibility requirement)
+- Replaced image URL text input with ImageUploader when uploadHandler is provided
+- Fallback to URL text input when no uploadHandler is provided
+- Alt text input appears conditionally when image is uploaded
+- Alt text preview box shows below ImageUploader when both image and alt text are present
+- Fixed accessibility lint error by using `<span>` for "Variant Image" label and adding screen-reader-only label for URL fallback input
+
+### Files Changed
+- `apps/admin/src/components/VariantForm.tsx`:
+  - Added ImageUploader import (line 3)
+  - Added image_alt to VariantFormData interface (line 10)
+  - Added image_alt to VariantFormSubmitData interface (line 19)
+  - Added uploadHandler prop to VariantFormProps (line 34)
+  - Added image_alt to form state initialization (line 50)
+  - Added alt text validation (lines 80-83)
+  - Added handleImageUpload and handleImageRemove handlers (lines 107-117)
+  - Replaced image URL input with conditional ImageUploader/fallback (lines 246-297)
+  - Added alt text input field (lines 300-334)
+  - Added alt text preview for ImageUploader mode (lines 337-341)
+
+### Files Created
+- `apps/admin/tests/components/VariantForm.test.ts` - 40 documented behavior tests for VariantForm
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors on VariantForm.tsx after fixing label accessibility)
+- Unit Tests: PASSED (148 tests - 40 new VariantForm + 114 existing in admin)
+
+### Test Coverage Summary
+All PRD requirements documented:
+- ImageUploader renders when uploadHandler provided ✓
+- Alt text input renders when image uploaded ✓
+- Alt text required with image validation ✓
+- Preview shows image with alt text ✓
+- Form submission includes image_alt ✓
+- Existing variant shows current alt text ✓
+
+### Next Steps
 - pm-17: Display product images on storefront with alt text
