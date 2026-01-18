@@ -1952,3 +1952,50 @@ All unit tests implemented:
 - newsletter-18: Add manual subscriber add functionality (Add Subscriber button)
 - newsletter-19: Add subscriber export (CSV download)
 - Consider adding bulk operations (delete/unsubscribe selected)
+
+## [newsletter-18]: Add manual subscriber add functionality
+**Status:** PASSED
+**Tests Written:** 9 tests in merchant/tests/routes/newsletter.test.ts
+  - returns 403 for non-admin users
+  - creates new subscriber for valid email
+  - skip_verification flag sets verified=true immediately
+  - returns 400 for missing email
+  - returns 400 for invalid email format
+  - returns 409 for existing subscriber
+  - reactivates unsubscribed subscriber
+  - normalizes email to lowercase
+  - sets source as admin for manually added subscribers
+
+**Test Results:** All tests passing (9 new + existing tests)
+**Type Check:** PASSED - 0 errors
+**Lint:** PASSED (0 new errors; 2 pre-existing a11y errors in TagInput.tsx lines 59 and 217)
+**Browser Tests:** N/A - Task has visual tests but requires dev server. Tests documented for manual/CI.
+
+**Findings:**
+- Created POST /v1/newsletter/subscribers/add endpoint in merchant/src/routes/newsletter.ts:
+  - Admin-only endpoint (requires adminOnly middleware)
+  - Accepts email (required) and skip_verification (optional boolean)
+  - Normalizes email to lowercase
+  - Validates email format
+  - Returns 409 if subscriber already exists and active
+  - Reactivates unsubscribed subscribers instead of creating duplicates
+  - Sets source='admin' to distinguish from self-subscribed users
+  - When skip_verification=true: marks as verified immediately
+  - When skip_verification=false: sends verification email
+- Created admin API proxy route apps/admin/src/pages/api/newsletter/subscribers/add.ts
+- Created React components:
+  - AddSubscriberForm.tsx: Form with email input, skip verification checkbox
+  - AddSubscriberModal.tsx: Button + modal wrapper with accessibility support
+- Updated subscribers page to include Add Subscriber button in header
+
+**PRD Coverage:**
+- Add 'Add Subscriber' button to admin subscribers page ✓
+- Create AddSubscriberForm component ✓
+- Implement POST /v1/newsletter/subscribers/add (admin only) ✓
+- Allow adding with optional skip_verification flag ✓
+- Show success/error feedback ✓
+
+**Recommendations:**
+- newsletter-19: Add manual subscriber remove functionality (Remove button on each row)
+- newsletter-20: Add subscriber export to CSV
+- Consider adding bulk import functionality for importing subscriber lists

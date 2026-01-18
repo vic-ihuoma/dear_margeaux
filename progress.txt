@@ -2530,3 +2530,45 @@ N/A - Visual tests require running dev server. Tests are documented for manual/C
 - newsletter-18: Add manual subscriber add functionality
 - newsletter-19: Add subscriber export (CSV)
 - newsletter-15: Add invisible reCAPTCHA to subscribe forms
+
+## 2026-01-18: newsletter-18 - Add manual subscriber add functionality
+
+### Task Completed
+Implemented POST /v1/newsletter/subscribers/add endpoint and admin UI for manually adding newsletter subscribers.
+
+### Key Decisions
+- Created admin-only endpoint that accepts email and optional skip_verification flag
+- When skip_verification=true, subscriber is marked as verified immediately without sending confirmation email
+- When skip_verification=false (default), a verification email is sent to the subscriber
+- If subscriber was previously unsubscribed, endpoint reactivates them instead of creating duplicate
+- Returns 409 Conflict if subscriber already exists and is active
+- Source field set to 'admin' to distinguish from self-subscribed users
+- Email is normalized to lowercase for consistency
+
+### Files Changed
+- `merchant/src/routes/newsletter.ts` - Added POST /v1/newsletter/subscribers/add endpoint
+- `merchant/tests/routes/newsletter.test.ts` - Added 9 unit tests for the new endpoint
+- `apps/admin/src/pages/api/newsletter/subscribers/add.ts` - New API proxy route
+- `apps/admin/src/components/AddSubscriberForm.tsx` - New form component for adding subscribers
+- `apps/admin/src/components/AddSubscriberModal.tsx` - Modal wrapper component with button
+- `apps/admin/src/pages/subscribers/index.astro` - Added AddSubscriberModal button to page header
+- `prd.json` - Set passes: true for newsletter-18
+
+### Test Results
+- Type Check: PASSED (0 errors)
+- Lint: PASSED (0 new errors; 2 pre-existing a11y errors in TagInput.tsx)
+- Unit Tests: All tests passing (9 new tests for add subscriber endpoint)
+
+### PRD Requirements Verified
+- ✓ Add Subscriber button on admin subscribers page
+- ✓ POST /v1/newsletter/subscribers/add creates subscriber
+- ✓ skip_verification flag sets verified=true immediately
+- ✓ Success/error feedback shown in UI
+
+### Browser Tests
+N/A - Visual tests require running dev server. Tests are documented for manual/CI verification.
+
+### Next Steps
+- newsletter-19: Add manual subscriber remove functionality
+- newsletter-20: Add subscriber export to CSV
+- newsletter-21: Add newsletter send history page

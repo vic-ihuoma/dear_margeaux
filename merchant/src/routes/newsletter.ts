@@ -339,6 +339,115 @@ newsletterRoutes.get('/subscribers/count', adminOnly, async (c) => {
   });
 });
 
+// POST /v1/newsletter/subscribers/add - Manually add a subscriber (admin only)
+newsletterRoutes.post('/subscribers/add', adminOnly, async (c) => {
+  const { store } = c.get('auth');
+  const body = await c.req.json();
+  const { email, skip_verification } = body;
+
+  // Validate required fields
+  if (!email) {
+    throw ApiError.invalidRequest('email is required');
+  }
+
+  // Validate email format and normalize
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!isValidEmail(normalizedEmail)) {
+    throw ApiError.invalidRequest('Invalid email format');
+  }
+
+  const db = getDb(c.env);
+
+  // Check for existing subscription
+  const [existing] = await db.query<{ id: string; email: string; unsubscribed_at: string | null }>(
+    `SELECT id, email, unsubscribed_at FROM newsletter_subscribers WHERE email = ? AND store_id = ?`,
+    [normalizedEmail, store.id]
+  );
+
+  if (existing) {
+    // If subscriber was unsubscribed, we can reactivate them
+    if (existing.unsubscribed_at) {
+      const timestamp = now();
+      await db.run(
+        `UPDATE newsletter_subscribers
+         SET unsubscribed_at = NULL, verified = ?, verified_at = ?, updated_at = ?
+         WHERE id = ?`,
+        [skip_verification ? 1 : 0, skip_verification ? timestamp : null, timestamp, existing.id]
+      );
+
+      console.log(`[NEWSLETTER] Admin reactivated subscriber: ${normalizedEmail}`);
+
+      return c.json({
+        success: true,
+        message: 'Subscriber reactivated successfully',
+        subscriber: {
+          id: existing.id,
+          email: normalizedEmail,
+          verified: skip_verification ?? false,
+          reactivated: true,
+        },
+      });
+    }
+
+    // Already exists and not unsubscribed
+    throw ApiError.conflict('Subscriber already exists');
+  }
+
+  // Generate ID and timestamps
+  const id = uuid();
+  const timestamp = now();
+  const verificationToken = skip_verification ? null : uuid();
+
+  // Insert new subscriber
+  await db.run(
+    `INSERT INTO newsletter_subscribers (id, store_id, email, verified, verification_token, subscribed_at, verified_at, source, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      store.id,
+      normalizedEmail,
+      skip_verification ? 1 : 0, // If skip_verification, set verified=true immediately
+      verificationToken,
+      timestamp,
+      skip_verification ? timestamp : null, // If skip_verification, set verified_at
+      'admin', // Mark source as admin-added
+      timestamp,
+      timestamp,
+    ]
+  );
+
+  console.log(
+    `[NEWSLETTER] Admin added subscriber: ${normalizedEmail} (verified: ${skip_verification ?? false})`
+  );
+
+  // If not skipping verification, send verification email
+  if (!skip_verification) {
+    const emailResult = await sendNewsletterVerificationEmail(c.env, {
+      email: normalizedEmail,
+      verificationToken: verificationToken!,
+      storeId: store.id,
+    });
+
+    if (!emailResult.success) {
+      console.warn(
+        `[NEWSLETTER] Verification email send failed for admin-added ${normalizedEmail}: ${emailResult.error}`
+      );
+    }
+  }
+
+  return c.json({
+    success: true,
+    message: skip_verification
+      ? 'Subscriber added and verified successfully'
+      : 'Subscriber added. Verification email sent.',
+    subscriber: {
+      id,
+      email: normalizedEmail,
+      verified: skip_verification ?? false,
+    },
+  });
+});
+
 // POST /v1/newsletter/send - Send newsletter to all subscribers (admin only)
 newsletterRoutes.post('/send', adminOnly, async (c) => {
   const body = await c.req.json();

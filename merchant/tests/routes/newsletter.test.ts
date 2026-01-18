@@ -1598,4 +1598,197 @@ describe('Newsletter Routes', () => {
       expect(body.send_id).toBe('ns_record_test');
     });
   });
+
+  describe('POST /v1/newsletter/subscribers/add - Manually add subscriber (admin only)', () => {
+    it('returns 403 for non-admin users', async () => {
+      setAuthContext('public');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'test@example.com' }),
+      });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('creates new subscriber for valid email', async () => {
+      setAuthContext('admin');
+
+      // Mock: no existing subscriber
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'newuser@example.com' }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+      expect(body.subscriber.email).toBe('newuser@example.com');
+      expect(body.subscriber.verified).toBe(false);
+      expect(body.message).toContain('Verification email sent');
+    });
+
+    it('skip_verification flag sets verified=true immediately', async () => {
+      setAuthContext('admin');
+
+      // Mock: no existing subscriber
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'verified@example.com', skip_verification: true }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+      expect(body.subscriber.verified).toBe(true);
+      expect(body.message).toContain('verified successfully');
+    });
+
+    it('returns 400 for missing email', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.message).toContain('email is required');
+    });
+
+    it('returns 400 for invalid email format', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'not-an-email' }),
+      });
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.message).toContain('Invalid email format');
+    });
+
+    it('returns 409 for existing subscriber', async () => {
+      setAuthContext('admin');
+
+      // Mock: existing subscriber (not unsubscribed)
+      mockDbQuery.mockResolvedValueOnce([
+        { id: 'existing-id', email: 'existing@example.com', unsubscribed_at: null },
+      ]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'existing@example.com' }),
+      });
+
+      expect(res.status).toBe(409);
+      const body = await res.json();
+      expect(body.message).toContain('already exists');
+    });
+
+    it('reactivates unsubscribed subscriber', async () => {
+      setAuthContext('admin');
+
+      // Mock: existing subscriber who has unsubscribed
+      mockDbQuery.mockResolvedValueOnce([
+        { id: 'unsub-id', email: 'unsub@example.com', unsubscribed_at: '2025-01-01T00:00:00Z' },
+      ]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'unsub@example.com' }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+      expect(body.message).toContain('reactivated');
+      expect(body.subscriber.reactivated).toBe(true);
+    });
+
+    it('normalizes email to lowercase', async () => {
+      setAuthContext('admin');
+
+      // Mock: no existing subscriber
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'TEST@EXAMPLE.COM' }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.subscriber.email).toBe('test@example.com');
+    });
+
+    it('sets source as admin for manually added subscribers', async () => {
+      setAuthContext('admin');
+
+      // Mock: no existing subscriber
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      await app.request('/v1/newsletter/subscribers/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'admin-added@example.com', skip_verification: true }),
+      });
+
+      // Verify the INSERT was called with 'admin' as the source
+      expect(mockDbRun).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO newsletter_subscribers'),
+        expect.arrayContaining(['admin'])
+      );
+    });
+  });
 });
