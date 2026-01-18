@@ -296,3 +296,27 @@ Updated the footer navigation to be consistent with the header changes made in n
 - nav-14: Remove or redirect legacy /about route
 - nav-15: Test all navigation flows end-to-end
 - initial-content-10: Create pinned 'About Dear Margeaux' blog post
+
+## 2026-01-18: nav-14 - Create redirect for legacy /about route
+
+### Task Completed
+Created a 301 permanent redirect from `/about` to `/blog/about-dear-margeaux` to preserve backwards compatibility for any existing links or bookmarks.
+
+### Key Decisions
+- The `/about` route did not previously exist (was returning 404)
+- Created a redirect page using `Astro.redirect('/blog/about-dear-margeaux', 301)`
+- Uses 301 (permanent redirect) since this is a permanent site structure change
+- Preserves SEO value and user experience for any external links to /about
+
+### Files Created
+- `apps/storefront/src/pages/about.astro` - Redirect page (5 lines)
+
+### Test Results
+- Typecheck: PASSED (0 errors, 3 hints across all packages)
+- Lint: PASSED (no errors on about.astro)
+- Unit Tests: PASSED (18 tests in 2 files)
+- Build: PASSED (31 pages built, up from 30)
+
+### Next Steps
+- nav-15: Test all navigation flows end-to-end
+- initial-content-10: Create pinned 'About Dear Margeaux' blog post

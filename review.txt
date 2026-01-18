@@ -249,3 +249,22 @@
 - nav-14: Remove or redirect legacy /about route (currently returns 404 - no page exists)
 - nav-15: End-to-end navigation flow testing
 - Consider adding visual regression tests for the new pages once agent-browser skill is available
+
+## [nav-14]: Create redirect for legacy /about route
+**Status:** PASSED
+**Tests Written:** N/A (simple redirect page, no logic change)
+**Test Results:** 18 tests passed (2 files)
+**Type Check:** PASSED - 0 errors, 3 hints across all packages
+**Lint:** PASSED - no errors on about.astro
+**Browser Tests:** SKIPPED - redirect behavior can be verified visually
+**Pre-commit Hooks:** All passed
+**Commit:** 56830f9 feat(nav-14): add 301 redirect from /about to /blog/about-dear-margeaux
+**Findings:**
+- Created `apps/storefront/src/pages/about.astro` with permanent 301 redirect
+- Uses `Astro.redirect('/blog/about-dear-margeaux', 301)` for SEO-friendly redirect
+- The /about page did not previously exist (was 404), so this adds backwards compatibility
+- Redirect target `/blog/about-dear-margeaux` will work once initial-content-10 is complete
+- Build now generates 31 pages (up from 30 with new about.astro redirect)
+**Recommendations:**
+- nav-15: Test all navigation flows end-to-end
+- initial-content-10: Create pinned 'About Dear Margeaux' blog post to make redirect destination functional
