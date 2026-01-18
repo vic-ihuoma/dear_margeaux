@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { getDb } from '../db';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, adminOnly } from '../middleware/auth';
 import { ApiError, uuid, now, type Env, type AuthContext, isValidEmail } from '../types';
 import { sendNewsletterVerificationEmail } from '../lib/notifications';
 
@@ -200,6 +200,23 @@ newsletterRoutes.get('/unsubscribe', async (c) => {
     success: true,
     message: 'You have been unsubscribed successfully',
     email: subscriber.email,
+  });
+});
+
+// GET /v1/newsletter/subscribers/count - Get active subscriber count (admin only)
+newsletterRoutes.get('/subscribers/count', adminOnly, async (c) => {
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+
+  // Count verified subscribers who haven't unsubscribed
+  const [result] = await db.query<{ count: number }>(
+    `SELECT COUNT(*) as count FROM newsletter_subscribers
+     WHERE store_id = ? AND verified = 1 AND unsubscribed_at IS NULL`,
+    [store.id]
+  );
+
+  return c.json({
+    count: result?.count ?? 0,
   });
 });
 

@@ -35,6 +35,13 @@ vi.mock('../../src/middleware/auth', () => {
       });
       return next();
     }),
+    adminOnly: vi.fn().mockImplementation((c: any, next: any) => {
+      const auth = c.get('auth');
+      if (auth.role !== 'admin') {
+        return c.json({ error: 'forbidden', message: 'Admin access required' }, 403);
+      }
+      return next();
+    }),
   };
 });
 
@@ -788,6 +795,104 @@ describe('Newsletter Routes', () => {
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.success).toBe(true);
+    });
+  });
+
+  describe('GET /v1/newsletter/subscribers/count - Get subscriber count', () => {
+    it('returns 403 for non-admin users', async () => {
+      setAuthContext('public');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/count', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('returns count of verified active subscribers for admin', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: return count of 42
+      mockDbQuery.mockResolvedValueOnce([{ count: 42 }]);
+
+      const res = await app.request('/v1/newsletter/subscribers/count', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.count).toBe(42);
+    });
+
+    it('returns 0 when no subscribers exist', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      // Mock: return count of 0
+      mockDbQuery.mockResolvedValueOnce([{ count: 0 }]);
+
+      const res = await app.request('/v1/newsletter/subscribers/count', {
+        method: 'GET',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.count).toBe(0);
+    });
+
+    it('queries only verified and non-unsubscribed subscribers', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      mockDbQuery.mockResolvedValueOnce([{ count: 15 }]);
+
+      await app.request('/v1/newsletter/subscribers/count', {
+        method: 'GET',
+      });
+
+      // Verify the SQL query checks verified = 1 AND unsubscribed_at IS NULL
+      expect(mockDbQuery).toHaveBeenCalledWith(
+        expect.stringContaining('verified = 1'),
+        expect.anything()
+      );
+      expect(mockDbQuery).toHaveBeenCalledWith(
+        expect.stringContaining('unsubscribed_at IS NULL'),
+        expect.anything()
+      );
+    });
+
+    it('filters by store_id', async () => {
+      setAuthContext('admin');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      mockDbQuery.mockResolvedValueOnce([{ count: 10 }]);
+
+      await app.request('/v1/newsletter/subscribers/count', {
+        method: 'GET',
+      });
+
+      // Verify the SQL query includes store_id filter
+      expect(mockDbQuery).toHaveBeenCalledWith(
+        expect.stringContaining('store_id = ?'),
+        expect.arrayContaining(['store-1'])
+      );
     });
   });
 });

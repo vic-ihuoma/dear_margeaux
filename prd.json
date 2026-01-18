@@ -2759,7 +2759,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "newsletter-12",

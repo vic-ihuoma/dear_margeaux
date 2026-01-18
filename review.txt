@@ -1631,3 +1631,74 @@ Additional test coverage:
 - newsletter-10: Create branded newsletter email template
 - Consider adding the unsub-{id} token to verification email for verified subscribers
 
+
+## [newsletter-9]: Create storefront unsubscribe confirmation page
+**Status:** PASSED
+**Tests Written:** N/A (page only, no logic tests needed)
+**Test Results:** 68 tests passed (storefront)
+**Type Check:** PASSED - 0 errors, 3 hints across all packages
+**Lint:** PASSED - 0 errors (1 pre-existing warning in CartDrawer.tsx)
+**Browser Tests:** PASSED
+  - Navigated to /newsletter/unsubscribed successfully
+  - Screenshot captured at e2e/__screenshots__/newsletter/unsubscribed-page.png
+  - Page displays: unsubscribe icon, confirmation message, "Changed your mind?" section
+  - Has "Subscribe again" link for resubscription
+  - Has "Browse the Shop" and "Read the Journal" CTA buttons
+  - Has "Back to Homepage" link
+**Pre-commit Hooks:** All passed
+**Commit:** b76937c feat(newsletter-9): create storefront unsubscribe confirmation page
+**Findings:**
+- Page already existed at apps/storefront/src/pages/newsletter/unsubscribed.astro
+- Uses BaseLayout for consistent site branding (header, footer)
+- Includes soft, muted messaging ("We're sorry to see you go")
+- Provides easy resubscription path in "Changed your mind?" section
+- Matches visual design of verified.astro success page
+- Build generates 38 pages successfully
+**PRD Coverage:**
+- ✓ Page exists at /newsletter/unsubscribed
+- ✓ Confirmation page with success message
+- ✓ Resubscribe link included
+- ✓ Matches site branding and layout
+**Recommendations:**
+- newsletter-10: Create branded newsletter email template
+- newsletter-11: Add 'Send as Newsletter' toggle to BlogForm
+- Consider adding analytics tracking for unsubscribe reasons
+
+## [newsletter-10]: Create branded newsletter email template
+**Status:** PASSED
+**Tests Written:** 15 unit tests in merchant/tests/lib/notifications.test.ts
+**Test Results:** 406 tests passed (merchant - 15 new + 391 existing)
+**Type Check:** PASSED - 0 errors across all 7 packages
+**Lint:** PASSED - 0 errors (236 pre-existing warnings for `any` types)
+**Browser Tests:** N/A - no visual tests in PRD for this task
+**Pre-commit Hooks:** All passed
+**Commit:** 9a9a5aa feat(newsletter-10): create branded newsletter email template
+**Findings:**
+- Created `buildNewsletterEmailHtml` function in merchant/src/lib/notifications.ts (lines 715-785)
+- Added `escapeHtml` helper function for XSS prevention (lines 98-109)
+- Added `newsletter` to EmailType union in email-queue.ts for queue tracking
+- Template features:
+  - Header with brand color #8B4513 and store name
+  - Optional featured image with alt text for accessibility
+  - Title and excerpt with HTML escaping for XSS prevention
+  - Read More CTA button with terracotta color #E2725B
+  - Unsubscribe link in footer (required by CAN-SPAM law)
+  - Hidden preheader text for email client previews
+  - Mobile responsive with viewport meta tag
+- All 15 unit tests verify PRD requirements plus XSS protection
+**PRD Coverage:**
+All unit tests implemented:
+- buildNewsletterEmailHtml returns valid HTML ✓
+- Email includes logo (store name in header) ✓
+- Email includes featured image when provided ✓
+- Handles missing featured image gracefully ✓
+- Email includes Read More button with blog link ✓
+- Email includes unsubscribe link (required by law) ✓
+- Uses brand colors #8B4513 and #E2725B ✓
+- XSS prevention via HTML escaping ✓
+- Mobile responsive with viewport meta tag ✓
+**Recommendations:**
+- newsletter-11: Add 'Send as Newsletter' toggle to BlogForm
+- newsletter-12: Create send newsletter API endpoint
+- newsletter-13: Integrate newsletter send into blog publish flow
+

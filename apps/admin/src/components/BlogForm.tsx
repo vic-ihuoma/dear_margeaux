@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 export interface BlogPostData {
   slug?: string;
@@ -10,6 +10,8 @@ export interface BlogPostData {
   image?: string;
   draft: boolean;
   pinned: boolean;
+  /** Whether to send this post as a newsletter (only applies when publishing) */
+  sendAsNewsletter?: boolean;
 }
 
 export interface BlogFormProps {
@@ -47,6 +49,38 @@ export function BlogForm({
   const [draft, setDraft] = useState(post?.draft ?? true);
   const [pinned, setPinned] = useState(post?.pinned ?? false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Newsletter state
+  const [sendAsNewsletter, setSendAsNewsletter] = useState(false);
+  const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
+  const [subscriberCountLoading, setSubscriberCountLoading] = useState(false);
+
+  // Track if the post was originally a draft (for showing newsletter toggle)
+  const wasOriginallyDraft = post?.draft ?? true;
+
+  // Fetch subscriber count when the toggle might be shown
+  useEffect(() => {
+    // Only fetch if we're creating a new post or the post was originally a draft
+    // and we're not submitting
+    if (!wasOriginallyDraft || isSubmitting) return;
+
+    const fetchSubscriberCount = async () => {
+      setSubscriberCountLoading(true);
+      try {
+        const response = await fetch('/api/newsletter/subscribers-count');
+        if (response.ok) {
+          const data = await response.json();
+          setSubscriberCount(data.count);
+        }
+      } catch (error) {
+        console.error('Failed to fetch subscriber count:', error);
+      } finally {
+        setSubscriberCountLoading(false);
+      }
+    };
+
+    fetchSubscriberCount();
+  }, [wasOriginallyDraft, isSubmitting]);
 
   // Auto-generate slug from title
   const handleTitleChange = useCallback(
@@ -138,6 +172,10 @@ export function BlogForm({
         return;
       }
 
+      // Only send as newsletter if toggling from draft to published and checkbox is checked
+      const shouldSendNewsletter =
+        wasOriginallyDraft && !draft && sendAsNewsletter;
+
       const data: BlogPostData = {
         slug: slug.trim(),
         title: title.trim(),
@@ -148,6 +186,7 @@ export function BlogForm({
         image: image.trim() || undefined,
         draft,
         pinned,
+        sendAsNewsletter: shouldSendNewsletter,
       };
 
       await onSubmit(data);
@@ -162,6 +201,8 @@ export function BlogForm({
       image,
       draft,
       pinned,
+      sendAsNewsletter,
+      wasOriginallyDraft,
       validate,
       onSubmit,
     ]
@@ -471,6 +512,43 @@ export function BlogForm({
           Pinned posts appear first in the blog
         </span>
       </div>
+
+      {/* Newsletter Toggle - Only show when publishing a draft post */}
+      {wasOriginallyDraft && !draft && (
+        <div className="rounded-lg border border-primary-200 bg-primary-50/50 p-4">
+          <div className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              id="sendAsNewsletter"
+              checked={sendAsNewsletter}
+              onChange={(e) => setSendAsNewsletter(e.target.checked)}
+              disabled={isSubmitting || subscriberCount === 0}
+              className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary-500 focus:ring-offset-0 disabled:opacity-50"
+            />
+            <div className="flex-1">
+              <label
+                htmlFor="sendAsNewsletter"
+                className="text-sm font-medium text-text-primary cursor-pointer"
+              >
+                Also send as newsletter
+                {subscriberCountLoading ? (
+                  <span className="ml-1 text-text-muted">(loading...)</span>
+                ) : subscriberCount !== null ? (
+                  <span className="ml-1 text-text-muted">
+                    to {subscriberCount.toLocaleString()} subscriber
+                    {subscriberCount !== 1 ? 's' : ''}
+                  </span>
+                ) : null}
+              </label>
+              <p className="mt-0.5 text-xs text-text-muted">
+                {subscriberCount === 0
+                  ? 'No verified subscribers yet'
+                  : 'Email this post to all verified newsletter subscribers'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Form Actions */}
       <div className="flex justify-end gap-3 pt-4 border-t border-border">
