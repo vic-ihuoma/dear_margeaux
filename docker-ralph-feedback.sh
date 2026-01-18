@@ -78,6 +78,11 @@ FOR NODE.JS PROJECTS:
 2. Install dependencies: pnpm install (or npm install if no pnpm)
 3. Ensure dev dependencies are installed (jest/vitest, typescript, eslint)
 
+FOR BROWSER TESTING (REQUIRED for UI/frontend tasks):
+1. Install agent-browser if not available: npm install -g agent-browser
+2. Install Chromium browser: agent-browser install
+3. Verify installation: agent-browser --help
+
 ========================================
 TASK WORKFLOW
 ========================================
@@ -119,9 +124,36 @@ TASK WORKFLOW
    - Tests: pnpm test (or npm test)
    - Lint: pnpm lint (or npm run lint)
 
-   FOR UI/BROWSER TESTING (when implementing frontend features):
-   - Start the dev server: pnpm dev
-   - Use the /agent-browser skill for browser automation and testing
+   FOR UI/BROWSER TESTING (REQUIRED when task has 'tests.visual' in prd.json):
+
+   IMPORTANT: If the task in prd.json has a 'tests.visual' array, you MUST run browser tests.
+   Do NOT skip browser tests with excuses like 'requires dev server' - START the dev server!
+
+   Step-by-step browser testing procedure:
+   1. Start the dev server in the background:
+      cd apps/storefront && pnpm dev &
+      sleep 5  # Wait for server to start
+
+   2. Run each visual test from the task's 'tests.visual' array using agent-browser CLI:
+      - 'agent-browser: navigate to /drops' → agent-browser open http://localhost:4321/drops
+      - 'agent-browser: screenshot drops listing' → agent-browser screenshot ./screenshots/drops-listing.png
+      - 'agent-browser: click Shop Now' → agent-browser snapshot -i && agent-browser click @e1
+      - 'agent-browser: verify element visible' → agent-browser snapshot -i (check output)
+
+   3. Common agent-browser commands:
+      - agent-browser open <url>           # Navigate to URL
+      - agent-browser snapshot -i          # Get interactive elements with refs (@e1, @e2, etc.)
+      - agent-browser click @e1            # Click element by ref
+      - agent-browser fill @e2 'text'      # Fill input by ref
+      - agent-browser screenshot path.png  # Take screenshot
+      - agent-browser screenshot --full    # Full page screenshot
+      - agent-browser get text @e1         # Get element text
+      - agent-browser wait --load networkidle  # Wait for page load
+
+   4. After testing, stop the dev server:
+      pkill -f 'astro dev' || true
+
+   5. Report results in review.txt under 'Browser Tests:' - PASSED or FAILED with details
 
    DO NOT COMMIT IF ANY FEEDBACK LOOP FAILS.
    Fix issues first, then re-run all checks.
@@ -162,8 +194,10 @@ TASK WORKFLOW
    **Test Results:** (pytest/jest output summary)
    **Type Check:** PASSED/FAILED
    **Lint:** PASSED/FAILED
-   **Browser Tests:** PASSED/SKIPPED/FAILED (for UI features)
-   **UI Verification:** (screenshots taken, flows tested)
+   **Browser Tests:** PASSED/FAILED/N/A
+     - If task has 'tests.visual' array: MUST be PASSED or FAILED (not SKIPPED!)
+     - If task has no 'tests.visual' array: N/A
+     - Include: which visual tests were run, screenshots taken, any failures
    **Findings:** Your detailed notes
    **Recommendations:** Any suggestions for future iterations
 
@@ -177,6 +211,11 @@ RULES
 - Never commit with failing tests or type errors
 - Each iteration is a fresh context - progress.txt is your memory
 - Git history shows what previous iterations did
+- BROWSER TESTS ARE MANDATORY: If task has 'tests.visual' in prd.json, you MUST:
+  1. Install agent-browser if needed: npm install -g agent-browser && agent-browser install
+  2. Start the dev server: cd apps/storefront && pnpm dev &
+  3. Run ALL visual tests listed in the task's 'tests.visual' array
+  4. Report PASSED or FAILED - NEVER report SKIPPED for visual tests
 
 If ALL tasks in prd.json have 'passes': true, output <promise>COMPLETE</promise>.")
 

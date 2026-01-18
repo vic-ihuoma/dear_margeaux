@@ -354,8 +354,9 @@ test.describe('Shop Page - Browse Products', () => {
   test('should display shop page with products', async ({ page }) => {
     await page.goto('/shop');
 
-    // Shop page heading
-    const heading = page.locator('h1');
+    // Shop page heading - look in main content area
+    const mainContent = page.locator('main');
+    const heading = mainContent.locator('h1').first();
     await expect(heading).toBeVisible();
   });
 

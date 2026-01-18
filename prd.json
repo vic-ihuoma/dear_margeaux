@@ -625,7 +625,7 @@
         "visual": [],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "sec-1",

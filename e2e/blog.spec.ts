@@ -34,8 +34,9 @@ test.describe('Blog Page', () => {
     const hasPinnedBadge = await pinnedBadge.isVisible().catch(() => false);
 
     // This test passes whether pinned posts exist or not
-    // Just verify the page loads correctly
-    await expect(page.locator('h1')).toBeVisible();
+    // Just verify the page loads correctly (use main content area)
+    const mainContent = page.locator('main');
+    await expect(mainContent.locator('h1').first()).toBeVisible();
   });
 
   test('should navigate to blog post when clicking', async ({ page }) => {
