@@ -1,22 +1,8 @@
 import type { APIRoute } from 'astro';
-import { MerchantClient } from '@dear-margeaux/api';
-
-function getClient(): MerchantClient | null {
-  const baseUrl = import.meta.env.MERCHANT_API_URL;
-  const apiKey = import.meta.env.MERCHANT_ADMIN_KEY;
-
-  if (!baseUrl || !apiKey) {
-    return null;
-  }
-
-  return new MerchantClient({
-    baseUrl,
-    apiKey,
-  });
-}
+import { getAdminMerchantClient } from '../../../../lib/merchant';
 
 export const PUT: APIRoute = async ({ params, request }) => {
-  const client = getClient();
+  const client = getAdminMerchantClient();
 
   if (!client) {
     return new Response(JSON.stringify({ error: 'API not configured' }), {

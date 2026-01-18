@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Drop, PaginatedResponse } from '@dear-margeaux/api';
 
-// Mock the MerchantClient
+// Mock the MerchantClient methods
 const mockGetDrops = vi.fn();
 const mockGetDrop = vi.fn();
 const mockCreateDrop = vi.fn();
@@ -9,8 +9,9 @@ const mockUpdateDrop = vi.fn();
 const mockDeleteDrop = vi.fn();
 const mockAssignDropProducts = vi.fn();
 
-vi.mock('@dear-margeaux/api', () => ({
-  MerchantClient: vi.fn().mockImplementation(() => ({
+// Mock the merchant lib's getAdminMerchantClient function
+vi.mock('../../src/lib/merchant', () => ({
+  getAdminMerchantClient: vi.fn(() => ({
     getDrops: mockGetDrops,
     getDrop: mockGetDrop,
     createDrop: mockCreateDrop,
