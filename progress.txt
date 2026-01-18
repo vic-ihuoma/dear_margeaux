@@ -1511,3 +1511,38 @@ PRD unit tests (visual verification with agent-browser):
 ### Next Steps
 - pm-11: Add drop_id field to Product schema
 - pm-12 onwards: Related drop features
+
+## 2026-01-18: pm-11 - Add drop_id field to Product schema
+
+### Task Completed
+Added `drop_id` field to Product-related interfaces in the API types to enable product-to-drop assignment.
+
+### Key Decisions
+- Added `drop_id: string | null` to Product interface (required on response, can be null for unassigned)
+- Added `drop_id: string | null` to ProductListItem interface for consistency
+- Added `drop_id?: string` to CreateProductParams (optional on creation)
+- Added `drop_id?: string | null` to UpdateProductParams (optional, nullable to clear assignment)
+
+### Files Changed
+- `packages/api/src/types.ts`:
+  - Added `drop_id: string | null` to Product interface (line 67)
+  - Added `drop_id: string | null` to ProductListItem interface (line 81)
+  - Added `drop_id?: string` to CreateProductParams interface (line 91)
+  - Added `drop_id?: string | null` to UpdateProductParams interface (line 102)
+- `apps/admin/tests/api/products.test.ts`:
+  - Added `drop_id: null` to sampleProduct fixture (line 90)
+  - Added `drop_id: sampleProduct.drop_id` to listResponse fixture (line 122)
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors on changed files, 2 pre-existing accessibility warnings in unrelated components)
+- Unit Tests: PASSED (all 508+ tests passing)
+  - Merchant: 287 tests
+  - API Client: 116 tests
+  - Storefront: 53 tests
+  - Admin: 96 tests
+
+### Next Steps
+- pm-12: Update Merchant API to handle product drop assignment in CRUD operations
+- pm-13: Create DropSelector component for admin
+- pm-14: Integrate DropSelector into ProductForm

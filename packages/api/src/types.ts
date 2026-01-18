@@ -64,6 +64,7 @@ export interface Product {
   status: ProductStatus;
   created_at: ISODateString;
   tags: string[];
+  drop_id: string | null;
   variants: Variant[];
 }
 
@@ -77,6 +78,7 @@ export interface ProductListItem {
   status: ProductStatus;
   created_at: ISODateString;
   tags: string[];
+  drop_id: string | null;
 }
 
 /** Parameters for creating a product */
@@ -87,6 +89,7 @@ export interface CreateProductParams {
   featured_image_alt?: string;
   status?: ProductStatus;
   tags?: string[];
+  drop_id?: string;
 }
 
 /** Parameters for updating a product */
@@ -97,6 +100,7 @@ export interface UpdateProductParams {
   featured_image_alt?: string | null;
   status?: ProductStatus;
   tags?: string[];
+  drop_id?: string | null;
 }
 
 /** Parameters for creating a variant */

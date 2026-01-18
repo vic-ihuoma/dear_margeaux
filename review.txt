@@ -1046,3 +1046,50 @@ All unit tests implemented:
 - pm-11: Add drop_id field to Product schema
 - Consider adding tag suggestions/autocomplete based on existing tags
 - Consider adding tag validation (blocked words, format restrictions)
+
+---
+
+## pm-11: Add drop_id field to Product schema
+
+**PRD Requirements:**
+- Open packages/api/src/types.ts
+- Add drop_id?: string to Product interface
+- Update CreateProductParams to include drop_id
+- Update UpdateProductParams to include drop_id
+- Verify TypeScript compiles without errors
+
+**Typecheck:** PASSED (0 errors across all 7 packages)
+**Lint:** PASSED (0 errors on changed files, 2 pre-existing accessibility warnings in unrelated components)
+**Unit Tests:** PASSED (508+ tests total)
+- Merchant: 287 tests
+- API Client: 116 tests
+- Storefront: 53 tests
+- Admin: 96 tests
+**Browser Tests:** N/A (no visual tests in PRD for this task)
+**Pre-commit Hooks:** Pending (commit in progress)
+
+**Findings:**
+- Added `drop_id: string | null` to Product interface (line 67)
+  - Required on response types but can be null for unassigned products
+- Added `drop_id: string | null` to ProductListItem interface (line 81)
+  - Maintains consistency with Product interface for list responses
+- Added `drop_id?: string` to CreateProductParams (line 91)
+  - Optional during creation (products can be created without drop assignment)
+- Added `drop_id?: string | null` to UpdateProductParams (line 102)
+  - Nullable to allow clearing drop assignment (set to null to unassign)
+- Updated admin test fixtures to include drop_id field:
+  - Added `drop_id: null` to sampleProduct
+  - Added `drop_id: sampleProduct.drop_id` to listResponse
+
+**Type Design Decisions:**
+- Response types (Product, ProductListItem) use `string | null` since the field will always be present in API responses
+- CreateProductParams uses `string?` (optional) since products can be created without a drop
+- UpdateProductParams uses `string | null?` (optional and nullable) to support:
+  - Omit field: preserve current drop_id
+  - Provide string: assign to new drop
+  - Provide null: clear drop assignment
+
+**Recommendations:**
+- pm-12: Update Merchant API to handle product drop assignment in CRUD operations
+- pm-13: Create DropSelector component for admin
+- pm-14: Integrate DropSelector into ProductForm

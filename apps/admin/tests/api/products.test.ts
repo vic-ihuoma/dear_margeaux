@@ -87,6 +87,7 @@ const sampleProduct: Product = {
   status: 'active',
   created_at: '2024-01-01T00:00:00Z',
   tags: [],
+  drop_id: null,
   variants: [
     {
       id: 'var_123',
@@ -118,6 +119,7 @@ describe('Products API Routes', () => {
             status: sampleProduct.status,
             created_at: sampleProduct.created_at,
             tags: sampleProduct.tags,
+            drop_id: sampleProduct.drop_id,
           },
         ],
         pagination: { has_more: false, next_cursor: null },
