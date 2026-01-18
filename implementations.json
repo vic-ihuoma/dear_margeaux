@@ -167,7 +167,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "assets-7",
@@ -219,6 +219,108 @@
           "agent-browser: scroll to Our Story section",
           "agent-browser: screenshot Our Story section with image",
           "agent-browser: verify image loaded (not broken)"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "assets-9",
+      "category": "assets",
+      "description": "Update seed data to use R2 product images",
+      "steps": [
+        "Open merchant/scripts/seed.ts or equivalent seed file",
+        "Update product image URLs to use R2 public URL + products/prod-X.webp",
+        "Map prod-1.webp through prod-7.webp to corresponding products",
+        "Run seed script to update database",
+        "Verify products display with correct images"
+      ],
+      "tests": {
+        "unit": [
+          "Seed script references R2 product image URLs",
+          "All 7 products have image URLs pointing to R2",
+          "Image URLs follow pattern: {R2_URL}/products/prod-X.webp"
+        ],
+        "visual": [
+          "agent-browser: navigate to /shop",
+          "agent-browser: verify product cards show images",
+          "agent-browser: click a product and verify detail page image loads"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "assets-10",
+      "category": "assets",
+      "description": "Update blog content to use R2 blog images",
+      "steps": [
+        "Open blog content files in apps/storefront/src/content/blog/",
+        "Update blog post frontmatter to use R2 blog image URLs",
+        "Replace placeholder images with blog/blog-about.webp",
+        "Verify blog posts display with correct images"
+      ],
+      "tests": {
+        "unit": [
+          "Blog post frontmatter has image field",
+          "Image URL points to R2 blog/ folder",
+          "Alt text is provided for accessibility"
+        ],
+        "visual": [
+          "agent-browser: navigate to /blog",
+          "agent-browser: verify blog post cards show images",
+          "agent-browser: click blog post and verify featured image loads"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "assets-11",
+      "category": "assets",
+      "description": "Update lookbook content to use R2 lookbook images",
+      "steps": [
+        "Open lookbook content files in apps/storefront/src/content/lookbook/",
+        "Update lookbook frontmatter to use R2 lookbook image URLs",
+        "Map lookbook-1.webp and lookbook-2.webp to lookbook entries",
+        "Verify lookbook pages display with correct images"
+      ],
+      "tests": {
+        "unit": [
+          "Lookbook content has image fields",
+          "Image URLs point to R2 lookbook/ folder",
+          "Alt text provided for each image"
+        ],
+        "visual": [
+          "agent-browser: navigate to /lookbook",
+          "agent-browser: verify lookbook gallery shows images",
+          "agent-browser: click lookbook entry and verify images load"
+        ],
+        "manual": []
+      },
+      "passes": false
+    },
+    {
+      "id": "assets-12",
+      "category": "assets",
+      "description": "Update site logo to use R2 branding images",
+      "steps": [
+        "Locate header/nav component with logo",
+        "Update logo src to use R2 branding/logo-main.webp or logo-light.webp",
+        "Add logo-light variant for dark mode if applicable",
+        "Ensure logo has proper alt text",
+        "Verify logo displays correctly in header"
+      ],
+      "tests": {
+        "unit": [
+          "Header component has logo img element",
+          "Logo src points to R2 branding/ folder",
+          "Logo has alt text 'Dear Margeaux' or similar"
+        ],
+        "visual": [
+          "agent-browser: navigate to homepage",
+          "agent-browser: verify logo loads in header",
+          "agent-browser: screenshot header with logo"
         ],
         "manual": []
       },
