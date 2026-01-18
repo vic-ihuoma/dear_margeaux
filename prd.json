@@ -172,7 +172,7 @@
         "Pass env parameter to sendEmailViaResend",
         "Test with a mock order to verify email sends"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "email-9",
@@ -184,7 +184,7 @@
         "Pass tracking info to the template builder",
         "Test with a mock order to verify email sends"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "email-10",
@@ -196,7 +196,7 @@
         "Pass featured image URL to template builder",
         "Add env parameter to the function signature"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "email-11",

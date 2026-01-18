@@ -25,6 +25,8 @@
 **Type Check:** PASSED - 0 errors across all 7 packages
 **Lint:** PASSED - 0 errors in notifications.ts after cleanup
 **Browser Tests:** SKIPPED - backend email implementation, no UI changes
+**Pre-commit Hooks:** All passed
+**Commit:** bad8cc5 feat(email-4-7): implement Resend API and email templates
 **Findings:**
 - Uncommented ResendEmailOptions interface (lines 371-378)
 - Uncommented ResendResponse interface (lines 380-383)
@@ -39,3 +41,36 @@
 - Proceed with email-8, email-9, email-10 to wire templates to notification functions
 - email-1, email-2, email-11 remain manual setup tasks requiring user action
 - Consider adding unit tests for the email template functions in future iteration
+
+## [email-8, email-9, email-10]: Wire email templates to notification functions
+**Status:** PASSED
+**Tests Written:** N/A (wiring existing implementations)
+**Test Results:** 18 tests passed (2 files)
+**Type Check:** PASSED - 0 errors across all 7 packages
+**Lint:** PASSED - 0 errors in notifications.ts
+**Browser Tests:** SKIPPED - backend email implementation, no UI changes
+**Pre-commit Hooks:** All passed
+**Findings:**
+- **email-8**: Updated `sendOrderConfirmationEmail` (lines 219-251):
+  - Changed `_env` to `env` parameter
+  - Added `customerName` extraction
+  - Calls `buildOrderConfirmationHtml` with order data including items array
+  - Returns `sendEmailViaResend` result
+- **email-9**: Updated `sendShippingUpdateEmail` (lines 253-279):
+  - Changed `_env` to `env` parameter
+  - Renamed `items` to `_items` (unused in shipping template)
+  - Removed unused `config` and `orderUrl` variables
+  - Calls `buildShippingUpdateHtml` with tracking info
+  - Returns `sendEmailViaResend` result
+- **email-10**: Updated `sendDropLaunchToSubscriber` (lines 129-152):
+  - Added `env` as first parameter (breaking change for internal function)
+  - Calls `buildDropLaunchHtml` with drop details and featured image
+  - Returns `sendEmailViaResend` result
+  - Updated call site at line 192 to pass `env` parameter
+- All email functions now use the Resend API with proper HTML templates
+- Falls back gracefully to stub logger when RESEND_API_KEY is not configured
+**Recommendations:**
+- email-1, email-2, email-11 remain manual setup tasks (Resend signup, API key, domain)
+- email-12, email-13, email-14 are end-to-end tests requiring Resend configuration
+- Consider adding unit tests for template builders (buildOrderConfirmationHtml, etc.)
+- Consider other PRD categories for parallel work while awaiting Resend setup

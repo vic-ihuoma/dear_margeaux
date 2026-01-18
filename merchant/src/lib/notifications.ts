@@ -127,6 +127,7 @@ function logEmailStub(
 // ============================================================
 
 async function sendDropLaunchToSubscriber(
+  env: Env,
   email: string,
   drop: DropData,
   subscriberName?: string,
@@ -135,13 +136,18 @@ async function sendDropLaunchToSubscriber(
   const config = getStoreConfig();
   const dropUrl = `${config.baseUrl}/shop/${drop.slug}`;
 
-  return logEmailStub('DROP_LAUNCH', email, `${drop.name} is now live! Shop before it sells out`, {
+  const html = buildDropLaunchHtml({
     subscriberName: subscriberName || 'there',
     dropName: drop.name,
     dropDescription: drop.description,
     dropUrl,
     featuredImageUrl,
-    storeName: config.storeName,
+  });
+
+  return sendEmailViaResend(env, {
+    to: email,
+    subject: `${drop.name} is now live! Shop before it sells out`,
+    html,
   });
 }
 
@@ -183,6 +189,7 @@ export async function sendDropLaunchEmails(
     const batchResults = await Promise.all(
       batch.map(async (subscriber) => {
         const sendResult = await sendDropLaunchToSubscriber(
+          env,
           subscriber.email,
           drop,
           undefined,
@@ -217,69 +224,65 @@ export async function sendDropLaunchEmails(
 }
 
 export async function sendOrderConfirmationEmail(
-  _env: Env,
+  env: Env,
   _storeId: string,
   order: OrderData,
   items: OrderItemData[]
 ): Promise<NotificationResult> {
   const config = getStoreConfig();
   const orderUrl = `${config.baseUrl}/account/orders/${order.number}`;
+  const customerName = order.shipping_name || 'Valued Customer';
 
   // eslint-disable-next-line no-console
   console.log(
     `Sending order confirmation email to ${order.customer_email} for order ${order.number}`
   );
 
-  return logEmailStub(
-    'ORDER_CONFIRMATION',
-    order.customer_email,
-    `Order Confirmed - #${order.number}`,
-    {
-      customerName: order.shipping_name || 'Valued Customer',
-      orderNumber: order.number,
-      itemCount: items.length,
-      subtotal: order.subtotal_cents,
-      shipping: order.shipping_cents,
-      tax: order.tax_cents,
-      discount: order.discount_amount_cents || 0,
-      total: order.total_cents,
-      orderUrl,
-      storeName: config.storeName,
-      supportEmail: config.supportEmail,
-    }
-  );
+  const html = buildOrderConfirmationHtml({
+    customerName,
+    orderNumber: order.number,
+    items,
+    subtotal: order.subtotal_cents,
+    shipping: order.shipping_cents,
+    tax: order.tax_cents,
+    discount: order.discount_amount_cents || 0,
+    total: order.total_cents,
+    orderUrl,
+  });
+
+  return sendEmailViaResend(env, {
+    to: order.customer_email,
+    subject: `Order Confirmed - #${order.number}`,
+    html,
+  });
 }
 
 export async function sendShippingUpdateEmail(
-  _env: Env,
+  env: Env,
   _storeId: string,
   order: OrderData,
-  items: OrderItemData[],
+  _items: OrderItemData[],
   tracking: TrackingInfo
 ): Promise<NotificationResult> {
-  const config = getStoreConfig();
-  const orderUrl = `${config.baseUrl}/account/orders/${order.number}`;
+  const customerName = order.shipping_name || 'Valued Customer';
 
   // eslint-disable-next-line no-console
   console.log(`Sending shipping update email to ${order.customer_email} for order ${order.number}`);
 
-  return logEmailStub(
-    'SHIPPING_UPDATE',
-    order.customer_email,
-    `Your Order Has Shipped - #${order.number}`,
-    {
-      customerName: order.shipping_name || 'Valued Customer',
-      orderNumber: order.number,
-      itemCount: items.length,
-      trackingNumber: tracking.tracking_number,
-      trackingUrl: tracking.tracking_url,
-      carrier: tracking.carrier,
-      estimatedDelivery: tracking.estimated_delivery,
-      orderUrl,
-      storeName: config.storeName,
-      supportEmail: config.supportEmail,
-    }
-  );
+  const html = buildShippingUpdateHtml({
+    customerName,
+    orderNumber: order.number,
+    trackingNumber: tracking.tracking_number,
+    trackingUrl: tracking.tracking_url,
+    carrier: tracking.carrier,
+    estimatedDelivery: tracking.estimated_delivery,
+  });
+
+  return sendEmailViaResend(env, {
+    to: order.customer_email,
+    subject: `Your Order Has Shipped - #${order.number}`,
+    html,
+  });
 }
 
 export async function processDropNotifications(env: Env, ctx: ExecutionContext): Promise<void> {

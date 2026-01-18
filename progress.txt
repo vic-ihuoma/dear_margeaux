@@ -59,3 +59,35 @@ Uncommented and activated the Resend API implementation in `merchant/src/lib/not
 - Tasks email-8, email-9, email-10: Wire the templates to the notification functions (replace logEmailStub calls)
 - Tasks email-1, email-2, email-11: Manual setup steps (Resend signup, API key, domain configuration)
 - Tasks email-12, email-13, email-14: End-to-end testing of email flows
+
+## 2026-01-18: email-8, email-9, email-10 - Wire email templates to notification functions
+
+### Tasks Completed
+Updated the three main notification functions to use Resend API with HTML templates:
+- **email-8**: `sendOrderConfirmationEmail` now uses `sendEmailViaResend` with `buildOrderConfirmationHtml`
+- **email-9**: `sendShippingUpdateEmail` now uses `sendEmailViaResend` with `buildShippingUpdateHtml`
+- **email-10**: `sendDropLaunchToSubscriber` now uses `sendEmailViaResend` with `buildDropLaunchHtml`
+
+### Key Decisions
+- Changed function signatures to accept `env` parameter (was `_env` unused placeholder)
+- `sendDropLaunchToSubscriber` now requires `env` as first parameter
+- Updated the call site in `sendDropLaunchEmails` to pass `env` to the subscriber function
+- Removed unused `config` variable from `sendShippingUpdateEmail` (orderUrl was in stub but not needed for HTML template)
+- Renamed `items` to `_items` in `sendShippingUpdateEmail` since the shipping template doesn't display item list
+
+### Files Changed
+- `merchant/src/lib/notifications.ts`:
+  - Lines 219-251: Updated `sendOrderConfirmationEmail` to use Resend
+  - Lines 253-279: Updated `sendShippingUpdateEmail` to use Resend
+  - Lines 129-152: Updated `sendDropLaunchToSubscriber` to use Resend
+  - Line 192: Updated call site to pass `env` parameter
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors in notifications.ts, 165 pre-existing warnings in other files)
+- Unit Tests: PASSED (18 tests in 2 files)
+
+### Next Steps
+- Tasks email-1, email-2, email-11 require manual user action (Resend signup, API key setup, domain config)
+- Tasks email-12, email-13, email-14: End-to-end testing once Resend is configured
+- Consider other categories (testing, security, performance, etc.) for parallel work
