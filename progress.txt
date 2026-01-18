@@ -793,3 +793,59 @@ Additional test coverage:
 - api-2: Add date range params to getOrders API
 - api-3: Add retry logic for transient failures
 - Other API enhancement tasks (api-4 through api-6)
+
+## 2026-01-18: sec-1 - Add rate limiting to login endpoint
+
+### Task Completed
+Implemented IP-based rate limiting for the customer login endpoint with account lockout mechanism after repeated failures.
+
+### Key Decisions
+- Used D1 database for persistent rate limit tracking (survives worker restarts)
+- Created login_attempts table to track all login attempts (both successful and failed)
+- Created account_lockouts table for temporary account lockouts
+- Configuration: 5 failed attempts per 15-minute window, 1-hour lockout after 3 rate limit blocks
+- Used SHA-256 hash of email+IP for identifier privacy in logs
+- Integrated rate limiting check before password verification to prevent timing attacks
+- Records both failed and successful attempts for complete audit trail
+
+### Files Created
+- `merchant/migrations/010-login-rate-limit.sql` - Database migration with tables and indexes
+- `merchant/src/middleware/login-rate-limit.ts` - Rate limiter middleware (271 lines)
+- `merchant/tests/middleware/login-rate-limit.test.ts` - 25 unit tests
+
+### Files Changed
+- `merchant/src/routes/customer-auth.ts` - Integrated rate limiting into login route
+- `apps/storefront/src/components/LoginForm.tsx` - Added user-friendly error messages for rate limit and lockout
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors, pre-existing warnings only)
+- Merchant Tests: PASSED (159 tests - 25 new rate limiting + 134 existing)
+- Pre-commit Hooks: All passed
+
+### Test Coverage Summary
+All PRD unit tests implemented:
+- Rate limiter allows requests under limit ✓
+- Rate limiter blocks after 5 failed attempts ✓
+- Rate limiter resets counter after 15 minutes ✓
+- Rate limiter returns 429 with Retry-After header ✓
+- Rate limiter locks account after repeated failures ✓
+- Rate limiter logs rate limit events ✓
+
+Additional test coverage:
+- getClientIp extracts IP from CF-Connecting-IP or X-Forwarded-For headers
+- setRateLimitHeaders sets correct X-RateLimit-* headers
+- recordLoginAttempt logs to database and console
+- lockAccount creates/updates lockout record
+- unlockAccount removes lockout record
+- cleanupOldAttempts removes old attempts and expired lockouts
+- enforceLoginRateLimit throws 429 or 423 errors with proper messages
+
+### Commit
+- Hash: 4fbf541
+- Message: feat(sec-1): add rate limiting to login endpoint
+
+### Next Steps
+- sec-2: Add email verification for customer accounts
+- sec-3: Implement password reset flow
+- Other security enhancements (sec-4 through sec-6)

@@ -517,3 +517,42 @@ All unit tests implemented:
 - api-2: Add date range params to getOrders API (similar date filtering pattern)
 - Consider using count endpoints in admin dashboard for efficient statistics loading
 - The low_stock threshold (10 units) could be made configurable in future iteration
+
+## [sec-1]: Add rate limiting to login endpoint
+**Status:** PASSED
+**Tests Written:** 25 unit tests in merchant/tests/middleware/login-rate-limit.test.ts
+**Test Results:** 159 tests passed (merchant - 25 new + 134 existing)
+**Type Check:** PASSED - 0 errors across all packages
+**Lint:** PASSED - 0 errors (pre-existing warnings only)
+**Browser Tests:** SKIPPED - PRD visual tests require running dev server with actual login attempts; unit tests cover all rate limiting logic
+**Pre-commit Hooks:** All passed
+**Commit:** 4fbf541 feat(sec-1): add rate limiting to login endpoint
+**Findings:**
+- Created D1 database migration for login_attempts and account_lockouts tables
+- Implemented rate limiter middleware with configurable options:
+  - `maxAttempts: 5` - failed attempts before rate limiting
+  - `windowMs: 15 * 60 * 1000` - 15-minute sliding window
+  - `lockoutDurationMs: 60 * 60 * 1000` - 1-hour lockout duration
+  - `lockoutThreshold: 3` - rate limit hits before account lockout
+- Integrated into customer-auth login route:
+  - Checks rate limit before processing login (prevents timing attacks)
+  - Records all attempts (failed and successful) for audit
+  - Returns appropriate 429 (rate limited) or 423 (locked) errors
+- Updated LoginForm with user-friendly error messages:
+  - "Too many login attempts. Please wait a few minutes before trying again."
+  - "Your account is temporarily locked due to too many failed attempts..."
+- Used SHA-256 hash of email+IP as identifier for privacy
+- Added cleanup function for old attempts (>7 days) and expired lockouts
+**PRD Coverage:**
+All unit tests implemented:
+- Rate limiter allows requests under limit ✓
+- Rate limiter blocks after 5 failed attempts ✓
+- Rate limiter resets counter after 15 minutes ✓
+- Rate limiter returns 429 with Retry-After header ✓
+- Rate limiter locks account after repeated failures ✓
+- Rate limiter logs rate limit events ✓
+**Recommendations:**
+- sec-2: Add email verification for customer accounts
+- sec-3: Implement password reset flow
+- Consider adding admin endpoint to manually unlock accounts
+- The migration requires `wrangler d1 execute` to apply in production
