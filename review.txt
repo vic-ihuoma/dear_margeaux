@@ -806,3 +806,29 @@ All unit tests implemented:
 - Consider adding cleanup of old records to cron job
 - Consider alerting when rate limit is frequently exceeded
 - The migration requires `wrangler d1 execute` to apply in production
+
+## [pm-1]: Add featured image and variant image fields to database and types
+**Status:** PASSED
+**Tests Written:** N/A (type definition and migration changes, updated existing test sample data)
+**Test Results:**
+- Merchant: 247 tests passed
+- API Client: 116 tests passed
+- Storefront: 53 tests passed
+- Admin: 79 tests passed (after updating sample data to include new fields)
+**Type Check:** PASSED - 0 errors across all 7 packages
+**Lint:** PASSED - 0 errors (pre-existing warnings only)
+**Browser Tests:** N/A - no visual tests in PRD for this task
+**Findings:**
+- Added `featured_image_url` and `featured_image_alt` to Product and ProductListItem interfaces
+- Added `image_alt` to Variant interface for accessibility
+- Updated all create/update parameter interfaces with optional image fields
+- Created migration 013-product-images.sql with ALTER TABLE statements to add columns
+- Updated admin products.test.ts sample data to include new fields (resolved TypeScript errors)
+- The migration adds:
+  - `featured_image_url TEXT` to products table
+  - `featured_image_alt TEXT` to products table
+  - `image_alt TEXT` to variants table
+**Recommendations:**
+- pm-2: Update Merchant API to handle the new fields in CRUD operations
+- pm-3 onwards: Implement tags, drop assignment, and admin form updates
+- Migration requires `wrangler d1 migrations apply` to deploy to production

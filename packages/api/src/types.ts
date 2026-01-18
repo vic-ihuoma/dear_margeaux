@@ -50,6 +50,7 @@ export interface Variant {
   title: string;
   price_cents: number;
   image_url: string | null;
+  image_alt: string | null;
   product_id: string;
 }
 
@@ -58,6 +59,8 @@ export interface Product {
   id: string;
   title: string;
   description: string | null;
+  featured_image_url: string | null;
+  featured_image_alt: string | null;
   status: ProductStatus;
   created_at: ISODateString;
   variants: Variant[];
@@ -68,6 +71,8 @@ export interface ProductListItem {
   id: string;
   title: string;
   description: string | null;
+  featured_image_url: string | null;
+  featured_image_alt: string | null;
   status: ProductStatus;
   created_at: ISODateString;
 }
@@ -76,6 +81,8 @@ export interface ProductListItem {
 export interface CreateProductParams {
   title: string;
   description?: string;
+  featured_image_url?: string;
+  featured_image_alt?: string;
   status?: ProductStatus;
 }
 
@@ -83,6 +90,8 @@ export interface CreateProductParams {
 export interface UpdateProductParams {
   title?: string;
   description?: string;
+  featured_image_url?: string | null;
+  featured_image_alt?: string | null;
   status?: ProductStatus;
 }
 
@@ -92,6 +101,7 @@ export interface CreateVariantParams {
   title: string;
   price_cents: number;
   image_url?: string;
+  image_alt?: string;
 }
 
 /** Parameters for updating a variant */
@@ -100,6 +110,7 @@ export interface UpdateVariantParams {
   title?: string;
   price_cents?: number;
   image_url?: string | null;
+  image_alt?: string | null;
 }
 
 // ============================================================================

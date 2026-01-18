@@ -82,6 +82,8 @@ const sampleProduct: Product = {
   id: 'prod_123',
   title: 'Test Product',
   description: 'Test description',
+  featured_image_url: null,
+  featured_image_alt: null,
   status: 'active',
   created_at: '2024-01-01T00:00:00Z',
   variants: [
@@ -92,6 +94,7 @@ const sampleProduct: Product = {
       sku: 'TEST-001',
       price_cents: 2999,
       image_url: null,
+      image_alt: null,
     },
   ],
 };
@@ -109,6 +112,8 @@ describe('Products API Routes', () => {
             id: sampleProduct.id,
             title: sampleProduct.title,
             description: sampleProduct.description,
+            featured_image_url: sampleProduct.featured_image_url,
+            featured_image_alt: sampleProduct.featured_image_alt,
             status: sampleProduct.status,
             created_at: sampleProduct.created_at,
           },

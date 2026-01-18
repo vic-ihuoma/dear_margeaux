@@ -2156,7 +2156,7 @@
         "visual": [],
         "manual": ["Query database and verify columns exist"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-2",

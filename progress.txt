@@ -1195,3 +1195,43 @@ GET /v1/email-usage returns:
 - Consider adding configurable limits per store (currently fixed at 1000/hour)
 - Consider adding cleanup of old records to cron job
 - The migration requires `wrangler d1 execute` to apply in production
+
+## 2026-01-18: pm-1 - Add featured image and variant image fields to database and types
+
+### Task Completed
+Added featured image fields to the Product interface and image_alt field to the Variant interface, along with database migration for schema changes.
+
+### Key Decisions
+- Added `featured_image_url: string | null` and `featured_image_alt: string | null` to Product and ProductListItem interfaces
+- Added `image_alt: string | null` to Variant interface for accessibility
+- Updated CreateProductParams and UpdateProductParams with optional featured image fields
+- Updated CreateVariantParams and UpdateVariantParams with optional image_alt field
+- Created migration 013-product-images.sql to add columns to products and variants tables
+- Note: The existing products table already has an `image_url` column, so we added the new `featured_image_url` and `featured_image_alt` as separate fields
+
+### Files Created
+- `merchant/migrations/013-product-images.sql` - Database migration adding featured_image_url, featured_image_alt to products and image_alt to variants
+
+### Files Changed
+- `packages/api/src/types.ts`:
+  - Added `featured_image_url` and `featured_image_alt` to Product interface
+  - Added `featured_image_url` and `featured_image_alt` to ProductListItem interface
+  - Added `image_alt` to Variant interface
+  - Added `featured_image_url` and `featured_image_alt` to CreateProductParams
+  - Added `featured_image_url` and `featured_image_alt` to UpdateProductParams (nullable for clearing)
+  - Added `image_alt` to CreateVariantParams
+  - Added `image_alt` to UpdateVariantParams (nullable for clearing)
+- `apps/admin/tests/api/products.test.ts` - Updated sample product data to include new fields
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors, only pre-existing warnings)
+- Merchant Tests: PASSED (247 tests)
+- API Client Tests: PASSED (116 tests)
+- Storefront Tests: PASSED (53 tests)
+- Admin Tests: PASSED (79 tests)
+
+### Next Steps
+- pm-2: Update Merchant API to handle product and variant image fields in CRUD operations
+- pm-3 and beyond: Add tags support, drop assignment, and admin form updates
+- The migration requires `wrangler d1 migrations apply` to apply in production
