@@ -694,10 +694,68 @@ function buildDropLaunchHtml(data: {
   `;
 }
 
+function buildNewsletterVerificationHtml(data: {
+  verificationUrl: string;
+  unsubscribeUrl?: string;
+}): string {
+  const config = getStoreConfig();
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: 'Inter', -apple-system, sans-serif; background: #fafafa; padding: 40px 20px;">
+      <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden;">
+        <div style="background: #8B4513; color: white; padding: 32px; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px;">Confirm Your Subscription</h1>
+        </div>
+        <div style="padding: 32px;">
+          <p style="color: #333; font-size: 16px;">Welcome to ${config.storeName}!</p>
+          <p style="color: #666; line-height: 1.6;">
+            Thank you for signing up for our newsletter. Please confirm your subscription
+            by clicking the button below.
+          </p>
+          <p style="color: #666; line-height: 1.6;">
+            Once confirmed, you'll receive updates about new collections, exclusive drops,
+            and behind-the-scenes content.
+          </p>
+
+          <a href="${data.verificationUrl}" style="display: block; background: #E2725B; color: white; text-align: center; padding: 16px; border-radius: 6px; text-decoration: none; margin-top: 24px; font-weight: bold;">
+            Confirm Subscription
+          </a>
+
+          <p style="color: #999; font-size: 14px; margin-top: 24px; text-align: center;">
+            This link will expire in 24 hours.
+          </p>
+
+          <p style="color: #999; font-size: 14px; margin-top: 16px; line-height: 1.5;">
+            If you didn't request this email, you can safely ignore it. You won't be
+            subscribed unless you click the confirmation button above.
+          </p>
+        </div>
+        <div style="background: #f5f5f5; padding: 24px; text-align: center; color: #666; font-size: 14px;">
+          <p style="margin: 0;">${config.storeName}</p>
+          <p style="margin: 8px 0 0;">Questions? Contact ${config.supportEmail}</p>
+          ${
+            data.unsubscribeUrl
+              ? `<p style="margin: 8px 0 0;"><a href="${data.unsubscribeUrl}" style="color: #999;">Unsubscribe</a></p>`
+              : ''
+          }
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
 // Export for testing
 export {
   sendEmailViaResend,
   buildOrderConfirmationHtml,
   buildShippingUpdateHtml,
   buildDropLaunchHtml,
+  buildNewsletterVerificationHtml,
 };

@@ -54,6 +54,7 @@ import {
   buildOrderConfirmationHtml,
   buildShippingUpdateHtml,
   buildDropLaunchHtml,
+  buildNewsletterVerificationHtml,
   type OrderData,
   type OrderItemData,
   type DropData,
@@ -896,5 +897,116 @@ describe('Failed email handling', () => {
     const result = await sendDropLaunchEmails(env, 'store-1', createMockDrop());
 
     expect(result.errors).toContain('fail@example.com: Rate limit exceeded');
+  });
+});
+
+// ============================================================
+// TESTS: Newsletter Verification Email Template (newsletter-4)
+// ============================================================
+
+describe('buildNewsletterVerificationHtml', () => {
+  it('returns valid HTML with doctype', () => {
+    const html = buildNewsletterVerificationHtml({
+      verificationUrl: 'https://example.com/verify?token=abc123',
+    });
+
+    expect(html).toContain('<!DOCTYPE html>');
+    expect(html).toContain('<html>');
+    expect(html).toContain('</html>');
+  });
+
+  it('includes verification link with token', () => {
+    const verificationUrl = 'https://dearmargeaux.com/newsletter/verify?token=secret-token-xyz';
+    const html = buildNewsletterVerificationHtml({ verificationUrl });
+
+    expect(html).toContain(`href="${verificationUrl}"`);
+  });
+
+  it('includes Confirm Subscription button', () => {
+    const html = buildNewsletterVerificationHtml({
+      verificationUrl: 'https://example.com/verify?token=abc',
+    });
+
+    expect(html).toContain('Confirm Subscription');
+  });
+
+  it('uses brand color #8B4513 for header', () => {
+    const html = buildNewsletterVerificationHtml({
+      verificationUrl: 'https://example.com/verify',
+    });
+
+    expect(html).toContain('#8B4513');
+  });
+
+  it('uses terracotta color #E2725B for CTA button', () => {
+    const html = buildNewsletterVerificationHtml({
+      verificationUrl: 'https://example.com/verify',
+    });
+
+    expect(html).toContain('#E2725B');
+  });
+
+  it('includes explanation text about receiving the email', () => {
+    const html = buildNewsletterVerificationHtml({
+      verificationUrl: 'https://example.com/verify',
+    });
+
+    // Should explain what happens if they didn't request the email
+    expect(html).toContain("If you didn't request this email");
+    expect(html).toContain('safely ignore');
+  });
+
+  it('includes store name in greeting', () => {
+    const html = buildNewsletterVerificationHtml({
+      verificationUrl: 'https://example.com/verify',
+    });
+
+    expect(html).toContain('Dear Margeaux');
+  });
+
+  it('includes token expiration notice', () => {
+    const html = buildNewsletterVerificationHtml({
+      verificationUrl: 'https://example.com/verify',
+    });
+
+    expect(html).toContain('expire');
+  });
+
+  it('includes unsubscribe link when provided', () => {
+    const unsubscribeUrl = 'https://dearmargeaux.com/newsletter/unsubscribe?email=test@example.com';
+    const html = buildNewsletterVerificationHtml({
+      verificationUrl: 'https://example.com/verify',
+      unsubscribeUrl,
+    });
+
+    expect(html).toContain(`href="${unsubscribeUrl}"`);
+    expect(html).toContain('Unsubscribe');
+  });
+
+  it('omits unsubscribe link when not provided', () => {
+    const html = buildNewsletterVerificationHtml({
+      verificationUrl: 'https://example.com/verify',
+      // No unsubscribeUrl
+    });
+
+    expect(html).not.toContain('Unsubscribe');
+  });
+
+  it('includes support email in footer', () => {
+    const html = buildNewsletterVerificationHtml({
+      verificationUrl: 'https://example.com/verify',
+    });
+
+    expect(html).toContain('hello@dearmargeaux.com');
+  });
+
+  it('describes newsletter benefits', () => {
+    const html = buildNewsletterVerificationHtml({
+      verificationUrl: 'https://example.com/verify',
+    });
+
+    // Should mention what subscribers will receive
+    expect(html).toContain('new collections');
+    expect(html).toContain('exclusive drops');
   });
 });

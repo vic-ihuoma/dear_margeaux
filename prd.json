@@ -2600,7 +2600,7 @@
         "visual": [],
         "manual": ["Verify email renders correctly in email client"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "newsletter-5",
