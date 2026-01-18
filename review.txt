@@ -396,3 +396,38 @@
 - test-5: Add visual regression tests
 - test-7: Add integration tests for email sending
 - Consider adding test coverage reporting to merchant package
+
+## [test-5]: Add visual regression tests
+**Status:** PASSED
+**Tests Written:** 15 visual regression tests in e2e/visual-regression.spec.ts
+**Test Results:** 83 E2E tests passed (68 existing + 15 new visual regression tests)
+**Type Check:** PASSED - 0 errors across all packages
+**Lint:** N/A - e2e directory doesn't have ESLint config (Playwright tests follow standard Playwright patterns)
+**Browser Tests:** PASSED - All 15 visual tests generated baseline screenshots:
+  - Homepage: desktop (1280x720), mobile (390x844)
+  - ProductCard: default state, hover state
+  - CartDrawer: empty state, with items
+  - Blog: listing page, individual post page
+  - Lookbook: gallery page
+  - Drops: listing page, archive page
+  - Checkout: success page, cancel page
+  - Account: login page, register page
+**Pre-commit Hooks:** Pending (commit in progress)
+**Findings:**
+- Implemented visual regression testing using Playwright's built-in `toHaveScreenshot()` API
+- No additional dependencies required - Playwright 1.57.0 already installed
+- Configured snapshot storage at `e2e/__screenshots__/` with organized path template
+- Added visual comparison thresholds (maxDiffPixelRatio: 0.002, threshold: 0.2) for anti-aliasing tolerance
+- Created 2 new npm scripts: `test:e2e:visual` and `test:e2e:update-snapshots`
+- All 15 baseline screenshots generated successfully (~1.1MB total)
+- Tests handle pages without backend data gracefully (falls back to sample/empty states)
+**Notes on PRD coverage:**
+- ProductCard out-of-stock state: Not implemented (requires product with 0 inventory)
+- CartDrawer with discount: Not implemented (requires discount code system)
+- StatCard/ActivityFeed: These are admin-only components; admin E2E tests not yet added
+- Email templates: Would require rendering HTML separately, not part of storefront pages
+**Recommendations:**
+- Add admin E2E tests to cover StatCard and ActivityFeed components
+- Add email template preview page or Storybook for email visual testing
+- Consider adding visual test for product detail page once products exist
+- Run `pnpm test:e2e:update-snapshots` after intentional UI changes

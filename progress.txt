@@ -560,3 +560,57 @@ Tests cover all PRD requirements:
 - test-4: Add E2E tests with Playwright
 - test-5: Add visual regression tests
 - test-7: Add integration tests for email sending
+
+## 2026-01-18: test-5 - Add visual regression tests
+
+### Task Completed
+Implemented visual regression testing infrastructure using Playwright's built-in `toHaveScreenshot()` API.
+
+### Key Decisions
+- Used Playwright's native visual comparison rather than external libraries (Storybook, Percy, etc.)
+- Configured snapshot directory at `e2e/__screenshots__/` with organized path template
+- Set visual comparison thresholds: maxDiffPixelRatio: 0.002, threshold: 0.2 for anti-aliasing tolerance
+- Created 15 visual regression tests covering all major pages and components
+
+### Files Created
+- `e2e/visual-regression.spec.ts` - 15 visual regression tests covering:
+  - Homepage: desktop (1280x720) and mobile (390x844 iPhone 14) viewports
+  - ProductCard: default and hover states
+  - CartDrawer: empty and with-items states
+  - Blog: listing page and individual post page
+  - Lookbook: gallery page
+  - Drops: listing and archive pages
+  - Checkout: success and cancel pages
+  - Account: login and register pages
+
+### Files Changed
+- `playwright.config.ts` - Added snapshot configuration, directory paths, and visual comparison thresholds
+- `package.json` - Added `test:e2e:visual` and `test:e2e:update-snapshots` scripts
+- `prd.json` - Set passes: true for test-5
+
+### Generated Baselines (15 screenshots)
+- `e2e/__screenshots__/visual-regression.spec.ts-snapshots/`:
+  - homepage-desktop-chromium.png, homepage-mobile-chromium.png
+  - product-card-default-chromium.png, product-card-hover-chromium.png
+  - cart-drawer-empty-chromium.png, cart-drawer-with-items-chromium.png
+  - blog-listing-chromium.png, blog-post-chromium.png
+  - lookbook-gallery-chromium.png
+  - drops-listing-chromium.png, drops-archive-chromium.png
+  - checkout-success-chromium.png, checkout-cancel-chromium.png
+  - account-login-chromium.png, account-register-chromium.png
+
+### Test Results
+- Visual Regression Tests: PASSED (15 tests)
+- All E2E Tests: PASSED (83 tests total - 68 existing + 15 new)
+- Unit Tests: PASSED (all cached, no changes to existing code)
+- Typecheck: PASSED (0 errors)
+
+### Usage
+- Run visual tests: `pnpm test:e2e:visual`
+- Update baselines after intentional UI changes: `pnpm test:e2e:update-snapshots`
+- Run all E2E tests (including visual): `pnpm test:e2e`
+
+### Next Steps
+- test-7: Add integration tests for email sending
+- Consider adding StatCard and ActivityFeed visual tests once admin E2E tests are added
+- Email template visual tests would require rendering HTML emails separately

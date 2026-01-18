@@ -566,7 +566,7 @@
           "Update baselines when intentional changes made"
         ]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-6",

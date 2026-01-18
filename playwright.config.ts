@@ -23,6 +23,21 @@ export default defineConfig({
   // Reporter to use
   reporter: [['html', { open: 'never' }], ['list']],
 
+  // Snapshot configuration for visual regression tests
+  snapshotDir: './e2e/__screenshots__',
+  snapshotPathTemplate:
+    '{snapshotDir}/{testFileDir}/{testFileName}-snapshots/{arg}{-projectName}{ext}',
+
+  // Expect configuration for visual comparisons
+  expect: {
+    toHaveScreenshot: {
+      // Allow up to 0.2% pixel difference to account for anti-aliasing
+      maxDiffPixelRatio: 0.002,
+      // Threshold for each pixel (0-1)
+      threshold: 0.2,
+    },
+  },
+
   // Shared settings for all the projects below
   use: {
     // Base URL to use in actions like `await page.goto('/')`
