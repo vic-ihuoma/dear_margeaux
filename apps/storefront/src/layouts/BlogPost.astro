@@ -4,6 +4,8 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import CartDrawer from '../components/CartDrawer';
 import SEO from '../components/SEO.astro';
+import RelatedPosts from '../components/RelatedPosts.astro';
+import type { BlogPost } from '../lib/blog';
 
 interface Props {
   title: string;
@@ -12,9 +14,18 @@ interface Props {
   author: string;
   tags: string[];
   image?: string;
+  relatedPosts?: BlogPost[];
 }
 
-const { title, description, date, author, tags, image } = Astro.props;
+const {
+  title,
+  description,
+  date,
+  author,
+  tags,
+  image,
+  relatedPosts = [],
+} = Astro.props;
 
 // Format date
 const formattedDate = date.toLocaleDateString('en-US', {
@@ -313,6 +324,9 @@ const breadcrumbs = [
               </a>
             </div>
           </footer>
+
+          {/* Related Posts */}
+          <RelatedPosts posts={relatedPosts} />
         </div>
       </article>
 

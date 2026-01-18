@@ -2189,3 +2189,54 @@ All unit tests implemented:
 - sf-7: Add related posts to blog (next natural enhancement)
 - sf-8: Add tag-based blog filtering (already has task defined)
 - Consider adding RSS feed for drop announcements in future
+
+## [sf-7]: Add related posts to blog
+**Status:** PASSED
+**Tests Written:**
+- getRelatedPosts - Basic functionality (3 tests)
+- getRelatedPosts - Tag matching (2 tests)
+- getRelatedPosts - Date sorting (2 tests)
+- getRelatedPosts - Draft post handling (1 test)
+- getRelatedPosts - Edge cases (6 tests)
+
+**Test Results:** 129 tests passed (14 new + 115 existing in storefront)
+**Type Check:** PASSED - 0 errors
+**Lint:** PASSED for new code (1 pre-existing warning in CartDrawer.tsx)
+**Browser Tests:** N/A - Visual tests require dev server and additional blog posts to test properly
+
+**Findings:**
+- Created getRelatedPosts utility at apps/storefront/src/lib/blog.ts:
+  - Uses CollectionEntry<'blog'> type from Astro content collections
+  - Matching algorithm: case-insensitive tag comparison using Set
+  - Scoring: posts ranked by (1) matching tag count descending, (2) date descending
+  - Excludes: current post by slug, all draft posts
+  - Edge case handling: falls back to most recent posts when current post has no tags
+
+- Created RelatedPosts.astro component at apps/storefront/src/components/RelatedPosts.astro:
+  - Conditionally renders only when posts.length > 0
+  - Responsive grid: 1 column on mobile, 3 columns on md breakpoint
+  - Card styling: bg-background-tertiary, rounded-lg, hover:shadow-md
+  - Image aspect ratio: 16/10 with object-cover
+  - Fallback placeholder SVG for posts without images
+  - Shows up to 2 tags per card
+
+- Integrated into BlogPost.astro layout:
+  - Added relatedPosts prop (optional, defaults to empty array)
+  - Renders RelatedPosts component after article footer, inside container
+
+- Updated [slug].astro page:
+  - Passes allPosts array in getStaticPaths props
+  - Calls getRelatedPosts to compute related posts at build time
+
+**Unit Test Coverage:**
+- getRelatedPosts returns posts with matching tags ✓
+- getRelatedPosts limits to 3 posts ✓
+- getRelatedPosts excludes current post ✓
+- getRelatedPosts handles posts with no tags ✓
+- getRelatedPosts returns empty array when no matches ✓
+- Additional tests: case-insensitivity, prioritization, date sorting, draft handling
+
+**Recommendations:**
+- sf-8: Add tag-based blog filtering (natural next step - allows clicking tag to see all posts with that tag)
+- Consider adding a "Read more from the author" section if multiple authors
+- Consider caching related posts computation in larger blogs (currently SSG handles this)

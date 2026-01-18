@@ -2781,3 +2781,57 @@ NOTES:
 - Feed uses standard RSS 2.0 format via @astrojs/rss
 - RSS link is visible in browser's RSS auto-discovery feature
 - Icon uses Material Design Icons RSS icon path
+
+================================================================================
+ITERATION: 2026-01-18
+TASK: sf-7 - Add related posts to blog
+================================================================================
+
+COMPLETED WORK:
+- Created getRelatedPosts utility function at apps/storefront/src/lib/blog.ts
+  - Scores posts by number of matching tags (case-insensitive)
+  - Sorts by: 1) matching tag count (descending), 2) date (newest first)
+  - Excludes current post and draft posts
+  - Falls back to most recent posts when current post has no tags
+  - Defaults to limit of 3 related posts
+
+- Created RelatedPosts.astro component at apps/storefront/src/components/RelatedPosts.astro
+  - Responsive grid layout (1 col mobile, 3 cols desktop)
+  - Card design with image, tags, title, and date
+  - Image placeholder for posts without images
+  - Hover effects matching site design
+  - Only renders when related posts exist (empty array = no section)
+
+- Updated blog post page (apps/storefront/src/pages/blog/[...slug].astro)
+  - Passes allPosts to getStaticPaths for related post computation
+  - Computes related posts and passes to BlogPost layout
+
+- Updated BlogPost.astro layout
+  - Added relatedPosts prop accepting BlogPost array
+  - Renders RelatedPosts component after article footer
+
+- Added 14 comprehensive unit tests in apps/storefront/tests/lib/blog.test.ts
+  - Tests for basic matching functionality
+  - Tests for case-insensitive tag matching
+  - Tests for prioritizing posts with more matching tags
+  - Tests for date sorting when tag counts are equal
+  - Tests for draft post exclusion
+  - Tests for edge cases (no matches, empty arrays, posts without tags)
+
+FILES CHANGED:
+- apps/storefront/src/lib/blog.ts (new file)
+- apps/storefront/src/components/RelatedPosts.astro (new file)
+- apps/storefront/src/pages/blog/[...slug].astro (updated)
+- apps/storefront/src/layouts/BlogPost.astro (updated)
+- apps/storefront/tests/lib/blog.test.ts (new file)
+- prd.json (marked sf-7 as passed)
+
+TEST RESULTS:
+- All 129 tests pass in storefront package (14 new + 115 existing)
+- TypeScript type check: PASSED (0 errors)
+- Lint: PASSED for new code (1 pre-existing warning in CartDrawer.tsx)
+
+NOTES:
+- Related posts are computed at build time (SSG) for optimal performance
+- The component gracefully handles edge cases like single blog post or no matching tags
+- Posts without images get a placeholder icon instead of broken image

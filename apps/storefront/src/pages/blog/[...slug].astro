@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
+import { getRelatedPosts } from '../../lib/blog';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog', ({ data }) => {
@@ -10,12 +11,15 @@ export async function getStaticPaths() {
 
   return posts.map((post) => ({
     params: { slug: post.slug },
-    props: { post },
+    props: { post, allPosts: posts },
   }));
 }
 
-const { post } = Astro.props;
+const { post, allPosts } = Astro.props;
 const { Content } = await render(post);
+
+// Get related posts based on matching tags
+const relatedPosts = getRelatedPosts(post, allPosts, 3);
 ---
 
 <BlogPost
@@ -25,6 +29,7 @@ const { Content } = await render(post);
   author={post.data.author}
   tags={post.data.tags}
   image={post.data.image}
+  relatedPosts={relatedPosts}
 >
   <Content />
 </BlogPost>
