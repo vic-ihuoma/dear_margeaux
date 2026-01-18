@@ -374,3 +374,68 @@ Tests cover all PRD requirements:
 - test-1: Add unit tests for API client
 - test-3: Add integration tests for admin API routes
 - Other testing tasks (test-4 through test-7)
+
+## 2026-01-18: test-1 - Add unit tests for API client
+
+### Task Completed
+Created comprehensive unit tests for the MerchantClient in the packages/api directory. Added 65 tests covering all client functionality including CRUD operations, error handling, and network error scenarios.
+
+### Key Decisions
+- Added Vitest as the test framework for the api package
+- Used node environment (no browser APIs needed for fetch mocking)
+- Created test file at `packages/api/src/__tests__/merchant-client.test.ts`
+- Mocked fetch function using Vitest's `vi.fn()` for complete control over responses
+- Tests cover all error classes: ValidationError, AuthenticationError, ForbiddenError, NotFoundError, ConflictError, NetworkError
+
+### Files Created
+- `packages/api/vitest.config.ts` - Vitest configuration with node environment
+- `packages/api/src/__tests__/merchant-client.test.ts` - 65 unit tests for MerchantClient
+
+### Files Changed
+- `packages/api/package.json` - Added vitest, @vitest/coverage-v8 dev dependencies, added test scripts
+- `prd.json` - Set passes: true for test-1
+
+### Test Results
+- API Client Tests: PASSED (65 tests)
+- Storefront Tests: PASSED (53 tests)
+- Merchant Tests: PASSED (18 tests)
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, pre-existing warnings only)
+
+### Test Coverage Summary
+Tests cover all PRD requirements:
+- getProducts fetches products list successfully ✓
+- getProducts passes pagination parameters correctly ✓
+- getProducts handles empty response ✓
+- getProduct fetches single product by ID ✓
+- getProduct throws on 404 not found ✓
+- createProduct creates product with valid data ✓
+- createProduct throws on 400 validation error ✓
+- createProduct throws on 409 conflict (duplicate) ✓
+- updateProduct updates product fields ✓
+- updateProduct throws on 404 not found ✓
+- deleteProduct deletes product successfully ✓
+- deleteProduct throws on 403 forbidden ✓
+- All methods throw on 401 unauthorized ✓
+- All methods throw on network error ✓
+
+Additional test coverage:
+- Client Configuration (Authorization header, Content-Type, URL handling)
+- Variants (create, update, delete)
+- Inventory (list, adjust)
+- Cart (create, add items, apply discount, checkout)
+- Orders (list, get, update, refund)
+- Customers (list, get, update, addresses)
+- Drops (list, create, update, delete, assign products)
+- Waitlist (subscribe, unsubscribe, list entries)
+- Customer Auth (register, login, logout, get current, get orders)
+- Discounts (list, create)
+- Webhooks (list, create)
+- Images (upload, get URL, delete)
+- HTTP status error handling (400, 401, 403, 404, 409, 500+)
+- Network error handling (timeouts, failures)
+
+### Next Steps
+- test-3: Add integration tests for admin API routes
+- test-4: Add E2E tests with Playwright
+- Other testing tasks (test-5 through test-7)

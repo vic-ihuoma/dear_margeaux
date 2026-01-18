@@ -297,3 +297,39 @@
 - test-3: Add integration tests for admin API routes
 - Consider adding test:coverage script to CI pipeline
 - Future: Add tests for other stores (auth, etc.) as needed
+
+## [test-1]: Add unit tests for API client
+**Status:** PASSED
+**Tests Written:** 65 unit tests in packages/api/src/__tests__/merchant-client.test.ts
+**Test Results:** 65 tests passed (api), 53 tests passed (storefront), 18 tests passed (merchant), 136 total
+**Type Check:** PASSED - 0 errors across all 7 packages
+**Lint:** PASSED - 0 errors (pre-existing warnings only)
+**Browser Tests:** N/A - unit tests only, no UI changes
+**Pre-commit Hooks:** Pending (commit in progress)
+**Findings:**
+- Created Vitest configuration for api package (vitest.config.ts)
+- Added vitest, @vitest/coverage-v8 as dev dependencies
+- Added test, test:watch, test:coverage scripts to package.json
+- Created comprehensive test suite covering all MerchantClient methods:
+  - **Client Configuration tests (3):** URL trailing slash handling, Authorization header, Content-Type header
+  - **Products tests (12):** getProducts (list, pagination, status filter, empty), getProduct (success, 404), createProduct (success, 400, 409), updateProduct (success, 404), deleteProduct (success, 403)
+  - **Variants tests (3):** create, update, delete
+  - **Inventory tests (2):** list, adjust
+  - **Cart tests (4):** create, add items, apply discount, checkout
+  - **Orders tests (5):** list, status filter, get single, update, refund
+  - **Customers tests (3):** list, get single, update
+  - **Drops tests (5):** list, create, update, delete, assign products
+  - **Waitlist tests (3):** subscribe, unsubscribe, list entries
+  - **Customer Auth tests (5):** register, login, logout, get current, get orders
+  - **Discounts tests (2):** list, create
+  - **Webhooks tests (2):** list, create
+  - **Images tests (4):** upload, get URL, delete, upload error
+  - **Error handling tests (12):** ValidationError (400), AuthenticationError (401), ForbiddenError (403), NotFoundError (404), ConflictError (409), MerchantApiError (5xx), non-JSON response, all methods throw on 401
+  - **Network error tests (3):** network failure, timeout, non-Error rejection
+- Tests use vi.fn() for complete fetch mocking
+- All error classes properly tested with status codes and details
+**Recommendations:**
+- test-3: Add integration tests for admin API routes
+- test-4: Add E2E tests with Playwright
+- Consider adding test:coverage to CI pipeline for code coverage reports
+- Future: Add mutation testing to improve test quality

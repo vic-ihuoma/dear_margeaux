@@ -419,7 +419,7 @@
         "visual": [],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "test-2",
