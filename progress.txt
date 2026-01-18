@@ -2949,3 +2949,43 @@ NOTES:
 - Active tag in filter bar has primary background color
 - Tag page shows clear count of matching posts
 - Easy navigation back to all posts via "Clear filter" link
+
+================================================================================
+ITERATION: 2026-01-18
+TASK: newsletter-23 - Add newsletter signup to blog listing page
+================================================================================
+
+COMPLETED WORK:
+- Updated apps/storefront/src/pages/blog/index.astro to include inline newsletter form
+  - Imported NewsletterForm React component
+  - Added API URL and API key configuration (same as Footer)
+  - Replaced link-based CTA with actual inline newsletter form
+  - Added email envelope icon for visual appeal
+  - Styled form to match blog page design (centered, max-width, bg-secondary)
+  - Form uses NewsletterForm component when API config is available
+  - Falls back to static form when no API config (for static builds)
+
+- Newsletter section features:
+  - Email envelope icon in primary color circle
+  - "Stay in the Loop" heading
+  - Descriptive text about new posts and drops
+  - Inline email input with Subscribe button
+  - Uses client:load for React hydration
+  - Shows success/error feedback inline (via NewsletterForm component)
+  - Accessible with proper labels and aria attributes
+
+FILES CHANGED:
+- apps/storefront/src/pages/blog/index.astro (updated Newsletter CTA section)
+- prd.json (marked newsletter-23 as passed)
+
+TEST RESULTS:
+- All 142 tests pass in storefront package
+- TypeScript/Astro check: PASSED (0 errors, 5 hints)
+- Lint: PASSED (1 pre-existing warning in CartDrawer.tsx)
+- Browser Tests: N/A - visual tests can be run manually when dev server is available
+
+NOTES:
+- Reuses existing NewsletterForm component for consistency
+- Form behavior matches footer newsletter form exactly
+- Double opt-in verification email is sent on subscribe
+- Success message shows "Check your email to confirm your subscription"
