@@ -1999,3 +1999,35 @@ All unit tests implemented:
 - newsletter-19: Add manual subscriber remove functionality (Remove button on each row)
 - newsletter-20: Add subscriber export to CSV
 - Consider adding bulk import functionality for importing subscriber lists
+
+## [newsletter-19]: Add manual subscriber remove functionality
+**Status:** PASSED
+**Tests Written:**
+- DELETE /v1/newsletter/subscribers/:id returns 403 for non-admin users
+- DELETE sets unsubscribed_at timestamp on removal
+- Does not delete record from database (soft delete)
+- Returns 404 for non-existent subscriber
+- Returns success for already unsubscribed subscriber
+- Returns subscriber email in response
+- Verifies subscriber belongs to the authenticated store
+
+**Test Results:** 465 tests passed (0 failed)
+**Type Check:** PASSED (0 errors)
+**Lint:** PASSED for new code (pre-existing errors in TagInput.tsx)
+**Browser Tests:** N/A (visual tests would require starting dev server)
+
+**Findings:**
+- Implemented soft delete pattern using unsubscribed_at timestamp for compliance/audit
+- RemoveSubscriberButton component includes:
+  - Confirmation dialog with email display
+  - Click-outside dismissal
+  - Escape key handling
+  - Loading spinner during API call
+  - Error message display
+  - Page reload on success
+- Admin-only access properly enforced at both API and proxy levels
+- Store isolation verified in database queries
+
+**Recommendations:**
+- Consider adding toast notifications instead of page reload for better UX
+- Future: Could add bulk remove functionality

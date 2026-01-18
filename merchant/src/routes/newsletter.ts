@@ -448,6 +448,67 @@ newsletterRoutes.post('/subscribers/add', adminOnly, async (c) => {
   });
 });
 
+// DELETE /v1/newsletter/subscribers/:id - Remove a subscriber (admin only)
+// This performs a soft delete by setting unsubscribed_at timestamp
+newsletterRoutes.delete('/subscribers/:id', adminOnly, async (c) => {
+  const { store } = c.get('auth');
+  const subscriberId = c.req.param('id');
+
+  if (!subscriberId) {
+    throw ApiError.invalidRequest('Subscriber ID is required');
+  }
+
+  const db = getDb(c.env);
+
+  // Look up subscriber by ID and verify it belongs to this store
+  const [subscriber] = await db.query<{
+    id: string;
+    email: string;
+    unsubscribed_at: string | null;
+  }>(
+    `SELECT id, email, unsubscribed_at FROM newsletter_subscribers
+     WHERE id = ? AND store_id = ?`,
+    [subscriberId, store.id]
+  );
+
+  if (!subscriber) {
+    throw ApiError.notFound('Subscriber not found');
+  }
+
+  // Check if already unsubscribed
+  if (subscriber.unsubscribed_at) {
+    return c.json({
+      success: true,
+      message: 'Subscriber was already removed',
+      subscriber: {
+        id: subscriber.id,
+        email: subscriber.email,
+      },
+    });
+  }
+
+  const timestamp = now();
+
+  // Soft delete: set unsubscribed_at timestamp (do NOT delete record for compliance)
+  await db.run(
+    `UPDATE newsletter_subscribers
+     SET unsubscribed_at = ?, updated_at = ?
+     WHERE id = ?`,
+    [timestamp, timestamp, subscriber.id]
+  );
+
+  console.log(`[NEWSLETTER] Admin removed subscriber: ${subscriber.email}`);
+
+  return c.json({
+    success: true,
+    message: 'Subscriber removed successfully',
+    subscriber: {
+      id: subscriber.id,
+      email: subscriber.email,
+    },
+  });
+});
+
 // POST /v1/newsletter/send - Send newsletter to all subscribers (admin only)
 newsletterRoutes.post('/send', adminOnly, async (c) => {
   const body = await c.req.json();

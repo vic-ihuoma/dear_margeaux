@@ -1599,6 +1599,169 @@ describe('Newsletter Routes', () => {
     });
   });
 
+  describe('DELETE /v1/newsletter/subscribers/:id - Remove subscriber (admin only)', () => {
+    it('returns 403 for non-admin users', async () => {
+      setAuthContext('public');
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/sub-123', {
+        method: 'DELETE',
+      });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('sets unsubscribed_at timestamp on removal', async () => {
+      setAuthContext('admin');
+
+      // Mock: subscriber found
+      mockDbQuery.mockResolvedValueOnce([
+        { id: 'sub-123', email: 'test@example.com', unsubscribed_at: null },
+      ]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/sub-123', {
+        method: 'DELETE',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+      expect(body.message).toContain('removed');
+
+      // Verify UPDATE was called with unsubscribed_at timestamp
+      expect(mockDbRun).toHaveBeenCalledWith(
+        expect.stringContaining('SET unsubscribed_at = ?'),
+        expect.arrayContaining(['2026-01-18T12:00:00.000Z']) // The mocked now()
+      );
+    });
+
+    it('does not delete record from database (soft delete)', async () => {
+      setAuthContext('admin');
+
+      // Mock: subscriber found
+      mockDbQuery.mockResolvedValueOnce([
+        { id: 'sub-123', email: 'test@example.com', unsubscribed_at: null },
+      ]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      await app.request('/v1/newsletter/subscribers/sub-123', {
+        method: 'DELETE',
+      });
+
+      // Verify UPDATE was called (not DELETE)
+      expect(mockDbRun).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE newsletter_subscribers'),
+        expect.any(Array)
+      );
+      expect(mockDbRun).not.toHaveBeenCalledWith(
+        expect.stringContaining('DELETE'),
+        expect.any(Array)
+      );
+    });
+
+    it('returns 404 for non-existent subscriber', async () => {
+      setAuthContext('admin');
+
+      // Mock: no subscriber found
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/non-existent', {
+        method: 'DELETE',
+      });
+
+      expect(res.status).toBe(404);
+      const body = await res.json();
+      expect(body.error).toBe('not_found');
+      expect(body.message).toContain('not found');
+    });
+
+    it('returns success for already unsubscribed subscriber', async () => {
+      setAuthContext('admin');
+
+      // Mock: subscriber already unsubscribed
+      mockDbQuery.mockResolvedValueOnce([
+        {
+          id: 'sub-123',
+          email: 'test@example.com',
+          unsubscribed_at: '2026-01-17T12:00:00.000Z',
+        },
+      ]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/sub-123', {
+        method: 'DELETE',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+      expect(body.message).toContain('already removed');
+
+      // Should NOT call UPDATE since already unsubscribed
+      expect(mockDbRun).not.toHaveBeenCalled();
+    });
+
+    it('returns subscriber email in response', async () => {
+      setAuthContext('admin');
+
+      // Mock: subscriber found
+      mockDbQuery.mockResolvedValueOnce([
+        { id: 'sub-123', email: 'removed@example.com', unsubscribed_at: null },
+      ]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      const res = await app.request('/v1/newsletter/subscribers/sub-123', {
+        method: 'DELETE',
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.subscriber.email).toBe('removed@example.com');
+      expect(body.subscriber.id).toBe('sub-123');
+    });
+
+    it('verifies subscriber belongs to the authenticated store', async () => {
+      setAuthContext('admin');
+
+      // Mock: no subscriber found (doesn't match store_id)
+      mockDbQuery.mockResolvedValueOnce([]);
+
+      const app = createTestApp();
+      const newsletter = await getNewsletterRoutes();
+      app.route('/v1/newsletter', newsletter);
+
+      await app.request('/v1/newsletter/subscribers/sub-from-other-store', {
+        method: 'DELETE',
+      });
+
+      // Verify query includes store_id filter
+      expect(mockDbQuery).toHaveBeenCalledWith(
+        expect.stringContaining('store_id = ?'),
+        expect.arrayContaining(['store-1'])
+      );
+    });
+  });
+
   describe('POST /v1/newsletter/subscribers/add - Manually add subscriber (admin only)', () => {
     it('returns 403 for non-admin users', async () => {
       setAuthContext('public');

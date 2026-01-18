@@ -2572,3 +2572,59 @@ N/A - Visual tests require running dev server. Tests are documented for manual/C
 - newsletter-19: Add manual subscriber remove functionality
 - newsletter-20: Add subscriber export to CSV
 - newsletter-21: Add newsletter send history page
+
+================================================================================
+ITERATION: 2026-01-18
+TASK: newsletter-19 - Add manual subscriber remove functionality
+================================================================================
+
+COMPLETED WORK:
+- Implemented DELETE /v1/newsletter/subscribers/:id endpoint in merchant/src/routes/newsletter.ts
+  - Performs soft delete by setting unsubscribed_at timestamp (not hard delete)
+  - Admin-only access via adminOnly middleware
+  - Returns 404 for non-existent subscribers
+  - Gracefully handles already-unsubscribed subscribers
+  - Verifies subscriber belongs to authenticated store
+
+- Created admin API proxy route at apps/admin/src/pages/api/newsletter/subscribers/[id].ts
+  - Proxies DELETE requests to Merchant API
+  - Handles errors gracefully
+
+- Created RemoveSubscriberButton React component at apps/admin/src/components/RemoveSubscriberButton.tsx
+  - Confirmation dialog before removal
+  - Loading state during API call
+  - Error handling with display message
+  - Click-outside and Escape key to dismiss
+  - Reloads page on success
+
+- Updated admin subscribers page to show Remove action in table
+  - Added Actions column header
+  - Added RemoveSubscriberButton to each non-unsubscribed row
+  - Shows "-" for already unsubscribed subscribers
+
+- Added unit tests for DELETE endpoint in merchant/tests/routes/newsletter.test.ts
+  - Tests for admin-only access (403 for public)
+  - Tests for setting unsubscribed_at timestamp
+  - Tests for soft delete (UPDATE, not DELETE)
+  - Tests for 404 on non-existent subscriber
+  - Tests for already-unsubscribed subscriber handling
+  - Tests for returning subscriber info in response
+  - Tests for store_id verification
+
+FILES CHANGED:
+- merchant/src/routes/newsletter.ts (added DELETE /v1/newsletter/subscribers/:id endpoint)
+- apps/admin/src/pages/api/newsletter/subscribers/[id].ts (new file)
+- apps/admin/src/components/RemoveSubscriberButton.tsx (new file)
+- apps/admin/src/pages/subscribers/index.astro (added Actions column and Remove button)
+- merchant/tests/routes/newsletter.test.ts (added 7 tests for DELETE endpoint)
+- prd.json (marked newsletter-19 as passed)
+
+TEST RESULTS:
+- All 465 tests pass in merchant package
+- TypeScript type check: PASSED (0 errors)
+- Lint: My new code passes (pre-existing errors in TagInput.tsx remain)
+
+NOTES:
+- Followed existing patterns from newsletter-18 (add subscriber) for consistency
+- Used soft delete approach for compliance reasons (audit trail)
+- The confirmation dialog provides clear user feedback before destructive action
