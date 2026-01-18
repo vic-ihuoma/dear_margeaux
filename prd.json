@@ -3098,7 +3098,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "nav-2",
@@ -3125,7 +3125,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "nav-3",
@@ -3151,7 +3151,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "nav-4",
@@ -3177,7 +3177,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "nav-5",

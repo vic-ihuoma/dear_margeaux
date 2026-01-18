@@ -189,7 +189,8 @@
 **Type Check:** PASSED - 0 errors (1 hint in admin, 3 hints in storefront)
 **Lint:** PASSED - 0 errors (4 pre-existing warnings in admin, 1 in storefront, 165 in merchant)
 **Browser Tests:** SKIPPED - requires running dev server to verify visually
-**Pre-commit Hooks:** Not run yet (commit pending)
+**Pre-commit Hooks:** All passed
+**Commit:** 4917c35 feat(nav-11,nav-12): add pinned field to BlogForm and admin blog API
 **Findings:**
 - **nav-11**: Added 'pinned' field to BlogForm in admin:
   - Added `pinned: boolean` to BlogPostData interface (BlogForm.tsx line 12)
@@ -210,3 +211,41 @@
 - Create initial pinned 'About Dear Margeaux' blog post (initial-content-10)
 - nav-14: Remove or redirect legacy /about route
 - Consider nav-1 through nav-4 for /drops index page implementation
+
+## [nav-1, nav-2, nav-3, nav-4]: Create /drops index and archive pages with countdown timer
+**Status:** PASSED
+**Tests Written:** N/A (Astro pages and React component, no new test files)
+**Test Results:** 18 tests passed (2 files)
+**Type Check:** PASSED - 0 errors, 3 hints across all packages
+**Lint:** PASSED - 0 errors (1 pre-existing warning in CartDrawer.tsx, 165 in merchant)
+**Browser Tests:** SKIPPED - requires running dev server to verify visually
+**Pre-commit Hooks:** Pending (commit not yet made)
+**Findings:**
+- **nav-1**: Created `/drops` index page at `apps/storefront/src/pages/drops/index.astro`:
+  - Fetches all drops from API using MerchantClient
+  - Groups drops into three sections: Active (Shop Now CTA), Scheduled (countdown + waitlist), Ended (View Archive link)
+  - Provides mock/sample drops for development when API not configured
+  - Includes status badges for each drop state
+  - Newsletter CTA section at bottom
+- **nav-2**: Created `CountdownTimer.tsx` React component:
+  - Uses `window.setInterval` for browser context compatibility
+  - `useRef<number>` for proper TypeScript types with setInterval
+  - Displays days, hours, minutes, seconds with two-digit formatting
+  - Uses `tabular-nums` for consistent number widths
+  - Shows "Live Now!" with animated ping indicator when countdown complete
+  - Optional `onComplete` callback when countdown reaches zero
+- **nav-3**: Integrated WaitlistForm on drops page:
+  - WaitlistForm component imported and rendered for scheduled drops only
+  - Passes dropId, dropName, apiUrl, apiKey props correctly
+  - Styled consistently within the drops page design
+- **nav-4**: Created `/drops/archive` page at `apps/storefront/src/pages/drops/archive.astro`:
+  - Fetches only ended drops using `status: 'ended'` filter
+  - Sorts by end_date (most recent first)
+  - Cards show name, description, dates, and View Collection link
+  - Back navigation to /drops
+  - CTA to view current drops at bottom
+- Build generates 30 pages (increased from 28 with new drops pages)
+**Recommendations:**
+- nav-14: Remove or redirect legacy /about route (currently returns 404 - no page exists)
+- nav-15: End-to-end navigation flow testing
+- Consider adding visual regression tests for the new pages once agent-browser skill is available
