@@ -3,6 +3,12 @@ import { getDb } from '../db';
 import { ApiError, type Env, type AuthContext, now, uuid, isValidEmail } from '../types';
 import { authMiddleware } from '../middleware/auth';
 import { hashPassword, verifyPassword } from '@dear-margeaux/auth';
+import {
+  enforceLoginRateLimit,
+  recordLoginAttempt,
+  getClientIp,
+  defaultLoginRateLimitConfig,
+} from '../middleware/login-rate-limit';
 
 // Session expiration: 30 days
 const SESSION_EXPIRY_SECONDS = 30 * 24 * 60 * 60;
@@ -116,6 +122,7 @@ customerAuth.post('/login', async (c) => {
   const { store } = c.get('auth');
   const db = getDb(c.env);
   const body = await c.req.json();
+  const ip = getClientIp(c);
 
   const { email, password } = body;
 
@@ -124,6 +131,9 @@ customerAuth.post('/login', async (c) => {
 
   const normalizedEmail = email.toLowerCase().trim();
 
+  // Check rate limit before processing login
+  await enforceLoginRateLimit(c, store.id, normalizedEmail, defaultLoginRateLimitConfig);
+
   // Find customer with password (has account)
   const [customer] = await db.query<any>(
     `SELECT * FROM customers WHERE store_id = ? AND email = ? AND password_hash IS NOT NULL`,
@@ -131,14 +141,21 @@ customerAuth.post('/login', async (c) => {
   );
 
   if (!customer) {
+    // Record failed attempt
+    await recordLoginAttempt(c.env, store.id, normalizedEmail, ip, false);
     throw ApiError.unauthorized('Invalid email or password');
   }
 
   // Verify password
   const valid = await verifyPassword(password, customer.password_hash);
   if (!valid) {
+    // Record failed attempt
+    await recordLoginAttempt(c.env, store.id, normalizedEmail, ip, false);
     throw ApiError.unauthorized('Invalid email or password');
   }
+
+  // Record successful login
+  await recordLoginAttempt(c.env, store.id, normalizedEmail, ip, true);
 
   // Create session
   const sessionId = generateSessionId();

@@ -28,9 +28,25 @@ export default function LoginForm({
 
       // Redirect to desired page
       window.location.href = redirectTo;
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Login error:', err);
-      if (err instanceof Error && err.message.includes('Invalid')) {
+      const errorMessage = err instanceof Error ? err.message : '';
+
+      if (
+        errorMessage.includes('Too many login attempts') ||
+        errorMessage.includes('rate_limit')
+      ) {
+        setError(
+          'Too many login attempts. Please wait a few minutes before trying again.'
+        );
+      } else if (
+        errorMessage.includes('Account is temporarily locked') ||
+        errorMessage.includes('account_locked')
+      ) {
+        setError(
+          'Your account is temporarily locked due to too many failed attempts. Please try again later or reset your password.'
+        );
+      } else if (errorMessage.includes('Invalid')) {
         setError('Invalid email or password. Please try again.');
       } else {
         setError('An error occurred. Please try again.');
