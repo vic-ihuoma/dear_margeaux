@@ -95,6 +95,20 @@ function getStoreConfig() {
   };
 }
 
+/**
+ * Escape HTML special characters to prevent XSS attacks
+ */
+function escapeHtml(text: string): string {
+  const htmlEntities: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  };
+  return text.replace(/[&<>"']/g, (char) => htmlEntities[char]);
+}
+
 // ============================================================
 // STUB IMPLEMENTATION (replace with Resend when ready)
 // ============================================================
@@ -694,6 +708,83 @@ function buildDropLaunchHtml(data: {
   `;
 }
 
+/**
+ * Build HTML email for newsletter (blog post to subscribers)
+ * Used when publishing a blog post with the "send as newsletter" option
+ */
+function buildNewsletterEmailHtml(data: {
+  title: string;
+  excerpt: string;
+  blogUrl: string;
+  unsubscribeUrl: string;
+  featuredImageUrl?: string;
+  featuredImageAlt?: string;
+}): string {
+  const config = getStoreConfig();
+  const safeTitle = escapeHtml(data.title);
+  const safeExcerpt = escapeHtml(data.excerpt);
+  const safeAlt = data.featuredImageAlt ? escapeHtml(data.featuredImageAlt) : safeTitle;
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${safeTitle}</title>
+    </head>
+    <body style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #fafafa; padding: 0; margin: 0;">
+      <!-- Hidden preheader text for email clients -->
+      <div style="display: none; max-height: 0; overflow: hidden;">
+        ${safeExcerpt}
+      </div>
+
+      <div style="max-width: 600px; margin: 0 auto; background: white;">
+        <!-- Header with logo -->
+        <div style="background: #8B4513; color: white; padding: 24px; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 1px;">${config.storeName}</h1>
+        </div>
+
+        <!-- Featured Image -->
+        ${
+          data.featuredImageUrl
+            ? `
+        <img src="${data.featuredImageUrl}" alt="${safeAlt}" style="width: 100%; height: auto; display: block;">
+        `
+            : ''
+        }
+
+        <!-- Content -->
+        <div style="padding: 32px;">
+          <h2 style="color: #333; font-size: 22px; font-weight: 600; margin: 0 0 16px; line-height: 1.3;">
+            ${safeTitle}
+          </h2>
+
+          <p style="color: #666; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
+            ${safeExcerpt}
+          </p>
+
+          <a href="${data.blogUrl}" style="display: inline-block; background: #E2725B; color: white; text-align: center; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 16px;">
+            Read More
+          </a>
+        </div>
+
+        <!-- Footer -->
+        <div style="background: #f5f5f5; padding: 24px; text-align: center; color: #666; font-size: 14px;">
+          <p style="margin: 0 0 8px; font-weight: 500;">${config.storeName}</p>
+          <p style="margin: 0 0 12px;">
+            Questions? Contact <a href="mailto:${config.supportEmail}" style="color: #8B4513;">${config.supportEmail}</a>
+          </p>
+          <p style="margin: 0;">
+            <a href="${data.unsubscribeUrl}" style="color: #999; text-decoration: underline;">Unsubscribe</a>
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
 function buildNewsletterVerificationHtml(data: {
   verificationUrl: string;
   unsubscribeUrl?: string;
@@ -807,4 +898,5 @@ export {
   buildShippingUpdateHtml,
   buildDropLaunchHtml,
   buildNewsletterVerificationHtml,
+  buildNewsletterEmailHtml,
 };

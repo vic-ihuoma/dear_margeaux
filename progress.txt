@@ -2275,3 +2275,84 @@ Implemented GET /v1/newsletter/unsubscribe endpoint that allows newsletter subsc
 - newsletter-9: Create storefront unsubscribe confirmation page (/newsletter/unsubscribed.astro)
 - newsletter-10: Create branded newsletter email template
 
+
+## 2026-01-18: newsletter-9 - Create storefront unsubscribe confirmation page
+
+### Task Completed
+Verified and committed the storefront unsubscribe confirmation page at `/newsletter/unsubscribed.astro`.
+
+### Key Decisions
+- Page was already implemented in a previous iteration (found in unstaged changes)
+- Uses BaseLayout for consistent site branding
+- Includes "Changed your mind?" section with resubscribe link
+- Added visual regression screenshots for the page
+- Build generates 38 pages including the new unsubscribed page
+
+### Files Added/Changed
+- `apps/storefront/src/pages/newsletter/unsubscribed.astro` - Unsubscribe confirmation page (113 lines)
+- `e2e/__screenshots__/newsletter/unsubscribed-page.png` - Visual regression screenshot
+- `prd.json` - Set passes: true for newsletter-9
+
+### Test Results
+- Typecheck: PASSED (0 errors, 3 hints)
+- Lint: PASSED (0 errors, 1 pre-existing warning)
+- Storefront Tests: PASSED (68 tests)
+- Browser Tests: PASSED
+  - Navigated to /newsletter/unsubscribed
+  - Screenshot captured showing complete page
+- Pre-commit Hooks: All passed
+
+### PRD Requirements Verified
+- ✓ Page exists at /newsletter/unsubscribed
+- ✓ Design confirms successful unsubscription
+- ✓ Includes resubscribe link ("Subscribe again")
+- ✓ Matches site branding (BaseLayout)
+
+### Commit
+- Hash: b76937c
+- Message: feat(newsletter-9): create storefront unsubscribe confirmation page
+
+### Next Steps
+- newsletter-10: Create branded newsletter email template
+- newsletter-11: Add 'Send as Newsletter' toggle to BlogForm
+- newsletter-12: Create send newsletter API endpoint
+
+
+## 2026-01-18: newsletter-10 - Create branded newsletter email template
+
+### Task Completed
+Implemented `buildNewsletterEmailHtml` function in merchant/src/lib/notifications.ts for sending blog posts as newsletters.
+
+### Key Decisions
+- Added HTML escaping helper function (`escapeHtml`) to prevent XSS attacks in title and excerpt
+- Template follows existing email template patterns used by verification, order confirmation, etc.
+- Uses brand color #8B4513 for header and terracotta #E2725B for CTA button
+- Includes hidden preheader text for email client previews
+- Featured image is optional (graceful handling when not provided)
+- Unsubscribe link is mandatory (required by CAN-SPAM law)
+- Added `newsletter` to EmailType union for queue tracking
+
+### Files Changed
+- `merchant/src/lib/notifications.ts` - Added `escapeHtml` helper and `buildNewsletterEmailHtml` function
+- `merchant/src/lib/email-queue.ts` - Added `newsletter` to EmailType union
+- `merchant/tests/lib/notifications.test.ts` - Added 15 unit tests for buildNewsletterEmailHtml
+
+### Test Results
+- Type Check: PASSED (0 errors)
+- Lint: PASSED (0 errors, 236 pre-existing warnings for `any` types)
+- Unit Tests: 406 PASSED (15 new + 391 existing)
+
+### PRD Requirements Verified
+- ✓ buildNewsletterEmailHtml returns valid HTML
+- ✓ Email includes logo (store name in header)
+- ✓ Email includes featured image when provided
+- ✓ Email includes Read More button with blog link
+- ✓ Email includes unsubscribe link (required by law)
+- ✓ Uses brand colors #8B4513 and #E2725B
+- ✓ XSS prevention via HTML escaping
+- ✓ Mobile responsive with viewport meta tag
+
+### Next Steps
+- newsletter-11: Add 'Send as Newsletter' toggle to BlogForm
+- newsletter-12: Create send newsletter API endpoint
+- newsletter-13: Integrate newsletter send into blog publish flow

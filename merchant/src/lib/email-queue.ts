@@ -22,7 +22,8 @@ export type EmailType =
   | 'order_confirmation'
   | 'shipping_update'
   | 'drop_launch'
-  | 'newsletter_verification';
+  | 'newsletter_verification'
+  | 'newsletter';
 
 export interface QueuedEmail {
   id: string;

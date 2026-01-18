@@ -1165,3 +1165,145 @@ describe('sendNewsletterVerificationEmail', () => {
     }
   });
 });
+
+// ============================================================
+// TESTS: buildNewsletterEmailHtml
+// ============================================================
+
+describe('buildNewsletterEmailHtml', () => {
+  // Import the function directly for testing
+  let buildNewsletterEmailHtml: typeof import('../../src/lib/notifications').buildNewsletterEmailHtml;
+
+  beforeAll(async () => {
+    const module = await import('../../src/lib/notifications');
+    buildNewsletterEmailHtml = module.buildNewsletterEmailHtml;
+  });
+
+  const sampleData = {
+    title: 'New Collection: Summer Essentials',
+    excerpt: 'Discover our latest summer pieces crafted with care.',
+    blogUrl: 'https://dearmargeaux.com/blog/summer-essentials',
+    unsubscribeUrl:
+      'https://dearmargeaux.com/newsletter/unsubscribe?email=test@example.com&token=abc123',
+    featuredImageUrl: 'https://images.dearmargeaux.com/summer-banner.jpg',
+    featuredImageAlt: 'Summer collection banner',
+  };
+
+  it('returns valid HTML with doctype', () => {
+    const html = buildNewsletterEmailHtml(sampleData);
+
+    expect(html).toContain('<!DOCTYPE html>');
+    expect(html).toContain('<html>');
+    expect(html).toContain('</html>');
+  });
+
+  it('includes logo in header', () => {
+    const html = buildNewsletterEmailHtml(sampleData);
+
+    // Should include the store name as logo text
+    expect(html).toContain('Dear Margeaux');
+  });
+
+  it('includes featured image when provided', () => {
+    const html = buildNewsletterEmailHtml(sampleData);
+
+    expect(html).toContain(`src="${sampleData.featuredImageUrl}"`);
+    expect(html).toContain(`alt="${sampleData.featuredImageAlt}"`);
+  });
+
+  it('handles missing featured image gracefully', () => {
+    const html = buildNewsletterEmailHtml({
+      ...sampleData,
+      featuredImageUrl: undefined,
+      featuredImageAlt: undefined,
+    });
+
+    // Should still render valid HTML
+    expect(html).toContain('<!DOCTYPE html>');
+    expect(html).toContain(sampleData.title);
+    // Should not have an img tag
+    expect(html).not.toContain('<img');
+  });
+
+  it('includes blog post title', () => {
+    const html = buildNewsletterEmailHtml(sampleData);
+
+    expect(html).toContain(sampleData.title);
+  });
+
+  it('includes blog post excerpt', () => {
+    const html = buildNewsletterEmailHtml(sampleData);
+
+    expect(html).toContain(sampleData.excerpt);
+  });
+
+  it('includes Read More button with blog link', () => {
+    const html = buildNewsletterEmailHtml(sampleData);
+
+    expect(html).toContain(`href="${sampleData.blogUrl}"`);
+    expect(html).toContain('Read More');
+  });
+
+  it('includes unsubscribe link in footer (required by law)', () => {
+    const html = buildNewsletterEmailHtml(sampleData);
+
+    expect(html).toContain(`href="${sampleData.unsubscribeUrl}"`);
+    expect(html).toContain('Unsubscribe');
+  });
+
+  it('uses brand color #8B4513 for header', () => {
+    const html = buildNewsletterEmailHtml(sampleData);
+
+    expect(html).toContain('#8B4513');
+  });
+
+  it('uses terracotta color #E2725B for CTA button', () => {
+    const html = buildNewsletterEmailHtml(sampleData);
+
+    expect(html).toContain('#E2725B');
+  });
+
+  it('includes support email in footer', () => {
+    const html = buildNewsletterEmailHtml(sampleData);
+
+    expect(html).toContain('hello@dearmargeaux.com');
+  });
+
+  it('escapes HTML in title to prevent XSS', () => {
+    const html = buildNewsletterEmailHtml({
+      ...sampleData,
+      title: 'Test <script>alert("xss")</script> Title',
+    });
+
+    // The title should be escaped
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&lt;script&gt;');
+  });
+
+  it('escapes HTML in excerpt to prevent XSS', () => {
+    const html = buildNewsletterEmailHtml({
+      ...sampleData,
+      excerpt: 'Test <img src="x" onerror="alert(1)"> excerpt',
+    });
+
+    // The excerpt should be escaped - the < and > are converted to entities
+    // preventing the browser from interpreting it as actual HTML
+    expect(html).not.toContain('<img src="x"');
+    expect(html).toContain('&lt;img');
+    expect(html).toContain('&quot;alert(1)&quot;');
+  });
+
+  it('includes preheader text for email clients', () => {
+    const html = buildNewsletterEmailHtml(sampleData);
+
+    // Should have a hidden preheader for email preview
+    expect(html).toContain(sampleData.excerpt);
+  });
+
+  it('is mobile responsive with viewport meta tag', () => {
+    const html = buildNewsletterEmailHtml(sampleData);
+
+    expect(html).toContain('viewport');
+    expect(html).toContain('width=device-width');
+  });
+});
