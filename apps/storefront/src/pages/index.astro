@@ -268,13 +268,16 @@ const currentDrop = activeDrop
   <!-- About/Story Teaser -->
   <section class="py-16 md:py-24 bg-background-secondary">
     <div class="container mx-auto px-4 max-w-6xl">
-      <div class="grid md:grid-cols-2 gap-12 items-center">
+      <a
+        href="/blog/about-dear-margeaux"
+        class="grid md:grid-cols-2 gap-12 items-center group cursor-pointer"
+      >
         {
           brandingHeroUrl ? (
             <img
               src={brandingHeroUrl}
               alt="Dear Margeaux handcrafted leather bags displayed in an elegant setting, showcasing the brand's dedication to timeless craftsmanship and French-inspired design"
-              class="aspect-[4/3] w-full rounded-lg object-cover"
+              class="aspect-[4/3] w-full rounded-lg object-cover transition-transform duration-300 group-hover:scale-[1.02]"
               loading="lazy"
             />
           ) : (
@@ -284,7 +287,9 @@ const currentDrop = activeDrop
           )
         }
         <div>
-          <h2 class="text-2xl md:text-3xl font-bold text-text mb-4">
+          <h2
+            class="text-2xl md:text-3xl font-bold text-text mb-4 group-hover:text-primary transition-colors duration-normal"
+          >
             Our Story
           </h2>
           <p class="text-text-secondary mb-6">
@@ -293,14 +298,13 @@ const currentDrop = activeDrop
             designed with intention and made with care, released in limited
             quantities to ensure quality never compromises.
           </p>
-          <a
-            href="/blog/about-dear-margeaux"
-            class="inline-flex text-sm font-medium text-primary hover:text-primary-600 transition-colors duration-normal"
+          <span
+            class="inline-flex text-sm font-medium text-primary group-hover:text-primary-600 transition-colors duration-normal"
           >
             Read Our Story &rarr;
-          </a>
+          </span>
         </div>
-      </div>
+      </a>
     </div>
   </section>
 </BaseLayout>
