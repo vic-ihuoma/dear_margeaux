@@ -16,6 +16,8 @@ export interface DropSelectorProps {
   error?: string;
   /** API URL to fetch drops from (defaults to /api/drops) */
   apiUrl?: string;
+  /** Whether to allow creating new drops inline */
+  allowCreate?: boolean;
 }
 
 /** Status badge configuration */
@@ -52,10 +54,234 @@ export function getStatusBadgeConfig(status: DropStatus): {
 }
 
 /**
+ * Generate a URL-friendly slug from a string
+ */
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+interface CreateDropModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreated: (drop: Drop) => void;
+  apiUrl: string;
+}
+
+function CreateDropModal({
+  isOpen,
+  onClose,
+  onCreated,
+  apiUrl,
+}: CreateDropModalProps) {
+  const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState<DropStatus>('draft');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+
+  // Auto-generate slug from name unless manually edited
+  useEffect(() => {
+    if (!slugManuallyEdited && name) {
+      setSlug(generateSlug(name));
+    }
+  }, [name, slugManuallyEdited]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          slug: slug.trim(),
+          description: description.trim() || undefined,
+          status,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.error?.message ||
+            errorData.error ||
+            `Failed to create drop: ${response.status}`
+        );
+      }
+
+      const newDrop: Drop = await response.json();
+      onCreated(newDrop);
+      handleClose();
+    } catch (err) {
+      console.error('Failed to create drop:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create drop');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+    setName('');
+    setSlug('');
+    setDescription('');
+    setStatus('draft');
+    setError(null);
+    setSlugManuallyEdited(false);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={handleClose}
+        aria-hidden="true"
+      />
+
+      {/* Modal */}
+      <div className="relative bg-background-primary rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <h2 className="text-lg font-semibold text-text-primary mb-4">
+          Create New Drop
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Name */}
+          <div>
+            <label
+              htmlFor="new-drop-name"
+              className="block text-sm font-medium text-text-primary mb-1"
+            >
+              Name *
+            </label>
+            <input
+              id="new-drop-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., Summer 2026 Collection"
+              required
+              maxLength={100}
+              className="block w-full rounded-lg border border-border bg-background-primary py-2 px-3 text-sm text-text-primary focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Slug */}
+          <div>
+            <label
+              htmlFor="new-drop-slug"
+              className="block text-sm font-medium text-text-primary mb-1"
+            >
+              Slug *
+            </label>
+            <input
+              id="new-drop-slug"
+              type="text"
+              value={slug}
+              onChange={(e) => {
+                setSlug(e.target.value);
+                setSlugManuallyEdited(true);
+              }}
+              placeholder="summer-2026"
+              required
+              maxLength={100}
+              pattern="^[a-z0-9-]+$"
+              className="block w-full rounded-lg border border-border bg-background-primary py-2 px-3 text-sm text-text-primary focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none"
+            />
+            <p className="mt-1 text-xs text-text-muted">
+              URL-friendly identifier (lowercase, hyphens only)
+            </p>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label
+              htmlFor="new-drop-description"
+              className="block text-sm font-medium text-text-primary mb-1"
+            >
+              Description
+            </label>
+            <textarea
+              id="new-drop-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief description of this drop..."
+              rows={2}
+              maxLength={500}
+              className="block w-full rounded-lg border border-border bg-background-primary py-2 px-3 text-sm text-text-primary focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none resize-none"
+            />
+          </div>
+
+          {/* Status */}
+          <div>
+            <label
+              htmlFor="new-drop-status"
+              className="block text-sm font-medium text-text-primary mb-1"
+            >
+              Status
+            </label>
+            <select
+              id="new-drop-status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as DropStatus)}
+              className="block w-full rounded-lg border border-border bg-background-primary py-2 px-3 text-sm text-text-primary focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none"
+            >
+              <option value="draft">Draft</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="active">Active</option>
+              <option value="ended">Ended</option>
+            </select>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <p className="text-sm text-status-error bg-status-error/10 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={handleClose}
+              disabled={isSubmitting}
+              className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting || !name.trim() || !slug.trim()}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isSubmitting ? 'Creating...' : 'Create Drop'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/**
  * DropSelector component for selecting a drop to assign to a product
  * - Fetches available drops from API on mount
  * - Shows drop names with status badges
  * - Includes 'No drop' option for unassigned products
+ * - Optionally allows creating new drops inline
  * - Displays loading and error states
  */
 export function DropSelector({
@@ -66,10 +292,12 @@ export function DropSelector({
   id = 'drop-selector',
   error,
   apiUrl = '/api/drops',
+  allowCreate = true,
 }: DropSelectorProps) {
   const [drops, setDrops] = useState<Drop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Fetch drops on mount
   const fetchDrops = useCallback(async () => {
@@ -124,7 +352,16 @@ export function DropSelector({
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newValue = e.target.value;
+    if (newValue === '__create_new__') {
+      setShowCreateModal(true);
+      return;
+    }
     onChange(newValue === '' ? null : newValue);
+  };
+
+  const handleDropCreated = (newDrop: Drop) => {
+    setDrops((prev) => [...prev, newDrop]);
+    onChange(newDrop.id);
   };
 
   const displayError = error || fetchError;
@@ -166,6 +403,9 @@ export function DropSelector({
               </option>
             );
           })}
+          {allowCreate && !isLoading && (
+            <option value="__create_new__">+ Create new drop...</option>
+          )}
         </select>
 
         {/* Loading spinner */}
@@ -227,6 +467,16 @@ export function DropSelector({
             ? 'Product will appear in this drop collection'
             : 'Product will not be part of any drop'}
         </p>
+      )}
+
+      {/* Create Drop Modal */}
+      {allowCreate && (
+        <CreateDropModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onCreated={handleDropCreated}
+          apiUrl={apiUrl}
+        />
       )}
     </div>
   );

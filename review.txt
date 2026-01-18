@@ -2370,3 +2370,129 @@ All unit tests implemented:
 - Consider adding newsletter signup to individual blog posts (newsletter-24)
 - Newsletter form is fully functional with existing backend infrastructure
 - Form includes double opt-in verification process
+
+## [sf-1]: Add product image lightbox
+**Status:** PASSED
+**Tests Written:**
+- Opening and displaying (3 tests): displays current image, object-contain, specified index
+- Closing (4 tests): Escape key, backdrop click, close button, no close on image click
+- Keyboard navigation (4 tests): ArrowRight, ArrowLeft, wrap behavior
+- Button navigation (2 tests): Next and Previous buttons
+- Single image handling (3 tests): no arrows, no counter, no keyboard nav
+- Image counter (2 tests): correct display, updates on navigation
+- Accessibility (2 tests): dialog role, button labels
+- Body scroll lock (1 test): hidden overflow, restore on unmount
+- Touch swipe (3 tests): left swipe, right swipe, small distance ignored
+- currentIndex sync (1 test): updates on prop change
+
+**Test Results:** 167 tests passed (25 new + 142 existing in storefront)
+**Type Check:** PASSED - 0 errors
+**Lint:** PASSED for new code (1 pre-existing warning in CartDrawer.tsx)
+**Browser Tests:** N/A - Visual tests require dev server and can be run manually
+
+**Findings:**
+- Created a fully-featured image lightbox component from scratch (no external library)
+- Component supports all required features:
+  * Full-screen overlay viewing
+  * Keyboard navigation (arrows, escape)
+  * Touch/swipe navigation for mobile
+  * Navigation arrows and image counter for multiple images
+  * Accessible with proper ARIA attributes and labels
+- Integrated via ProductImageGallery wrapper that manages state
+- Product page shows zoom cursor and icon to indicate clickability
+- Images deduplicated by URL to avoid duplicates from featured + variant images
+
+**PRD Coverage:**
+- Choose lightbox library or build custom ✓ (built custom)
+- Create ImageLightbox.tsx component ✓
+- Add click handler to product images ✓
+- Implement zoom functionality ✓ (full-size viewing)
+- Add navigation between images ✓
+- Support keyboard navigation (arrows, escape) ✓
+- Add touch/swipe support for mobile ✓
+
+**Unit Test Coverage:**
+- ImageLightbox opens on image click ✓
+- ImageLightbox displays full-size image ✓
+- ImageLightbox closes on Escape key ✓
+- ImageLightbox closes on backdrop click ✓
+- ImageLightbox navigates with arrow keys ✓
+- ImageLightbox navigates with arrow buttons ✓
+- ImageLightbox handles single image (no arrows) ✓
+
+**Recommendations:**
+- Consider adding zoom-in/zoom-out functionality within lightbox for detailed viewing
+- Could add pinch-to-zoom on mobile in future iteration
+- Manual testing on mobile device recommended for touch swipe validation
+
+## [sf-5]: Add countdown timer for scheduled drops (already implemented)
+**Status:** PASSED (pre-existing implementation discovered)
+**Tests Written:** 15 tests already exist
+**Test Results:** All tests passing
+**Type Check:** PASSED
+**Lint:** PASSED
+**Browser Tests:** N/A
+
+**Findings:**
+- CountdownTimer.tsx component already existed at apps/storefront/src/components/CountdownTimer.tsx
+- Already integrated into drops/index.astro for scheduled drops
+- 15 comprehensive tests already in place covering all requirements
+- Simply marked sf-5 as passed in prd.json
+
+## [sf-2]: Add social sharing buttons
+**Status:** PASSED
+**Tests Written:**
+- ShareButtons generates correct Twitter share URL
+- ShareButtons generates correct Facebook share URL
+- ShareButtons generates correct Pinterest pin URL with image
+- ShareButtons excludes Pinterest button when no image is provided
+- ShareButtons copies URL to clipboard when copy link is clicked
+- ShareButtons shows success feedback after copying
+- ShareButtons resets success message after timeout (2s)
+- ShareButtons shows error message when clipboard fails
+- All share links open in new tab with noopener noreferrer
+- ShareButtons has accessible button labels
+- ShareButtons renders in horizontal layout by default
+- ShareButtons renders in vertical layout when specified
+
+**Test Results:**
+- All 179 storefront tests pass (12 new ShareButtons tests)
+- All 116 API tests pass
+- All 481 merchant tests pass
+- TypeScript type check: PASSED (0 errors across all packages)
+
+**Type Check:** PASSED
+**Lint:** PASSED for storefront (0 errors, 1 pre-existing warning in CartDrawer.tsx)
+**Browser Tests:** N/A - Visual tests require dev server for manual verification
+
+**Findings:**
+- Created a fully-featured share buttons component with:
+  - Twitter/X share (uses new X logo)
+  - Facebook share
+  - Pinterest pin (only visible when image URL provided)
+  - Copy link with visual feedback
+- Component is accessible with proper aria-labels and roles
+- Integrated on product detail page below shipping info
+- Uses design system colors and tokens
+- Error handling for clipboard API failures
+
+**PRD Coverage:**
+- Create ShareButtons.tsx component ✓
+- Add Twitter share link with product info ✓
+- Add Facebook share link ✓
+- Add Pinterest pin button with image ✓
+- Add copy link functionality ✓
+- Style buttons to match design system ✓
+
+**Unit Test Coverage:**
+- ShareButtons generates correct Twitter share URL ✓
+- ShareButtons generates correct Facebook share URL ✓
+- ShareButtons generates correct Pinterest pin URL with image ✓
+- ShareButtons copy link copies URL to clipboard ✓
+- ShareButtons shows success feedback on copy ✓
+
+**Recommendations:**
+- Consider adding LinkedIn share option for professional audiences
+- Could add share count tracking via analytics
+- Manual testing: verify popup behavior on mobile devices
+

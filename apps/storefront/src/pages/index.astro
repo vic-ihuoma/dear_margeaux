@@ -17,33 +17,38 @@ const brandingHeroUrl = imagesUrl
   : null;
 
 // Sample products for development/fallback when API is unavailable
+// Named to match the Dear Margeaux debut collection with R2 images
 const sampleProducts = [
   {
     id: '1',
-    title: 'Classic Leather Tote',
+    title: 'Le Classique Tote',
     price: 45000,
-    collection: 'Spring 2026',
+    image: imagesUrl ? `${imagesUrl}/products/prod-1.webp` : undefined,
+    collection: 'Debut Collection',
     soldOut: false,
   },
   {
     id: '2',
-    title: 'Mini Crossbody',
+    title: 'Petit Crossbody',
     price: 28500,
-    collection: 'Spring 2026',
+    image: imagesUrl ? `${imagesUrl}/products/prod-3.webp` : undefined,
+    collection: 'Debut Collection',
     soldOut: false,
   },
   {
     id: '3',
-    title: 'Structured Satchel',
+    title: 'The Margot Satchel',
     price: 52000,
-    collection: 'Spring 2026',
-    soldOut: true,
+    image: imagesUrl ? `${imagesUrl}/products/prod-2.webp` : undefined,
+    collection: 'Debut Collection',
+    soldOut: false,
   },
   {
     id: '4',
-    title: 'Weekend Duffle',
+    title: 'Le Weekend Duffle',
     price: 68000,
-    collection: 'Spring 2026',
+    image: imagesUrl ? `${imagesUrl}/products/prod-5.webp` : undefined,
+    collection: 'Debut Collection',
     soldOut: false,
   },
 ];
@@ -144,6 +149,7 @@ if (apiUrl && apiKey) {
 }
 
 // Current drop info for the banner
+// Default to "Debut Collection" which links to /shop (all products)
 const currentDrop = activeDrop
   ? {
       name: activeDrop.name,
@@ -153,8 +159,8 @@ const currentDrop = activeDrop
       description: activeDrop.description,
     }
   : {
-      name: 'Spring 2026',
-      slug: 'spring-2026',
+      name: 'Debut Collection',
+      slug: '', // Empty slug means link to /shop
       tagline: 'Now Available',
       isActive: true,
     };
@@ -178,7 +184,7 @@ const currentDrop = activeDrop
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <a
-          href={`/shop/${currentDrop.slug}`}
+          href={currentDrop.slug ? `/shop/${currentDrop.slug}` : '/shop'}
           class="px-8 py-4 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
         >
           Shop {currentDrop.name}
@@ -204,7 +210,7 @@ const currentDrop = activeDrop
             </span>
             <span class="hidden sm:inline text-white/60">•</span>
             <a
-              href={`/shop/${currentDrop.slug}`}
+              href={currentDrop.slug ? `/shop/${currentDrop.slug}` : '/shop'}
               class="text-sm font-medium text-white underline underline-offset-2 hover:text-white/90 transition-colors"
             >
               Shop {currentDrop.name} →

@@ -49,10 +49,42 @@ async function api(path: string, body?: unknown) {
   return res.json();
 }
 
+async function apiPut(path: string, body: unknown) {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(
+      `${path}: ${(err as { error?: { message?: string } }).error?.message || res.statusText}`
+    );
+  }
+
+  return res.json();
+}
+
 async function seed() {
   console.log('🌱 Seeding demo data...\n');
 
+  // Create the Debut drop first
+  console.log('🎯 Creating "The Debut" drop...');
+  const drop = (await api('/v1/drops', {
+    name: 'The Debut',
+    slug: 'the-debut',
+    description:
+      'Our inaugural collection. Seven handcrafted leather bags, each designed with intention and made with care.',
+    status: 'active',
+  })) as { id: string };
+  console.log(`   └─ Drop created: ${drop.id}\n`);
+
   // Create products with R2 image URLs
+  const productIds: string[] = [];
   for (const prod of PRODUCTS) {
     console.log(`📦 Creating ${prod.title}...`);
 
@@ -61,6 +93,8 @@ async function seed() {
       description: prod.description,
       featured_image_url: prod.image_url,
     });
+
+    productIds.push((product as { id: string }).id);
 
     const productVariants = VARIANTS[prod.title];
     if (productVariants) {
@@ -78,6 +112,11 @@ async function seed() {
       }
     }
   }
+
+  // Assign all products to the Debut drop
+  console.log('\n🔗 Assigning products to "The Debut" drop...');
+  await apiPut(`/v1/drops/${drop.id}/products`, { productIds });
+  console.log(`   └─ ${productIds.length} products assigned to drop`);
 
   // Create test orders
   console.log('\n🛒 Creating test orders...');

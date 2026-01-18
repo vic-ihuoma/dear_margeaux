@@ -2989,3 +2989,116 @@ NOTES:
 - Form behavior matches footer newsletter form exactly
 - Double opt-in verification email is sent on subscribe
 - Success message shows "Check your email to confirm your subscription"
+
+================================================================================
+ITERATION: 2026-01-18
+TASK: sf-1 - Add product image lightbox
+================================================================================
+
+COMPLETED WORK:
+- Created ImageLightbox.tsx React component at apps/storefront/src/components/ImageLightbox.tsx
+  - Full-screen overlay with semi-transparent backdrop (bg-background-inverse/90)
+  - Displays full-size images with object-contain for proper aspect ratio
+  - Close button in top-right corner with accessible aria-label
+  - Previous/Next navigation arrows for multiple images
+  - Image counter showing current position (e.g., "1 / 3")
+  - Keyboard navigation: ArrowLeft, ArrowRight for navigation, Escape to close
+  - Touch/swipe support for mobile devices (left swipe = next, right swipe = previous)
+  - Body scroll lock when lightbox is open
+  - Prevents closing when clicking on the image itself
+  - Hides navigation controls for single-image products
+
+- Created ProductImageGallery.tsx wrapper at apps/storefront/src/components/ProductImageGallery.tsx
+  - Manages lightbox state (open/closed, current index)
+  - Attaches click handler to main product image
+  - Syncs with main image changes via MutationObserver
+  - Updates main page image when navigating in lightbox
+
+- Integrated lightbox into product page (apps/storefront/src/pages/product/[id].astro)
+  - Added ProductImageGallery import
+  - Built lightboxImages array from featured image + variant images (with deduplication)
+  - Added ProductImageGallery React island with client:load
+  - Added cursor-zoom-in style to main product image
+  - Added zoom icon indicator in bottom-right corner
+
+- Added 25 comprehensive unit tests in apps/storefront/tests/components/ImageLightbox.test.tsx
+  - Opening and displaying tests (3 tests)
+  - Closing tests: Escape key, backdrop click, close button (4 tests)
+  - Keyboard navigation tests (4 tests)
+  - Button navigation tests (2 tests)
+  - Single image handling tests: no arrows, no counter (3 tests)
+  - Image counter tests (2 tests)
+  - Accessibility tests (2 tests)
+  - Body scroll lock tests (1 test)
+  - Touch swipe navigation tests (3 tests)
+  - currentIndex sync test (1 test)
+
+- Also marked sf-5 (countdown timer) as passed - was already fully implemented
+
+FILES CHANGED:
+- apps/storefront/src/components/ImageLightbox.tsx (new file)
+- apps/storefront/src/components/ProductImageGallery.tsx (new file)
+- apps/storefront/tests/components/ImageLightbox.test.tsx (new file)
+- apps/storefront/src/pages/product/[id].astro (updated)
+- prd.json (marked sf-1 and sf-5 as passed)
+
+TEST RESULTS:
+- All 167 tests pass in storefront package (25 new + 142 existing)
+- TypeScript type check: PASSED (0 errors)
+- Lint: PASSED for new code (1 pre-existing warning in CartDrawer.tsx)
+
+NOTES:
+- Lightbox uses React portal-style rendering (positioned fixed, z-50)
+- Touch swipe requires minimum 50px distance to trigger navigation
+- Images are deduplicated by URL to avoid showing duplicates in lightbox
+- ESLint exceptions added for click handlers on non-interactive elements (necessary for backdrop close functionality)
+
+================================================================================
+ITERATION: 2026-01-18
+TASK: sf-2 - Add social sharing buttons
+================================================================================
+
+COMPLETED WORK:
+- Created ShareButtons.tsx React component at apps/storefront/src/components/ShareButtons.tsx
+  - Twitter share link with encoded URL and title
+  - Facebook share link with encoded URL
+  - Pinterest pin button with image URL and description (only shown when imageUrl provided)
+  - Copy link functionality with clipboard API
+  - Success/error feedback states for copy operation
+  - 2-second auto-reset of copy status
+  - Horizontal and vertical layout options
+  - Accessible with proper aria-labels and role="group"
+  - All external links open in new tab with rel="noopener noreferrer"
+
+- Integrated ShareButtons into product page (apps/storefront/src/pages/product/[id].astro)
+  - Positioned below shipping & returns section
+  - Uses product URL, title, description, and featured image
+  - Rendered as React island with client:load
+
+- Added 12 comprehensive unit tests in apps/storefront/tests/components/ShareButtons.test.tsx
+  - URL generation tests: Twitter, Facebook, Pinterest with correct encoding
+  - Pinterest exclusion when no image provided
+  - Copy link functionality: clipboard API, success feedback
+  - Timeout reset of success message (2 seconds)
+  - Error handling when clipboard fails
+  - Accessibility: new tab attributes, aria-labels
+  - Layout variants: horizontal (default), vertical
+
+FILES CHANGED:
+- apps/storefront/src/components/ShareButtons.tsx (new file)
+- apps/storefront/tests/components/ShareButtons.test.tsx (new file)
+- apps/storefront/src/pages/product/[id].astro (integrated ShareButtons)
+- prd.json (marked sf-2 as passed)
+
+TEST RESULTS:
+- All 179 storefront tests pass (12 new + 167 existing)
+- TypeScript type check: PASSED (0 errors)
+- Lint: PASSED for storefront (1 pre-existing warning in CartDrawer.tsx)
+
+NOTES:
+- Uses X/Twitter's new logo (no longer blue bird)
+- Pinterest button only appears if product has an image
+- Copy success shows checkmark icon with "Copied!" text
+- Copy error shows X icon with "Failed to copy" text
+- Component uses Tailwind CSS with design system tokens
+
