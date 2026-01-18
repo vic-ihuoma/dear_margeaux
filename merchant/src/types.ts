@@ -13,6 +13,8 @@ export type Env = {
   IMAGES_URL?: string;
   // Resend email service
   RESEND_API_KEY?: string;
+  // Logging configuration (debug, info, warn, error)
+  LOG_LEVEL?: 'debug' | 'info' | 'warn' | 'error';
 };
 
 export type Store = {

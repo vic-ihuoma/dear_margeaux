@@ -17,6 +17,7 @@ import { counts } from './routes/counts';
 import { handleCron } from './cron';
 import { rateLimitMiddleware } from './middleware/rate-limit';
 import { securityHeaders } from './middleware/security-headers';
+import { loggerMiddleware } from './middleware/logger';
 import { ApiError, type Env } from './types';
 
 // ============================================================
@@ -27,6 +28,10 @@ const app = new Hono<{ Bindings: Env }>();
 
 // Security headers (applied to all routes)
 app.use('*', securityHeaders());
+
+// Request/response logging (respects LOG_LEVEL env var)
+// Excludes health check from logging to reduce noise
+app.use('*', loggerMiddleware({ excludePaths: ['/'] }));
 
 app.use('*', cors());
 

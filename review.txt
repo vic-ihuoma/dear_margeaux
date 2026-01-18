@@ -651,3 +651,50 @@ All unit tests implemented:
 - api-5: Add email queue for failed emails
 - Consider integrating withRetry into MerchantClient fetch calls for automatic retry
 - Could add configurable retry conditions via predicate function in future
+
+## [api-4]: Add request/response logging
+**Status:** PASSED
+**Tests Written:** 24 unit tests in merchant/tests/middleware/logger.test.ts
+**Test Results:** 171 tests passed (merchant - 24 new logger + 147 existing)
+**Type Check:** PASSED - 0 errors across all packages
+**Lint:** PASSED - 0 errors (pre-existing warnings only)
+**Browser Tests:** N/A - backend middleware, no UI changes
+**Pre-commit Hooks:** Pending (commit in progress)
+**Findings:**
+- Created `merchant/src/middleware/logger.ts` with complete logging implementation:
+  - `loggerMiddleware(options?)` - main middleware factory function
+  - `redactSensitiveData(data)` - recursively redacts sensitive fields from objects
+  - `shouldLog(messageLevel, configuredLevel)` - log level comparison utility
+  - `LogLevel`, `LogEntry`, `LoggerOptions` - TypeScript types
+- Logger features:
+  - Logs request method, path, status code, and duration in milliseconds
+  - Log format: `[TIMESTAMP] METHOD PATH STATUS DURATIONms`
+  - Status-based log level: 2xx=info, 4xx=warn, 5xx=error
+  - Configurable log level via options or `LOG_LEVEL` env var
+  - Supports excluding paths (e.g., health checks)
+  - Optional request body logging with automatic redaction
+  - Custom format function support
+- Added `LOG_LEVEL` to Env type in types.ts
+- Integrated into main app after security headers, before CORS
+- Sensitive data redaction covers:
+  - Password fields (password, confirm_password, new_password, etc.)
+  - Tokens (access_token, refresh_token, id_token, session_token, token)
+  - API keys (api_key, apiKey, apikey, api-key)
+  - Authorization header
+  - Secrets (secret, client_secret, stripe_secret_key, stripe_webhook_secret, resend_api_key)
+  - Payment data (card_number, cvv, cvc, expiry)
+- Test approach uses mock env middleware to simulate Cloudflare Workers context
+**PRD Coverage:**
+All unit tests implemented:
+- Logger logs request method and path ✓
+- Logger logs response status code ✓
+- Logger logs request duration in milliseconds ✓
+- Logger redacts Authorization header value ✓
+- Logger redacts password fields in body ✓
+- Logger redacts API key values ✓
+- Logger respects configured log level ✓
+**Recommendations:**
+- api-5: Add email retry mechanism (queue for failed emails)
+- api-6: Add email rate limiting per store
+- Consider adding structured JSON logging for log aggregation services (Datadog, Sumo Logic, etc.)
+- Consider adding request ID/correlation ID for tracing requests across services

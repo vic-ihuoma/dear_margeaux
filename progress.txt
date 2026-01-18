@@ -957,3 +957,73 @@ Additional test coverage:
 - api-4: Add request/response logging
 - api-5: Add email queue for failed emails
 - Consider integrating withRetry into MerchantClient for automatic retry behavior
+
+## 2026-01-18: api-4 - Add request/response logging
+
+### Task Completed
+Created a comprehensive request/response logging middleware for the Hono-based Merchant API with sensitive data redaction and configurable log levels.
+
+### Key Decisions
+- Created `merchant/src/middleware/logger.ts` with the following features:
+  - Logs request method, path, status code, and duration in milliseconds
+  - Supports configurable log levels: debug, info, warn, error
+  - Respects `LOG_LEVEL` environment variable at runtime
+  - Redacts sensitive data from logs (passwords, API keys, tokens, secrets)
+  - Supports excluding paths from logging (e.g., health checks)
+  - Optional request body logging (in debug mode with sensitive data redacted)
+- Added `LOG_LEVEL` to the `Env` type definition in types.ts
+- Integrated logger middleware into main app, placed after security headers and before CORS
+- Excludes the root health check endpoint (`/`) from logging to reduce noise
+- Log level determination based on HTTP status:
+  - 2xx: info level
+  - 4xx: warn level
+  - 5xx: error level
+
+### Files Created
+- `merchant/src/middleware/logger.ts` - Logger middleware (253 lines)
+- `merchant/tests/middleware/logger.test.ts` - 24 unit tests
+
+### Files Changed
+- `merchant/src/types.ts` - Added LOG_LEVEL to Env type
+- `merchant/src/index.ts` - Added loggerMiddleware import and registration
+- `prd.json` - Set passes: true for api-4
+
+### Test Results
+- Merchant Tests: PASSED (171 tests - 24 new logger + 147 existing)
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors, pre-existing warnings only)
+
+### Test Coverage Summary
+All PRD unit tests implemented:
+- Logger logs request method and path ✓
+- Logger logs response status code ✓
+- Logger logs request duration in milliseconds ✓
+- Logger redacts Authorization header value ✓
+- Logger redacts password fields in body ✓
+- Logger redacts API key values ✓
+- Logger respects configured log level ✓
+
+Additional test coverage:
+- Logs 5xx errors at error level
+- Logs 4xx errors at warn level
+- Skips logging for excluded paths
+- Custom format function support
+- Request body logging with redaction (debug mode)
+- Environment variable log level configuration
+- Option level takes precedence over env level
+- Handles concurrent requests correctly
+- Handles requests with no response body
+
+### Sensitive Data Redaction
+The following fields are redacted in logs:
+- password, confirm_password, new_password, old_password, current_password
+- token, access_token, refresh_token, id_token, session_token
+- api_key, apiKey, apikey, api-key
+- authorization
+- secret, client_secret, stripe_secret_key, stripe_webhook_secret, resend_api_key
+- card_number, cvv, cvc, expiry
+
+### Next Steps
+- api-5: Add email retry mechanism (queue for failed emails)
+- api-6: Add email rate limiting per store
+- Consider adding structured logging (JSON format) for log aggregation services
