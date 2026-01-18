@@ -86,6 +86,7 @@ const sampleProduct: Product = {
   featured_image_alt: null,
   status: 'active',
   created_at: '2024-01-01T00:00:00Z',
+  tags: [],
   variants: [
     {
       id: 'var_123',
@@ -116,6 +117,7 @@ describe('Products API Routes', () => {
             featured_image_alt: sampleProduct.featured_image_alt,
             status: sampleProduct.status,
             created_at: sampleProduct.created_at,
+            tags: sampleProduct.tags,
           },
         ],
         pagination: { has_more: false, next_cursor: null },

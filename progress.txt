@@ -1289,3 +1289,28 @@ Additional test coverage:
 - pm-6: Add tags field to Product schema
 - pm-7: Create product_tags table migration
 - Other product management tasks (pm-8 onwards)
+
+## 2026-01-18: pm-6 - Add tags field to Product schema
+
+### Task Completed
+Added `tags: string[]` field to Product and ProductListItem interfaces, and `tags?: string[]` to CreateProductParams and UpdateProductParams.
+
+### Key Decisions
+- Added `tags: string[]` (required) to Product interface - tags will be an array of strings
+- Added `tags: string[]` (required) to ProductListItem interface for consistency with Product
+- Added `tags?: string[]` (optional) to CreateProductParams - can omit when creating products
+- Added `tags?: string[]` (optional) to UpdateProductParams - can omit when updating products
+- Updated admin tests to include tags field in sample product data
+
+### Files Changed
+- `packages/api/src/types.ts` - Added tags field to Product, ProductListItem, CreateProductParams, UpdateProductParams interfaces
+- `apps/admin/tests/api/products.test.ts` - Updated sample product data to include tags field
+
+### Test Results
+- Typecheck: PASSED (0 errors across all 7 packages)
+- Lint: PASSED (0 errors, 228 pre-existing warnings)
+- Unit Tests: PASSED (508 tests total - 260 merchant + 116 api + 53 storefront + 79 admin)
+
+### Next Steps
+- pm-7: Create product_tags table in database
+- pm-8: Update Merchant API to handle product tags in CRUD operations

@@ -63,6 +63,7 @@ export interface Product {
   featured_image_alt: string | null;
   status: ProductStatus;
   created_at: ISODateString;
+  tags: string[];
   variants: Variant[];
 }
 
@@ -75,6 +76,7 @@ export interface ProductListItem {
   featured_image_alt: string | null;
   status: ProductStatus;
   created_at: ISODateString;
+  tags: string[];
 }
 
 /** Parameters for creating a product */
@@ -84,6 +86,7 @@ export interface CreateProductParams {
   featured_image_url?: string;
   featured_image_alt?: string;
   status?: ProductStatus;
+  tags?: string[];
 }
 
 /** Parameters for updating a product */
@@ -93,6 +96,7 @@ export interface UpdateProductParams {
   featured_image_url?: string | null;
   featured_image_alt?: string | null;
   status?: ProductStatus;
+  tags?: string[];
 }
 
 /** Parameters for creating a variant */
