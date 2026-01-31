@@ -659,3 +659,29 @@ Implemented MDX component preview in the blog editor with toolbar buttons for in
 
 ### Next Steps
 None for this task.
+
+
+## 2026-01-31: newsletter-24 - Add newsletter signup to individual blog posts
+
+### Task Completed
+Added inline newsletter subscription form to the end of individual blog posts, replacing the previous link-based CTA.
+
+### Key Decisions
+- Reused existing NewsletterForm component for consistency with footer and blog index page
+- Added conditional rendering: shows interactive React form when API is configured, fallback static form otherwise
+- Used same API configuration pattern (PUBLIC_MERCHANT_API_URL, PUBLIC_MERCHANT_API_KEY) as other pages
+- Centered form layout with max-width constraint for optimal readability
+- NewsletterForm handles its own success/error feedback inline (no additional UI needed)
+
+### Files Changed
+- apps/storefront/src/layouts/BlogPost.astro - Import NewsletterForm, add API configuration, replace link CTA with inline form
+- apps/storefront/tests/layouts/BlogPostNewsletter.test.ts - 13 tests verifying component integration, styling, placement, and fallback behavior
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 157 warnings - all pre-existing)
+- Tests: PASSED (411 storefront tests, including 13 new BlogPostNewsletter tests)
+- Visual: Not executed (task has visual tests but deferred)
+
+### Next Steps
+None for this task.
