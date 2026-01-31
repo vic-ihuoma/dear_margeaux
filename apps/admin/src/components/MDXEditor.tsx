@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 
 export interface MDXEditorProps {
   /** Initial content */
@@ -9,6 +9,8 @@ export interface MDXEditorProps {
   placeholder?: string;
   /** Minimum height for the editor */
   minHeight?: string;
+  /** Optional image upload handler - enables image upload button when provided */
+  onImageUpload?: (file: File) => Promise<{ url: string; key: string }>;
 }
 
 /**
@@ -63,6 +65,15 @@ function markdownToHtml(markdown: string): string {
   html = html.replace(/___(.*?)___/g, '<strong><em>$1</em></strong>');
   html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
   html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+
+  // Images (must come before links to handle ![alt](url) before [text](url))
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, url) => {
+    if (isValidUrl(url)) {
+      return `<img src="${url}" alt="${alt}" class="max-w-full h-auto rounded-lg my-4" />`;
+    }
+    // Invalid URL - render as placeholder
+    return `[Image: ${alt}]`;
+  });
 
   // Links (with URL protocol validation to prevent XSS)
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, text, url) => {
@@ -130,8 +141,12 @@ export function MDXEditor({
   onChange,
   placeholder = 'Start writing your content...',
   minHeight = '400px',
+  onImageUpload,
 }: MDXEditorProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('write');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const previewHtml = useMemo(() => markdownToHtml(value), [value]);
 
@@ -170,6 +185,61 @@ export function MDXEditor({
     },
     [value, onChange]
   );
+
+  const handleImageFileSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file || !onImageUpload) return;
+
+      // Validate file type
+      const acceptedTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'image/gif',
+      ];
+      if (!acceptedTypes.includes(file.type)) {
+        setUploadError('Please upload a JPEG, PNG, WebP, or GIF image');
+        return;
+      }
+
+      // Validate file size (5MB max)
+      const maxFileSize = 5 * 1024 * 1024;
+      if (file.size > maxFileSize) {
+        setUploadError('File size must be less than 5MB');
+        return;
+      }
+
+      setUploadError(null);
+      setIsUploadingImage(true);
+
+      try {
+        const result = await onImageUpload(file);
+        // Extract filename for alt text
+        const altText = file.name
+          .replace(/\.[^/.]+$/, '')
+          .replace(/[-_]/g, ' ');
+        // Insert markdown image syntax
+        insertMarkdown(`![${altText}](${result.url})\n`);
+      } catch (err) {
+        console.error('Image upload failed:', err);
+        setUploadError('Failed to upload image. Please try again.');
+      } finally {
+        setIsUploadingImage(false);
+        // Reset the input
+        if (imageInputRef.current) {
+          imageInputRef.current.value = '';
+        }
+      }
+    },
+    [onImageUpload, insertMarkdown]
+  );
+
+  const handleImageButtonClick = useCallback(() => {
+    if (onImageUpload && !isUploadingImage) {
+      imageInputRef.current?.click();
+    }
+  }, [onImageUpload, isUploadingImage]);
 
   const toolbarButtons = [
     {
@@ -313,6 +383,66 @@ export function MDXEditor({
               )}
             </button>
           ))}
+
+          {/* Image upload button - only shown when onImageUpload is provided */}
+          {onImageUpload && (
+            <>
+              <div className="w-px h-4 bg-border mx-1" aria-hidden="true" />
+              <button
+                type="button"
+                onClick={handleImageButtonClick}
+                disabled={isUploadingImage}
+                title="Upload Image"
+                className={`p-1.5 text-text-secondary hover:text-text-primary hover:bg-background-primary rounded transition-colors ${isUploadingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {isUploadingImage ? (
+                  <svg
+                    className="animate-spin w-4 h-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-4 h-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+                    />
+                  </svg>
+                )}
+              </button>
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleImageFileSelect}
+                className="hidden"
+                aria-label="Upload image"
+              />
+            </>
+          )}
         </div>
 
         {/* View mode toggle */}
@@ -395,6 +525,13 @@ export function MDXEditor({
           </div>
         )}
       </div>
+
+      {/* Upload error message */}
+      {uploadError && (
+        <div className="px-4 py-2 bg-status-error/10 border-t border-status-error/20">
+          <p className="text-xs text-status-error">{uploadError}</p>
+        </div>
+      )}
 
       {/* Footer with character count */}
       <div className="flex items-center justify-between px-4 py-2 bg-background-tertiary border-t border-border">

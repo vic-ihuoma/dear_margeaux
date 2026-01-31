@@ -2,6 +2,28 @@ import { useState, useCallback } from 'react';
 import { BlogForm, type BlogPostData } from './BlogForm';
 import { MDXEditor } from './MDXEditor';
 
+/**
+ * Upload an image file to R2 storage
+ */
+async function uploadImageToR2(
+  file: File
+): Promise<{ url: string; key: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/images/upload', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to upload image');
+  }
+
+  return response.json();
+}
+
 export interface BlogPost extends BlogPostData {
   content: string;
 }
@@ -255,6 +277,7 @@ export function BlogEditor({ post: initialPost }: BlogEditorProps) {
             value={content}
             onChange={setContent}
             minHeight="500px"
+            onImageUpload={uploadImageToR2}
             placeholder="# Your Post Title
 
 Start writing your blog post content here...
