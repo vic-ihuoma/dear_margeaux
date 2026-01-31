@@ -13,6 +13,99 @@ export interface MDXEditorProps {
   onImageUpload?: (file: File) => Promise<{ url: string; key: string }>;
 }
 
+// Supported MDX component types
+type MDXComponentType = 'Callout' | 'Note' | 'Tip' | 'Warning' | 'ProductCard';
+
+const SUPPORTED_MDX_COMPONENTS: MDXComponentType[] = [
+  'Callout',
+  'Note',
+  'Tip',
+  'Warning',
+  'ProductCard',
+];
+
+/**
+ * Check if a component type is supported
+ */
+function isSupportedMDXComponent(type: string): type is MDXComponentType {
+  return SUPPORTED_MDX_COMPONENTS.includes(type as MDXComponentType);
+}
+
+/**
+ * Render an MDX component to HTML for preview
+ */
+function renderMDXComponentToHtml(
+  type: string,
+  props: Record<string, string>,
+  children: string
+): string {
+  if (!isSupportedMDXComponent(type)) {
+    return `<div class="bg-red-50 border border-red-200 text-red-700 p-4 my-4 rounded" data-error="unsupported-component">
+      <p class="font-semibold">Unsupported Component</p>
+      <p class="text-sm">The component &lt;${type}&gt; is not supported in preview. Supported: Callout, Note, Tip, Warning, ProductCard.</p>
+    </div>`;
+  }
+
+  switch (type) {
+    case 'Callout': {
+      const variant = props.type || 'info';
+      const variantStyles: Record<string, string> = {
+        info: 'bg-blue-50 border-blue-500 text-blue-800',
+        success: 'bg-green-50 border-green-500 text-green-800',
+        warning: 'bg-yellow-50 border-yellow-500 text-yellow-800',
+        error: 'bg-red-50 border-red-500 text-red-800',
+      };
+      const styles = variantStyles[variant] || variantStyles.info;
+      return `<div class="mdx-callout border-l-4 p-4 my-4 rounded-r ${styles}" data-component="Callout">${children}</div>`;
+    }
+
+    case 'Note':
+      return `<div class="mdx-note bg-blue-50 border-l-4 border-blue-500 p-4 my-4 rounded-r text-blue-800" data-component="Note">${children}</div>`;
+
+    case 'Tip':
+      return `<div class="mdx-tip bg-green-50 border-l-4 border-green-500 p-4 my-4 rounded-r text-green-800" data-component="Tip">${children}</div>`;
+
+    case 'Warning':
+      return `<div class="mdx-warning bg-yellow-50 border-l-4 border-yellow-500 p-4 my-4 rounded-r text-yellow-800" data-component="Warning">${children}</div>`;
+
+    case 'ProductCard': {
+      const { sku, name } = props;
+      return `<div class="mdx-product-card border border-gray-200 rounded-lg p-4 my-4 bg-white" data-component="ProductCard" data-sku="${sku || ''}">
+        <p class="font-semibold">${name || 'Product'}</p>
+        <p class="text-sm text-gray-500">SKU: ${sku || 'N/A'}</p>
+      </div>`;
+    }
+
+    default:
+      return '';
+  }
+}
+
+/**
+ * Process MDX components in markdown content
+ * Finds <ComponentName props>content</ComponentName> patterns and renders them
+ */
+function processMDXComponents(html: string): string {
+  // Match MDX component patterns: <ComponentName props?>content</ComponentName>
+  // This regex captures: component name, props string, and inner content
+  const componentRegex = /&lt;(\w+)([^&]*?)&gt;([\s\S]*?)&lt;\/\1&gt;/g;
+
+  return html.replace(
+    componentRegex,
+    (match, componentType, propsString, children) => {
+      // Parse props from string like ' type="warning" title="Hello"'
+      const props: Record<string, string> = {};
+      const propRegex = /(\w+)=["']([^"']*)["']/g;
+      let propMatch;
+      while ((propMatch = propRegex.exec(propsString)) !== null) {
+        props[propMatch[1]] = propMatch[2];
+      }
+
+      return renderMDXComponentToHtml(componentType, props, children.trim());
+    }
+  );
+}
+
 /**
  * Validates a URL to prevent XSS via javascript: or data: protocols
  * Only allows http, https, mailto, and relative URLs
@@ -130,6 +223,13 @@ function markdownToHtml(markdown: string): string {
   html = html.replace(/<p class="my-4"><blockquote/g, '<blockquote');
   html = html.replace(/<\/blockquote><\/p>/g, '</blockquote>');
   html = html.replace(/<p class="my-4"><hr/g, '<hr');
+
+  // Process MDX components (after HTML escaping but before returning)
+  html = processMDXComponents(html);
+
+  // Clean up paragraphs around MDX components
+  html = html.replace(/<p class="my-4"><div class="mdx-/g, '<div class="mdx-');
+  html = html.replace(/<\/div><\/p>/g, '</div>');
 
   return html;
 }
@@ -360,6 +460,94 @@ export function MDXEditor({
     },
   ];
 
+  // MDX component toolbar buttons
+  const componentButtons = [
+    {
+      label: 'Callout',
+      title: 'Insert Callout (info, warning, error, success)',
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-4 h-4"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+          />
+        </svg>
+      ),
+      action: () => insertMarkdown('<Callout type="info">\n', '\n</Callout>'),
+    },
+    {
+      label: 'Note',
+      title: 'Insert Note',
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-4 h-4"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+          />
+        </svg>
+      ),
+      action: () => insertMarkdown('<Note>\n', '\n</Note>'),
+    },
+    {
+      label: 'Tip',
+      title: 'Insert Tip',
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-4 h-4"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"
+          />
+        </svg>
+      ),
+      action: () => insertMarkdown('<Tip>\n', '\n</Tip>'),
+    },
+    {
+      label: 'Warning',
+      title: 'Insert Warning',
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-4 h-4"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+          />
+        </svg>
+      ),
+      action: () => insertMarkdown('<Warning>\n', '\n</Warning>'),
+    },
+  ];
+
   return (
     <div className="border border-border rounded-lg overflow-hidden">
       {/* Toolbar */}
@@ -381,6 +569,22 @@ export function MDXEditor({
               ) : (
                 button.icon
               )}
+            </button>
+          ))}
+
+          {/* MDX Component buttons separator */}
+          <div className="w-px h-4 bg-border mx-1" aria-hidden="true" />
+
+          {/* MDX Component insertion buttons */}
+          {componentButtons.map((button) => (
+            <button
+              key={button.label}
+              type="button"
+              onClick={button.action}
+              title={button.title}
+              className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-background-primary rounded transition-colors"
+            >
+              {button.icon}
             </button>
           ))}
 
