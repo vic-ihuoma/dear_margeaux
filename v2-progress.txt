@@ -511,3 +511,31 @@ Implemented CSV export functionality for the analytics page, allowing admins to 
 
 ### Next Steps
 None for this task.
+
+
+## 2026-01-31: admin-17 - Upgrade to proper charting library
+
+### Task Completed
+Replaced custom CSS/HTML bar chart with Recharts LineChart for professional data visualization on the analytics page.
+
+### Key Decisions
+- Chose Recharts as recommended in task - mature, well-maintained React charting library
+- Changed from bar chart to line chart for better revenue trend visualization
+- Added ResponsiveContainer for fluid width that adapts to container size
+- Created custom tooltip component showing date, formatted revenue, and order count
+- Used CSS variables for chart colors to maintain theme consistency
+- Kept summary stats (total revenue, orders, avg order value) above chart
+
+### Files Changed
+- apps/admin/package.json - Added recharts dependency (^3.7.0)
+- apps/admin/src/components/SalesChart.tsx - Complete rewrite using Recharts LineChart with custom tooltip, responsive container, and proper axis formatting
+- apps/admin/tests/components/SalesChart.test.ts - 22 new tests covering data utilities, transformations, tooltip behavior, and rendering states
+- pnpm-lock.yaml - Updated with recharts and its dependencies
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 157 warnings - all pre-existing)
+- Tests: PASSED (564 admin tests, including 22 new SalesChart tests)
+
+### Next Steps
+None for this task.
