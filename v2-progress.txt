@@ -1,0 +1,35 @@
+# Ralph v2 Progress Log
+# Tracks implementation progress with enforced feedback loops
+
+
+## 2026-01-31: perf-1 - Self-host Inter font
+
+### Task Completed
+Self-hosted Inter variable fonts replacing Google Fonts CDN for improved performance.
+
+### Key Decisions
+- Used Inter variable font (v4.1) from GitHub releases instead of static weight fonts
+- Variable fonts support all weights (100-900) in single file, reducing total font payload
+- Kept both regular and italic variable fonts for full typography support
+- Added preload hint for primary font file to improve loading performance
+
+### Files Changed
+- apps/storefront/public/fonts/inter-variable.woff2 - Added self-hosted Inter regular variable font
+- apps/storefront/public/fonts/inter-variable-italic.woff2 - Added self-hosted Inter italic variable font
+- apps/storefront/src/styles/global.css - Added @font-face declarations with font-display: swap
+- apps/storefront/src/layouts/BaseLayout.astro - Removed Google Fonts CDN, added preload for self-hosted font
+- apps/storefront/src/layouts/BlogPost.astro - Removed Google Fonts CDN, added preload
+- apps/storefront/src/layouts/Lookbook.astro - Removed Google Fonts CDN, added preload
+- apps/storefront/tests/styles/self-hosted-fonts.test.ts - Added 12 unit tests for font implementation
+- apps/storefront/tests/components/ThemeToggle.test.tsx - Fixed pre-existing lint error (require -> import)
+- apps/admin/src/components/TagInput.tsx - Fixed pre-existing lint error (jsx-a11y)
+
+### Test Results
+- Typecheck: PASSED
+- Lint: PASSED (0 errors, 99 warnings - all pre-existing)
+- Tests: PASSED (334 storefront tests, 252 admin tests)
+- Visual: perf-1-font-rendering.png - verified Inter loads from /fonts/inter-variable.woff2, no Google Fonts requests
+
+### Next Steps
+None for this task.
+
