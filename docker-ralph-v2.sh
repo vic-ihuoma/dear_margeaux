@@ -144,20 +144,7 @@ ONLY WORK ON ONE TASK THIS ITERATION.")
   fi
 
   # -------------------------------------------
-  # COMPLETION CHECK
-  # -------------------------------------------
-  if [[ "$result" == *"<promise>COMPLETE</promise>"* ]]; then
-    echo "=========================================="
-    echo "SUCCESS: All implementations complete!"
-    echo "=========================================="
-    echo "Completed after $i iteration(s)."
-    echo "Review v2-progress.txt for summary."
-    echo "=========================================="
-    exit 0
-  fi
-
-  # -------------------------------------------
-  # PUSH CHANGES
+  # PUSH CHANGES (always push before checking completion)
   # -------------------------------------------
   echo "--- Pushing changes from iteration $i ---"
   if ! git push origin HEAD; then
@@ -169,7 +156,21 @@ ONLY WORK ON ONE TASK THIS ITERATION.")
   fi
   echo ""
 
-  echo "--- Iteration $i complete ---"
+  # -------------------------------------------
+  # COMPLETION CHECK (after push, verify against actual file)
+  # -------------------------------------------
+  remaining=$(grep -c '"passes": false' implementations.json 2>/dev/null || echo "0")
+  if [[ "$remaining" == "0" ]]; then
+    echo "=========================================="
+    echo "SUCCESS: All implementations complete!"
+    echo "=========================================="
+    echo "Completed after $i iteration(s)."
+    echo "Review v2-progress.txt for summary."
+    echo "=========================================="
+    exit 0
+  fi
+
+  echo "--- Iteration $i complete ($remaining tasks remaining) ---"
   echo ""
 done
 
