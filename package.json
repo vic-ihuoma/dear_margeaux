@@ -16,7 +16,7 @@
     "typecheck": "turbo run typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky"
+    "prepare": "[ \"$CI\" = true ] || [ \"$HUSKY\" = 0 ] || husky"
   },
   "keywords": [
     "e-commerce",
@@ -27,6 +27,12 @@
   "packageManager": "pnpm@10.27.0",
   "engines": {
     "node": ">=20"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp"
+    ]
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",

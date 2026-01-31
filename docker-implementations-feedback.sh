@@ -1,7 +1,7 @@
 #!/bin/bash
-# ralph.sh - AFK Ralph Loop
+# docker-implementations-feedback.sh - AFK Ralph Loop for implementations.json
 # Based on: https://www.aihero.dev/tips-for-ai-coding-with-ralph-wiggum
-# Usage: ./docker-ralph-feedback.sh <iterations>
+# Usage: ./docker-implementations-feedback.sh <iterations>
 
 set -e
 
@@ -11,17 +11,42 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+# Create implementations-progress.txt if it doesn't exist
+if [ ! -f "implementations-progress.txt" ]; then
+  echo "# Implementations Progress Log" > implementations-progress.txt
+  echo "# This file tracks progress for implementations.json tasks" >> implementations-progress.txt
+  echo "" >> implementations-progress.txt
+fi
+
 echo "=========================================="
-echo "AFK Ralph Loop"
+echo "AFK Ralph Loop (Implementations)"
 echo "=========================================="
 echo "Iterations: $1"
+echo "Task file: implementations.json"
+echo "Progress file: implementations-progress.txt"
 echo "=========================================="
 echo ""
 
 for ((i=1; i<=$1; i++)); do
   echo "=== Iteration $i of $1 ==="
   
-  result=$(docker sandbox run --env HUSKY=0 --env CI=true claude --permission-mode acceptEdits -p "@prd.json @progress.txt
+  result=$(docker sandbox run --env HUSKY=0 --env CI=true claude --permission-mode acceptEdits -p "@implementations.json @implementations-progress.txt
+
+========================================
+TASK INSTRUCTIONS
+========================================
+
+Go through implementations.json, for the first task that has passes as false,
+change its status to implementing, implement its test first then implement
+its features to pass the tests, and use agent-browser skill for visual
+testing if it requires.
+
+For each item we use pnpm. When the item and all its test passes, update
+passes to true for the item, then commit, run pnpm build and if all build
+passes then push that change.
+
+Use pnpm dev to start all servers if needed and kill all servers after
+pushing an item.
 
 ========================================
 QUALITY EXPECTATIONS
@@ -37,19 +62,10 @@ you cut will be cut again.
 Fight entropy. Leave the codebase better than you found it.
 
 ========================================
-TASK WORKFLOW
+WORKFLOW
 ========================================
 
-1. Decide which task to work on next.
-   This should be the one YOU decide has the highest priority,
-   not necessarily the first in the list.
-   
-   Prioritize in this order:
-   - Architectural decisions and core abstractions
-   - Integration points between modules
-   - Unknown unknowns and spike work
-   - Standard features and implementation
-   - Polish, cleanup, and quick wins
+1. Find the first task in implementations.json with 'passes': false
 
 2. Before committing, run ALL feedback loops:
    - TypeScript: pnpm typecheck (must pass with no errors)
@@ -74,8 +90,8 @@ TASK WORKFLOW
    
    Quality over speed. Small steps compound into big progress.
 
-4. After completing the task, append to progress.txt:
-   - Task completed and PRD item reference
+5. After completing the task, append to implementations-progress.txt:
+   - Task completed and task ID reference
    - Key decisions made and reasoning
    - Files changed
    - Any blockers or notes for next iteration
@@ -83,23 +99,26 @@ TASK WORKFLOW
    Keep entries concise. Sacrifice grammar for the sake of concision.
    This file helps future iterations skip exploration.
 
-5. Update prd.json:
+6. Update implementations.json:
    - Set 'passes' to true for the completed task
 
-6. Make a git commit of that feature.
-   Use a descriptive commit message referencing the task.
+7. Make a git commit of that feature.
+   Use a descriptive commit message referencing the task ID.
+
+8. Run pnpm build - if it passes, push the changes.
 
 ========================================
 RULES
 ========================================
 
-- ONLY WORK ON A SINGLE FEATURE
-- Each iteration is a fresh context - progress.txt is your memory
+- ONLY WORK ON A SINGLE TASK PER ITERATION
+- Each iteration is a fresh context - implementations-progress.txt is your memory
 - Git history shows what previous iterations did
 - Never commit with failing tests or type errors
+- Kill any dev servers after pushing
 
 If, while implementing the feature, you notice that all work
-is complete (all tasks in prd.json have 'passes': true),
+is complete (all tasks in implementations.json have 'passes': true),
 output <promise>COMPLETE</promise>.")
 
   echo "$result"
@@ -112,7 +131,7 @@ output <promise>COMPLETE</promise>.")
 
   if [[ "$result" == *"<promise>COMPLETE</promise>"* ]]; then
     echo "=========================================="
-    echo "PRD complete after $i iterations!"
+    echo "All implementations complete after $i iterations!"
     echo "=========================================="
     exit 0
   fi
@@ -124,5 +143,5 @@ done
 echo "=========================================="
 echo "Reached maximum iterations ($1)."
 echo "Some tasks may still have 'passes': false."
-echo "Check prd.json and progress.txt"
+echo "Check implementations.json and implementations-progress.txt"
 echo "=========================================="
