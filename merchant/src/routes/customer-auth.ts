@@ -321,6 +321,285 @@ customerAuth.get('/orders', async (c) => {
 });
 
 // ------------------------------------------------------------
+// GET /v1/customers/auth/addresses - Get current customer's addresses
+// ------------------------------------------------------------
+customerAuth.get('/addresses', async (c) => {
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+  const sessionId = c.req.header('X-Customer-Session');
+
+  if (!sessionId) {
+    throw ApiError.unauthorized('No session provided');
+  }
+
+  // Validate session
+  const [session] = await db.query<any>(
+    `SELECT customer_id, expires_at FROM customer_sessions WHERE id = ?`,
+    [sessionId]
+  );
+
+  if (!session || session.expires_at < Math.floor(Date.now() / 1000)) {
+    throw ApiError.unauthorized('Invalid or expired session');
+  }
+
+  const customerId = session.customer_id;
+
+  // Get addresses
+  const addresses = await db.query<any>(
+    `SELECT * FROM customer_addresses WHERE customer_id = ? ORDER BY is_default DESC, created_at DESC`,
+    [customerId]
+  );
+
+  return c.json({
+    items: addresses.map(formatAddress),
+  });
+});
+
+// ------------------------------------------------------------
+// POST /v1/customers/auth/addresses - Add a new address
+// ------------------------------------------------------------
+customerAuth.post('/addresses', async (c) => {
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+  const sessionId = c.req.header('X-Customer-Session');
+
+  if (!sessionId) {
+    throw ApiError.unauthorized('No session provided');
+  }
+
+  // Validate session
+  const [session] = await db.query<any>(
+    `SELECT customer_id, expires_at FROM customer_sessions WHERE id = ?`,
+    [sessionId]
+  );
+
+  if (!session || session.expires_at < Math.floor(Date.now() / 1000)) {
+    throw ApiError.unauthorized('Invalid or expired session');
+  }
+
+  const customerId = session.customer_id;
+  const body = await c.req.json();
+
+  // Validation
+  if (!body.name) throw ApiError.invalidRequest('name is required');
+  if (!body.line1) throw ApiError.invalidRequest('line1 is required');
+  if (!body.city) throw ApiError.invalidRequest('city is required');
+  if (!body.postal_code) throw ApiError.invalidRequest('postal_code is required');
+  if (!body.country) throw ApiError.invalidRequest('country is required');
+
+  const addressId = uuid();
+  const isDefault = body.is_default ? 1 : 0;
+
+  // If setting as default, unset other defaults
+  if (isDefault) {
+    await db.run(`UPDATE customer_addresses SET is_default = 0 WHERE customer_id = ?`, [
+      customerId,
+    ]);
+  }
+
+  await db.run(
+    `INSERT INTO customer_addresses (id, customer_id, label, is_default, name, company, line1, line2, city, state, postal_code, country, phone)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      addressId,
+      customerId,
+      body.label || null,
+      isDefault,
+      body.name,
+      body.company || null,
+      body.line1,
+      body.line2 || null,
+      body.city,
+      body.state || null,
+      body.postal_code,
+      body.country,
+      body.phone || null,
+    ]
+  );
+
+  const [address] = await db.query<any>(`SELECT * FROM customer_addresses WHERE id = ?`, [
+    addressId,
+  ]);
+
+  return c.json(formatAddress(address), 201);
+});
+
+// ------------------------------------------------------------
+// PATCH /v1/customers/auth/addresses/:id - Update an address
+// ------------------------------------------------------------
+customerAuth.patch('/addresses/:id', async (c) => {
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+  const sessionId = c.req.header('X-Customer-Session');
+  const addressId = c.req.param('id');
+
+  if (!sessionId) {
+    throw ApiError.unauthorized('No session provided');
+  }
+
+  // Validate session
+  const [session] = await db.query<any>(
+    `SELECT customer_id, expires_at FROM customer_sessions WHERE id = ?`,
+    [sessionId]
+  );
+
+  if (!session || session.expires_at < Math.floor(Date.now() / 1000)) {
+    throw ApiError.unauthorized('Invalid or expired session');
+  }
+
+  const customerId = session.customer_id;
+
+  // Check address exists and belongs to customer
+  const [existing] = await db.query<any>(
+    `SELECT * FROM customer_addresses WHERE id = ? AND customer_id = ?`,
+    [addressId, customerId]
+  );
+
+  if (!existing) {
+    throw ApiError.notFound('Address not found');
+  }
+
+  const body = await c.req.json();
+
+  // If setting as default, unset other defaults
+  if (body.is_default) {
+    await db.run(`UPDATE customer_addresses SET is_default = 0 WHERE customer_id = ?`, [
+      customerId,
+    ]);
+  }
+
+  // Build update query dynamically
+  const updates: string[] = [];
+  const values: any[] = [];
+
+  const fields = [
+    'label',
+    'name',
+    'company',
+    'line1',
+    'line2',
+    'city',
+    'state',
+    'postal_code',
+    'country',
+    'phone',
+  ];
+  for (const field of fields) {
+    if (body[field] !== undefined) {
+      updates.push(`${field} = ?`);
+      values.push(body[field]);
+    }
+  }
+
+  if (body.is_default !== undefined) {
+    updates.push('is_default = ?');
+    values.push(body.is_default ? 1 : 0);
+  }
+
+  if (updates.length > 0) {
+    updates.push('updated_at = ?');
+    values.push(now());
+    values.push(addressId);
+
+    await db.run(`UPDATE customer_addresses SET ${updates.join(', ')} WHERE id = ?`, values);
+  }
+
+  const [address] = await db.query<any>(`SELECT * FROM customer_addresses WHERE id = ?`, [
+    addressId,
+  ]);
+
+  return c.json(formatAddress(address));
+});
+
+// ------------------------------------------------------------
+// DELETE /v1/customers/auth/addresses/:id - Delete an address
+// ------------------------------------------------------------
+customerAuth.delete('/addresses/:id', async (c) => {
+  const db = getDb(c.env);
+  const sessionId = c.req.header('X-Customer-Session');
+  const addressId = c.req.param('id');
+
+  if (!sessionId) {
+    throw ApiError.unauthorized('No session provided');
+  }
+
+  // Validate session
+  const [session] = await db.query<any>(
+    `SELECT customer_id, expires_at FROM customer_sessions WHERE id = ?`,
+    [sessionId]
+  );
+
+  if (!session || session.expires_at < Math.floor(Date.now() / 1000)) {
+    throw ApiError.unauthorized('Invalid or expired session');
+  }
+
+  const customerId = session.customer_id;
+
+  // Check address exists and belongs to customer
+  const [existing] = await db.query<any>(
+    `SELECT * FROM customer_addresses WHERE id = ? AND customer_id = ?`,
+    [addressId, customerId]
+  );
+
+  if (!existing) {
+    throw ApiError.notFound('Address not found');
+  }
+
+  await db.run(`DELETE FROM customer_addresses WHERE id = ?`, [addressId]);
+
+  return c.json({ success: true });
+});
+
+// ------------------------------------------------------------
+// PATCH /v1/customers/auth/addresses/:id/default - Set address as default
+// ------------------------------------------------------------
+customerAuth.patch('/addresses/:id/default', async (c) => {
+  const db = getDb(c.env);
+  const sessionId = c.req.header('X-Customer-Session');
+  const addressId = c.req.param('id');
+
+  if (!sessionId) {
+    throw ApiError.unauthorized('No session provided');
+  }
+
+  // Validate session
+  const [session] = await db.query<any>(
+    `SELECT customer_id, expires_at FROM customer_sessions WHERE id = ?`,
+    [sessionId]
+  );
+
+  if (!session || session.expires_at < Math.floor(Date.now() / 1000)) {
+    throw ApiError.unauthorized('Invalid or expired session');
+  }
+
+  const customerId = session.customer_id;
+
+  // Check address exists and belongs to customer
+  const [existing] = await db.query<any>(
+    `SELECT * FROM customer_addresses WHERE id = ? AND customer_id = ?`,
+    [addressId, customerId]
+  );
+
+  if (!existing) {
+    throw ApiError.notFound('Address not found');
+  }
+
+  // Unset all defaults, then set this one
+  await db.run(`UPDATE customer_addresses SET is_default = 0 WHERE customer_id = ?`, [customerId]);
+
+  await db.run(`UPDATE customer_addresses SET is_default = 1, updated_at = ? WHERE id = ?`, [
+    now(),
+    addressId,
+  ]);
+
+  const [address] = await db.query<any>(`SELECT * FROM customer_addresses WHERE id = ?`, [
+    addressId,
+  ]);
+
+  return c.json(formatAddress(address));
+});
+
+// ------------------------------------------------------------
 // Helpers
 // ------------------------------------------------------------
 
@@ -373,5 +652,22 @@ function formatOrder(o: any) {
         }
       : null,
     created_at: o.created_at,
+  };
+}
+
+function formatAddress(a: any) {
+  return {
+    id: a.id,
+    label: a.label || null,
+    name: a.name,
+    company: a.company || null,
+    line1: a.line1,
+    line2: a.line2 || null,
+    city: a.city,
+    state: a.state || null,
+    postal_code: a.postal_code,
+    country: a.country,
+    phone: a.phone || null,
+    is_default: !!a.is_default,
   };
 }

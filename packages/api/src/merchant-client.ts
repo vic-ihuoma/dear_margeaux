@@ -937,6 +937,141 @@ export class MerchantClient {
     return response.json();
   }
 
+  /**
+   * Get addresses for the current authenticated customer (self-service)
+   * Note: This method requires a session token via X-Customer-Session header
+   */
+  async getMyAddresses(
+    sessionId: string
+  ): Promise<{ items: CustomerAddress[] }> {
+    const url = new URL(`${this.baseUrl}/v1/customers/auth/addresses`);
+
+    const response = await this.fetchFn(url.toString(), {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'X-Customer-Session': sessionId,
+      },
+    });
+
+    if (!response.ok) {
+      await this.handleErrorResponse(response);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Add a new address for the current authenticated customer (self-service)
+   * Note: This method requires a session token via X-Customer-Session header
+   */
+  async addMyAddress(
+    sessionId: string,
+    data: CreateAddressParams
+  ): Promise<CustomerAddress> {
+    const url = new URL(`${this.baseUrl}/v1/customers/auth/addresses`);
+
+    const response = await this.fetchFn(url.toString(), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'X-Customer-Session': sessionId,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      await this.handleErrorResponse(response);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Update an address for the current authenticated customer (self-service)
+   * Note: This method requires a session token via X-Customer-Session header
+   */
+  async updateMyAddress(
+    sessionId: string,
+    addressId: string,
+    data: Partial<CreateAddressParams>
+  ): Promise<CustomerAddress> {
+    const url = new URL(
+      `${this.baseUrl}/v1/customers/auth/addresses/${addressId}`
+    );
+
+    const response = await this.fetchFn(url.toString(), {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'X-Customer-Session': sessionId,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      await this.handleErrorResponse(response);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Delete an address for the current authenticated customer (self-service)
+   * Note: This method requires a session token via X-Customer-Session header
+   */
+  async deleteMyAddress(
+    sessionId: string,
+    addressId: string
+  ): Promise<{ success: boolean }> {
+    const url = new URL(
+      `${this.baseUrl}/v1/customers/auth/addresses/${addressId}`
+    );
+
+    const response = await this.fetchFn(url.toString(), {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'X-Customer-Session': sessionId,
+      },
+    });
+
+    if (!response.ok) {
+      await this.handleErrorResponse(response);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Set an address as the default for the current authenticated customer (self-service)
+   * Note: This method requires a session token via X-Customer-Session header
+   */
+  async setDefaultAddress(
+    sessionId: string,
+    addressId: string
+  ): Promise<CustomerAddress> {
+    const url = new URL(
+      `${this.baseUrl}/v1/customers/auth/addresses/${addressId}/default`
+    );
+
+    const response = await this.fetchFn(url.toString(), {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'X-Customer-Session': sessionId,
+      },
+    });
+
+    if (!response.ok) {
+      await this.handleErrorResponse(response);
+    }
+
+    return response.json();
+  }
+
   // ==========================================================================
   // Counts
   // ==========================================================================
