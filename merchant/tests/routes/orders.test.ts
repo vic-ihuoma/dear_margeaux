@@ -46,6 +46,7 @@ vi.mock('../../src/lib/webhooks', () => ({
 // Mock notifications
 vi.mock('../../src/lib/notifications', () => ({
   sendShippingUpdateEmail: vi.fn().mockResolvedValue({ success: true }),
+  sendOrderStatusUpdateEmail: vi.fn().mockResolvedValue({ success: true }),
 }));
 
 import { ApiError } from '../../src/types';

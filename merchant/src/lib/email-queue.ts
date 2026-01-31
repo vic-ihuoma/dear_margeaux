@@ -21,6 +21,7 @@ import { uuid, now, type Env } from '../types';
 export type EmailType =
   | 'order_confirmation'
   | 'shipping_update'
+  | 'order_status_update'
   | 'drop_launch'
   | 'newsletter_verification'
   | 'newsletter';

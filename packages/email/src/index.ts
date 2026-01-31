@@ -42,3 +42,10 @@ export {
   type ShippingUpdateEmailProps,
   type ShippingItem,
 } from './templates/shipping-update.js';
+
+export {
+  OrderStatusUpdateEmail,
+  type OrderStatusUpdateEmailProps,
+  type OrderStatusItem,
+  type OrderStatus,
+} from './templates/order-status-update.js';

@@ -318,6 +318,53 @@ export async function sendShippingUpdateEmail(
   });
 }
 
+export type OrderStatusType = 'processing' | 'delivered';
+
+export async function sendOrderStatusUpdateEmail(
+  env: Env,
+  storeId: string,
+  order: OrderData,
+  items: OrderItemData[],
+  status: OrderStatusType,
+  tracking?: TrackingInfo
+): Promise<NotificationResult> {
+  const customerName = order.shipping_name || 'Valued Customer';
+
+  // eslint-disable-next-line no-console
+  console.log(
+    `Sending order status update email (${status}) to ${order.customer_email} for order ${order.number}`
+  );
+
+  const html = buildOrderStatusUpdateHtml({
+    customerName,
+    orderNumber: order.number,
+    status,
+    items: items.map((i) => ({
+      title: i.title,
+      variantTitle: i.variant_title || undefined,
+      quantity: i.qty,
+    })),
+    trackingNumber: tracking?.tracking_number,
+    trackingUrl: tracking?.tracking_url,
+  });
+
+  const subjectMap: Record<OrderStatusType, string> = {
+    processing: `Your Order Is Being Prepared - #${order.number}`,
+    delivered: `Your Order Has Been Delivered - #${order.number}`,
+  };
+
+  return sendEmailViaResend(env, {
+    to: order.customer_email,
+    subject: subjectMap[status],
+    html,
+    queueOnFailure: {
+      storeId,
+      emailType: 'order_status_update',
+      metadata: { orderId: order.id, orderNumber: order.number, status },
+    },
+  });
+}
+
 export async function processDropNotifications(env: Env, ctx: ExecutionContext): Promise<void> {
   const db = getDb(env);
   const currentTime = now();
@@ -656,6 +703,134 @@ function buildShippingUpdateHtml(data: {
         </div>
         <div style="background: #f5f5f5; padding: 24px; text-align: center; color: #666; font-size: 14px;">
           <p style="margin: 0;">Dear Margeaux</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function buildOrderStatusUpdateHtml(data: {
+  customerName: string;
+  orderNumber: string;
+  status: OrderStatusType;
+  items?: Array<{ title: string; variantTitle?: string; quantity: number }>;
+  trackingNumber?: string;
+  trackingUrl?: string;
+}): string {
+  const config = getStoreConfig();
+
+  const statusConfig: Record<
+    OrderStatusType,
+    { icon: string; title: string; message: string; bannerBg: string; headingColor: string }
+  > = {
+    processing: {
+      icon: '⚙️',
+      title: 'Your Order Is Being Prepared',
+      message: "Great news! We've started preparing your order and it will be on its way soon.",
+      bannerBg: '#fef3c7',
+      headingColor: '#92400e',
+    },
+    delivered: {
+      icon: '✅',
+      title: 'Your Order Has Been Delivered',
+      message:
+        "Your order has arrived! We hope you love your new items. If you have any questions, we're here to help.",
+      bannerBg: '#dcfce7',
+      headingColor: '#166534',
+    },
+  };
+
+  const cfg = statusConfig[data.status];
+
+  const itemsHtml =
+    data.items && data.items.length > 0
+      ? `
+      <div style="margin: 24px 0;">
+        <h3 style="color: #333; font-size: 16px; margin: 0 0 12px;">Order Items</h3>
+        ${data.items
+          .map(
+            (item) => `
+          <div style="padding: 8px 0; border-bottom: 1px solid #eee;">
+            <strong>${escapeHtml(item.title)}</strong>
+            ${item.variantTitle ? `<span style="color: #666;"> - ${escapeHtml(item.variantTitle)}</span>` : ''}
+            <div style="color: #666; font-size: 14px;">Qty: ${item.quantity}</div>
+          </div>
+        `
+          )
+          .join('')}
+      </div>
+    `
+      : '';
+
+  const trackingHtml =
+    data.status === 'delivered' && data.trackingNumber
+      ? `
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
+        <div style="color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Tracking Number</div>
+        <div style="color: #333; font-size: 16px; font-weight: 600; margin-bottom: 16px;">${escapeHtml(data.trackingNumber)}</div>
+        ${
+          data.trackingUrl
+            ? `<a href="${data.trackingUrl}" style="display: inline-block; background: #16a34a; color: white; padding: 12px 20px; border-radius: 6px; text-decoration: none; font-weight: 600;">View Tracking Details</a>`
+            : ''
+        }
+      </div>
+    `
+      : '';
+
+  const tipsHtml =
+    data.status === 'processing'
+      ? `
+      <div style="margin: 24px 0;">
+        <h3 style="color: #333; font-size: 16px; margin: 0 0 12px;">What's Next?</h3>
+        <p style="color: #333; font-size: 14px; margin: 8px 0;"><strong>📦 Packing:</strong> Our team is carefully preparing your items.</p>
+        <p style="color: #333; font-size: 14px; margin: 8px 0;"><strong>📧 Updates:</strong> You'll receive an email when your order ships.</p>
+        <p style="color: #333; font-size: 14px; margin: 8px 0;"><strong>📍 Track:</strong> Once shipped, you'll get tracking information to follow your package.</p>
+      </div>
+    `
+      : data.status === 'delivered'
+        ? `
+      <div style="margin: 24px 0;">
+        <h3 style="color: #333; font-size: 16px; margin: 0 0 12px;">What's Next?</h3>
+        <p style="color: #333; font-size: 14px; margin: 8px 0;"><strong>📸 Share:</strong> We'd love to see you with your new items! Tag us on social media.</p>
+        <p style="color: #333; font-size: 14px; margin: 8px 0;"><strong>⭐ Review:</strong> Your feedback helps us improve. Consider leaving a review!</p>
+        <p style="color: #333; font-size: 14px; margin: 8px 0;"><strong>🔄 Returns:</strong> Not quite right? Check our return policy for easy exchanges.</p>
+      </div>
+    `
+        : '';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: 'Inter', -apple-system, sans-serif; background: #fafafa; padding: 40px 20px;">
+      <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden;">
+        <div style="background: #8B4513; color: white; padding: 32px; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px;">${config.storeName}</h1>
+        </div>
+        <div style="background: ${cfg.bannerBg}; padding: 32px; text-align: center;">
+          <div style="font-size: 48px; margin-bottom: 16px;">${cfg.icon}</div>
+          <h2 style="color: ${cfg.headingColor}; font-size: 24px; margin: 0 0 8px;">${cfg.title}</h2>
+          <p style="color: #666; margin: 0;">Order #${escapeHtml(data.orderNumber)}</p>
+        </div>
+        <div style="padding: 32px;">
+          <p style="color: #333; font-size: 16px;">Hi ${escapeHtml(data.customerName)},</p>
+          <p style="color: #666; line-height: 1.6;">${cfg.message}</p>
+
+          ${trackingHtml}
+          ${itemsHtml}
+          ${tipsHtml}
+
+          <a href="${config.baseUrl}/account/orders/${escapeHtml(data.orderNumber)}" style="display: block; background: white; border: 2px solid #8B4513; color: #8B4513; text-align: center; padding: 14px; border-radius: 6px; text-decoration: none; margin-top: 24px; font-weight: 600;">
+            View Order Details
+          </a>
+        </div>
+        <div style="background: #f5f5f5; padding: 24px; text-align: center; color: #666; font-size: 14px;">
+          <p style="margin: 0;">Questions? Contact <a href="mailto:${config.supportEmail}" style="color: #8B4513;">${config.supportEmail}</a></p>
+          <p style="margin: 8px 0 0;">${config.storeName} | Handcrafted with love</p>
         </div>
       </div>
     </body>
@@ -1023,6 +1198,7 @@ export {
   sendEmailViaResend,
   buildOrderConfirmationHtml,
   buildShippingUpdateHtml,
+  buildOrderStatusUpdateHtml,
   buildDropLaunchHtml,
   buildNewsletterVerificationHtml,
   buildNewsletterEmailHtml,

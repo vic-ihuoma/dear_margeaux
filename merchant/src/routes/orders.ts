@@ -5,7 +5,7 @@ import { authMiddleware, adminOnly } from '../middleware/auth';
 import { ApiError, uuid, now, generateOrderNumber, type Env, type AuthContext } from '../types';
 import { validateDiscount, calculateDiscount, type Discount } from './discounts';
 import { dispatchWebhooks, type WebhookEventType } from '../lib/webhooks';
-import { sendShippingUpdateEmail } from '../lib/notifications';
+import { sendShippingUpdateEmail, sendOrderStatusUpdateEmail } from '../lib/notifications';
 import { isValidISODate } from '../lib/validation';
 
 // ============================================================
@@ -295,37 +295,58 @@ ordersRoutes.patch('/:orderId', async (c) => {
       previous_status: order.status,
     });
 
+    // Prepare common order data for emails
+    const orderEmailData = {
+      id: updated.id,
+      number: updated.number,
+      customer_email: updated.customer_email,
+      shipping_name: updated.shipping_name,
+      ship_to: updated.ship_to,
+      subtotal_cents: updated.subtotal_cents,
+      tax_cents: updated.tax_cents,
+      shipping_cents: updated.shipping_cents,
+      discount_amount_cents: updated.discount_amount_cents ?? undefined,
+      total_cents: updated.total_cents,
+    };
+
+    const orderItemsData = orderItems.map((i) => ({
+      sku: i.sku,
+      title: i.title,
+      qty: i.qty,
+      unit_price_cents: i.unit_price_cents,
+      image_url: null,
+      variant_title: null,
+    }));
+
     // Send shipping update email when status changes to shipped (non-blocking)
     if (status === 'shipped') {
       c.executionCtx.waitUntil(
-        sendShippingUpdateEmail(
+        sendShippingUpdateEmail(c.env, store.id, orderEmailData, orderItemsData, {
+          tracking_number: tracking_number || updated.tracking_number,
+          tracking_url: tracking_url || updated.tracking_url,
+        }).catch((err: unknown) => console.error('Shipping update email failed:', err))
+      );
+    }
+
+    // Send order status update email for processing and delivered statuses (non-blocking)
+    if (status === 'processing') {
+      c.executionCtx.waitUntil(
+        sendOrderStatusUpdateEmail(
           c.env,
           store.id,
-          {
-            id: updated.id,
-            number: updated.number,
-            customer_email: updated.customer_email,
-            shipping_name: updated.shipping_name,
-            ship_to: updated.ship_to,
-            subtotal_cents: updated.subtotal_cents,
-            tax_cents: updated.tax_cents,
-            shipping_cents: updated.shipping_cents,
-            discount_amount_cents: updated.discount_amount_cents ?? undefined,
-            total_cents: updated.total_cents,
-          },
-          orderItems.map((i) => ({
-            sku: i.sku,
-            title: i.title,
-            qty: i.qty,
-            unit_price_cents: i.unit_price_cents,
-            image_url: null,
-            variant_title: null,
-          })),
-          {
-            tracking_number: tracking_number || updated.tracking_number,
-            tracking_url: tracking_url || updated.tracking_url,
-          }
-        ).catch((err: unknown) => console.error('Shipping update email failed:', err))
+          orderEmailData,
+          orderItemsData,
+          'processing'
+        ).catch((err: unknown) => console.error('Processing status email failed:', err))
+      );
+    }
+
+    if (status === 'delivered') {
+      c.executionCtx.waitUntil(
+        sendOrderStatusUpdateEmail(c.env, store.id, orderEmailData, orderItemsData, 'delivered', {
+          tracking_number: tracking_number || updated.tracking_number,
+          tracking_url: tracking_url || updated.tracking_url,
+        }).catch((err: unknown) => console.error('Delivered status email failed:', err))
       );
     }
   }

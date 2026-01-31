@@ -49,17 +49,20 @@ vi.mock('../../src/lib/email-rate-limiter', () => ({
 import {
   sendOrderConfirmationEmail,
   sendShippingUpdateEmail,
+  sendOrderStatusUpdateEmail,
   sendDropLaunchEmails,
   sendEmailViaResend,
   sendNewsletterVerificationEmail,
   buildOrderConfirmationHtml,
   buildShippingUpdateHtml,
+  buildOrderStatusUpdateHtml,
   buildDropLaunchHtml,
   buildNewsletterVerificationHtml,
   type OrderData,
   type OrderItemData,
   type DropData,
   type TrackingInfo,
+  type OrderStatusType,
 } from '../../src/lib/notifications';
 
 // ============================================================
@@ -551,6 +554,392 @@ describe('sendDropLaunchEmails', () => {
     expect(result.total).toBe(15);
     expect(result.success).toBe(15);
     expect(mockFetch).toHaveBeenCalledTimes(15);
+  });
+});
+
+// ============================================================
+// TESTS: sendOrderStatusUpdateEmail (admin-11)
+// ============================================================
+
+describe('sendOrderStatusUpdateEmail', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('sends processing status email successfully', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendSuccess('status-msg-123'));
+
+    const env = createMockEnv(true);
+    const order = createMockOrder();
+    const items = createMockOrderItems();
+
+    const result = await sendOrderStatusUpdateEmail(env, 'store-1', order, items, 'processing');
+
+    expect(result.success).toBe(true);
+    expect(result.messageId).toBe('status-msg-123');
+  });
+
+  it('sends delivered status email successfully', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendSuccess('delivered-msg-456'));
+
+    const env = createMockEnv(true);
+    const order = createMockOrder();
+    const items = createMockOrderItems();
+    const tracking = createMockTrackingInfo();
+
+    const result = await sendOrderStatusUpdateEmail(
+      env,
+      'store-1',
+      order,
+      items,
+      'delivered',
+      tracking
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.messageId).toBe('delivered-msg-456');
+  });
+
+  it('sets correct subject line for processing status', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendSuccess());
+
+    const env = createMockEnv(true);
+    const order = createMockOrder({ number: 'ORD-TEST-001' });
+    const items = createMockOrderItems();
+
+    await sendOrderStatusUpdateEmail(env, 'store-1', order, items, 'processing');
+
+    const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(requestBody.subject).toBe('Your Order Is Being Prepared - #ORD-TEST-001');
+  });
+
+  it('sets correct subject line for delivered status', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendSuccess());
+
+    const env = createMockEnv(true);
+    const order = createMockOrder({ number: 'ORD-TEST-002' });
+    const items = createMockOrderItems();
+
+    await sendOrderStatusUpdateEmail(env, 'store-1', order, items, 'delivered');
+
+    const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(requestBody.subject).toBe('Your Order Has Been Delivered - #ORD-TEST-002');
+  });
+
+  it('includes order items in email body', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendSuccess());
+
+    const env = createMockEnv(true);
+    const order = createMockOrder();
+    const items = createMockOrderItems();
+
+    await sendOrderStatusUpdateEmail(env, 'store-1', order, items, 'processing');
+
+    const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(requestBody.html).toContain('Vintage Dress');
+    expect(requestBody.html).toContain('Handmade Scarf');
+  });
+
+  it('includes tracking info for delivered status', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendSuccess());
+
+    const env = createMockEnv(true);
+    const order = createMockOrder();
+    const items = createMockOrderItems();
+    const tracking = createMockTrackingInfo({
+      tracking_number: 'TRACK-12345',
+      tracking_url: 'https://track.example.com/12345',
+    });
+
+    await sendOrderStatusUpdateEmail(env, 'store-1', order, items, 'delivered', tracking);
+
+    const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(requestBody.html).toContain('TRACK-12345');
+    expect(requestBody.html).toContain('https://track.example.com/12345');
+  });
+
+  it('handles missing tracking info for delivered status', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendSuccess());
+
+    const env = createMockEnv(true);
+    const order = createMockOrder();
+    const items = createMockOrderItems();
+
+    const result = await sendOrderStatusUpdateEmail(env, 'store-1', order, items, 'delivered');
+
+    expect(result.success).toBe(true);
+  });
+
+  it('returns error on failed send', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendError('Rate limit exceeded', 429));
+
+    const env = createMockEnv(true);
+    const result = await sendOrderStatusUpdateEmail(
+      env,
+      'store-1',
+      createMockOrder(),
+      createMockOrderItems(),
+      'processing'
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('Rate limit exceeded');
+  });
+
+  it('uses customer email as recipient', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendSuccess());
+
+    const env = createMockEnv(true);
+    const order = createMockOrder({ customer_email: 'customer@test.com' });
+    const items = createMockOrderItems();
+
+    await sendOrderStatusUpdateEmail(env, 'store-1', order, items, 'processing');
+
+    const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(requestBody.to).toBe('customer@test.com');
+  });
+
+  it('queues email for retry with order_status_update type on failure', async () => {
+    mockFetch.mockImplementationOnce(() => createMockResendError('Service unavailable', 503));
+
+    const env = createMockEnv(true);
+    await sendOrderStatusUpdateEmail(
+      env,
+      'store-1',
+      createMockOrder({ id: 'order-xyz', number: 'ORD-123' }),
+      createMockOrderItems(),
+      'processing'
+    );
+
+    const queueCall = mockDbRun.mock.calls.find((call) =>
+      call[0].includes('INSERT INTO email_queue')
+    );
+    expect(queueCall).toBeDefined();
+    if (queueCall) {
+      expect(queueCall[1]).toContain('order_status_update');
+    }
+  });
+});
+
+// ============================================================
+// TESTS: buildOrderStatusUpdateHtml (admin-11)
+// ============================================================
+
+describe('buildOrderStatusUpdateHtml', () => {
+  it('includes customer name in greeting', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Jane Smith',
+      orderNumber: 'ORD-001',
+      status: 'processing',
+    });
+
+    expect(html).toContain('Jane Smith');
+  });
+
+  it('includes order number', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-SPECIAL-42',
+      status: 'processing',
+    });
+
+    expect(html).toContain('ORD-SPECIAL-42');
+  });
+
+  it('shows correct title for processing status', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-001',
+      status: 'processing',
+    });
+
+    expect(html).toContain('Your Order Is Being Prepared');
+  });
+
+  it('shows correct title for delivered status', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-001',
+      status: 'delivered',
+    });
+
+    expect(html).toContain('Your Order Has Been Delivered');
+  });
+
+  it('shows correct icon for processing status', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-001',
+      status: 'processing',
+    });
+
+    expect(html).toContain('⚙️');
+  });
+
+  it('shows correct icon for delivered status', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-001',
+      status: 'delivered',
+    });
+
+    expect(html).toContain('✅');
+  });
+
+  it('includes order items when provided', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-001',
+      status: 'processing',
+      items: [
+        { title: 'Luxury Bag', variantTitle: 'Black', quantity: 1 },
+        { title: 'Silk Scarf', quantity: 2 },
+      ],
+    });
+
+    expect(html).toContain('Luxury Bag');
+    expect(html).toContain('Black');
+    expect(html).toContain('Silk Scarf');
+    expect(html).toContain('Qty: 1');
+    expect(html).toContain('Qty: 2');
+  });
+
+  it('includes tracking info for delivered status', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-001',
+      status: 'delivered',
+      trackingNumber: 'TRACK-999',
+      trackingUrl: 'https://carrier.com/track/999',
+    });
+
+    expect(html).toContain('TRACK-999');
+    expect(html).toContain('https://carrier.com/track/999');
+    expect(html).toContain('View Tracking Details');
+  });
+
+  it('does not show tracking info for processing status', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-001',
+      status: 'processing',
+      trackingNumber: 'TRACK-999',
+      trackingUrl: 'https://carrier.com/track/999',
+    });
+
+    expect(html).not.toContain('Tracking Number');
+    expect(html).not.toContain('View Tracking Details');
+  });
+
+  it("includes what's next tips for processing status", () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-001',
+      status: 'processing',
+    });
+
+    expect(html).toContain("What's Next?");
+    expect(html).toContain('Packing');
+    expect(html).toContain('Updates');
+    expect(html).toContain("You'll receive an email when your order ships");
+  });
+
+  it("includes what's next tips for delivered status", () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-001',
+      status: 'delivered',
+    });
+
+    expect(html).toContain("What's Next?");
+    expect(html).toContain('Share');
+    expect(html).toContain('Review');
+    expect(html).toContain('Returns');
+  });
+
+  it('includes View Order Details button', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-001',
+      status: 'processing',
+    });
+
+    expect(html).toContain('View Order Details');
+    expect(html).toContain('href="https://dearmargeaux.com/account/orders/ORD-001"');
+  });
+
+  it('uses brand color #8B4513 for header', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-001',
+      status: 'processing',
+    });
+
+    expect(html).toContain('#8B4513');
+  });
+
+  it('uses amber color for processing status banner', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-001',
+      status: 'processing',
+    });
+
+    expect(html).toContain('#fef3c7'); // amber-100
+  });
+
+  it('uses green color for delivered status banner', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-001',
+      status: 'delivered',
+    });
+
+    expect(html).toContain('#dcfce7'); // green-100
+  });
+
+  it('includes support email in footer', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-001',
+      status: 'processing',
+    });
+
+    expect(html).toContain('hello@dearmargeaux.com');
+  });
+
+  it('escapes HTML in customer name', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: '<script>alert("xss")</script>',
+      orderNumber: 'ORD-001',
+      status: 'processing',
+    });
+
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&lt;script&gt;');
+  });
+
+  it('escapes HTML in order number', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: '<img src=x onerror=alert(1)>',
+      status: 'processing',
+    });
+
+    expect(html).not.toContain('<img src=x');
+    expect(html).toContain('&lt;img');
+  });
+
+  it('escapes HTML in item titles', () => {
+    const html = buildOrderStatusUpdateHtml({
+      customerName: 'Test',
+      orderNumber: 'ORD-001',
+      status: 'processing',
+      items: [{ title: '<script>evil()</script>', quantity: 1 }],
+    });
+
+    expect(html).not.toContain('<script>evil()');
+    expect(html).toContain('&lt;script&gt;');
   });
 });
 
