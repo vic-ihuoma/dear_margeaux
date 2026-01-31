@@ -772,3 +772,43 @@ export interface CustomerOrderItem {
   unit_price_cents: number;
   image_url: string | null;
 }
+
+// ============================================================================
+// Email Send Types
+// ============================================================================
+
+/** Email send status */
+export type EmailSendStatus = 'sent' | 'failed' | 'queued';
+
+/** Email types that can be sent */
+export type EmailSendType =
+  | 'order_confirmation'
+  | 'shipping_update'
+  | 'order_status_update'
+  | 'drop_launch'
+  | 'newsletter_verification'
+  | 'newsletter';
+
+/** Email send log record */
+export interface EmailSend {
+  id: string;
+  email_type: EmailSendType;
+  recipient: string;
+  subject: string;
+  status: EmailSendStatus;
+  error_message: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: ISODateString;
+}
+
+/** Parameters for listing email sends */
+export interface ListEmailSendsParams extends PaginationParams {
+  /** Filter by email type */
+  email_type?: EmailSendType;
+  /** Filter by status */
+  status?: EmailSendStatus;
+  /** Filter by date range start */
+  start_date?: ISODateString;
+  /** Filter by date range end */
+  end_date?: ISODateString;
+}

@@ -78,6 +78,9 @@ import type {
   ProductCountParams,
   OrderCountParams,
   InventoryCountParams,
+  // Email Sends
+  EmailSend,
+  ListEmailSendsParams,
 } from './types.js';
 
 // ============================================================================
@@ -1204,5 +1207,35 @@ export class MerchantClient {
     return this.request<CountResponse>('GET', '/counts/inventory', {
       params: params ? { ...params } : undefined,
     });
+  }
+
+  // ==========================================================================
+  // Email Sends
+  // ==========================================================================
+
+  /**
+   * List email sends with pagination and filters (admin only)
+   */
+  async getEmailSends(
+    params?: ListEmailSendsParams
+  ): Promise<PaginatedResponse<EmailSend>> {
+    return this.request<PaginatedResponse<EmailSend>>('GET', '/email-sends', {
+      params: params ? { ...params } : undefined,
+    });
+  }
+
+  /**
+   * Get email send statistics (admin only)
+   */
+  async getEmailSendStats(): Promise<{
+    total: number;
+    by_status: Record<string, number>;
+    by_type: Record<string, number>;
+  }> {
+    return this.request<{
+      total: number;
+      by_status: Record<string, number>;
+      by_type: Record<string, number>;
+    }>('GET', '/email-sends/stats');
   }
 }

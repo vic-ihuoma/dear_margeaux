@@ -466,6 +466,50 @@ interface ResendResponse {
   error?: { message: string; name: string };
 }
 
+// Type for email send status
+type EmailSendStatus = 'sent' | 'failed' | 'queued';
+
+/**
+ * Log email send to database for admin visibility
+ */
+async function logEmailSend(
+  db: ReturnType<typeof getDb>,
+  params: {
+    storeId: string;
+    emailType: EmailType;
+    recipient: string;
+    subject: string;
+    status: EmailSendStatus;
+    errorMessage?: string;
+    metadata?: Record<string, unknown>;
+  }
+): Promise<void> {
+  try {
+    const id = `es_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    const currentTime = now();
+
+    await db.run(
+      `INSERT INTO email_sends (id, store_id, email_type, recipient, subject, status, error_message, metadata, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        params.storeId,
+        params.emailType,
+        params.recipient,
+        params.subject,
+        params.status,
+        params.errorMessage || null,
+        params.metadata ? JSON.stringify(params.metadata) : null,
+        currentTime,
+      ]
+    );
+  } catch (error) {
+    // Don't fail the email send if logging fails
+    // eslint-disable-next-line no-console
+    console.error('[EMAIL_SEND_LOG] Failed to log email send:', error);
+  }
+}
+
 async function sendEmailViaResend(
   env: Env,
   options: ResendEmailOptions
@@ -533,6 +577,15 @@ async function sendEmailViaResend(
       // Increment usage counter after successful send
       if (options.queueOnFailure?.storeId) {
         await incrementUsage(db, options.queueOnFailure.storeId);
+        // Log successful email send
+        await logEmailSend(db, {
+          storeId: options.queueOnFailure.storeId,
+          emailType: options.queueOnFailure.emailType,
+          recipient,
+          subject: options.subject,
+          status: 'sent',
+          metadata: options.queueOnFailure.metadata,
+        });
       }
       return {
         success: true,
@@ -555,6 +608,16 @@ async function sendEmailViaResend(
       html: options.html,
       metadata: options.queueOnFailure.metadata,
       error: result.error || 'Unknown error',
+    });
+    // Log failed email send (queued for retry)
+    await logEmailSend(db, {
+      storeId: options.queueOnFailure.storeId,
+      emailType: options.queueOnFailure.emailType,
+      recipient,
+      subject: options.subject,
+      status: 'failed',
+      errorMessage: result.error,
+      metadata: options.queueOnFailure.metadata,
     });
   }
 
