@@ -278,3 +278,38 @@ Implemented reorder point threshold for variants with admin nav badge and reorde
 
 ### Next Steps
 None for this task.
+
+
+## 2026-01-31: admin-9 - Add order notes/comments
+
+### Task Completed
+Implemented order notes/comments feature allowing admins to add internal notes to orders.
+
+### Key Decisions
+- Created order_notes table with order_id, admin_id, admin_name, content, timestamps
+- Added ON DELETE CASCADE to order_id foreign key for automatic cleanup
+- Permission model: admins can only edit/delete their own notes (enforced at API level)
+- Notes displayed with "(edited)" indicator when updated_at differs from created_at
+- Used existing Lucia session for admin identification (id, name from Astro.locals.user)
+- Notes fetched and displayed in descending chronological order
+
+### Files Changed
+- merchant/schema-d1.sql - Added order_notes table with indexes
+- merchant/schema-postgres.sql - Added order_notes table with UUID types and indexes
+- packages/api/src/types.ts - Added OrderNote, CreateOrderNoteParams, UpdateOrderNoteParams types
+- packages/api/src/merchant-client.ts - Added getOrderNotes, createOrderNote, updateOrderNote, deleteOrderNote methods
+- merchant/src/routes/orders.ts - Added 4 order notes endpoints (GET, POST, PATCH, DELETE) with permission checks
+- apps/admin/src/pages/api/orders/[id]/notes/index.ts - New admin API for GET/POST notes
+- apps/admin/src/pages/api/orders/[id]/notes/[noteId].ts - New admin API for PATCH/DELETE notes
+- apps/admin/src/components/OrderNotes.tsx - New React component with full CRUD UI
+- apps/admin/src/pages/orders/[id].astro - Added OrderNotes component to order detail page
+- apps/admin/tests/api/order-notes.test.ts - 20+ tests for admin API routes
+- merchant/tests/routes/order-notes.test.ts - Tests for merchant service routes
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 132 warnings - all pre-existing)
+- Tests: PASSED (444 admin tests, 372 storefront tests)
+
+### Next Steps
+None for this task.
