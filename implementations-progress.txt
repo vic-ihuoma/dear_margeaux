@@ -1,0 +1,38 @@
+# Implementations Progress Log
+# This file tracks progress for implementations.json tasks
+# Each iteration appends notes here to maintain context across runs
+
+## 2026-01-31: assets-10 - Update blog content to use R2 blog images
+
+Completed: Added R2 blog image URL to about-dear-margeaux.mdx frontmatter
+
+Files changed:
+- apps/storefront/src/content/blog/about-dear-margeaux.mdx (added image field)
+- apps/storefront/tests/content/blog-images.test.ts (new test file)
+- implementations.json (set passes: true)
+
+Key decisions:
+- Used R2 public URL: https://pub-bf88a85e013c44b6a3a965d48812aa90.r2.dev/blog/blog-about.webp
+- Alt text handled by BlogPost.astro layout using post title
+- Created unit tests to verify frontmatter image field, R2 URL pattern, and alt text implementation
+
+Visual verification: Blog listing shows image, post page displays featured image correctly
+
+
+## 2026-01-31: assets-11 - Update lookbook content to use R2 lookbook images
+
+Completed: Updated lookbook images array to use R2 URLs
+
+Files changed:
+- apps/storefront/src/content/lookbook/spring-2026.mdx (updated images array)
+- apps/storefront/tests/content/lookbook-images.test.ts (new test file)
+- implementations.json (set passes: true)
+
+Key decisions:
+- Used R2 public URL: https://pub-bf88a85e013c44b6a3a965d48812aa90.r2.dev/lookbook/
+- Mapped lookbook-1.webp and lookbook-2.webp to spring-2026 lookbook
+- Alt text handled by Lookbook.astro layout using title in format: "${title} - Hero" and "${title} - Image ${index}"
+- Created unit tests verifying images array, R2 URL pattern, WebP format, and alt text implementation
+
+Visual verification: Lookbook listing shows entry, detail page displays both R2 images in hero and gallery
+
