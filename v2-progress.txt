@@ -455,3 +455,31 @@ Implemented email sends tracking and notifications view for admin panel visibili
 
 ### Next Steps
 None for this task.
+
+
+## 2026-01-31: admin-15 - Add blog image upload to R2
+
+### Task Completed
+Implemented image upload functionality in the MDXEditor, allowing users to upload images directly to R2 storage and insert them as markdown.
+
+### Key Decisions
+- Added optional onImageUpload prop to MDXEditor - image button only shows when handler is provided
+- Used existing /api/images/upload endpoint for R2 uploads (consistent with product images)
+- Generate alt text automatically from filename (converts dashes/underscores to spaces)
+- Insert markdown image syntax `![alt](url)` for maximum compatibility
+- Added image rendering to markdown preview with URL validation for XSS prevention
+- Separated image button from text formatting with a visual divider for clarity
+
+### Files Changed
+- apps/admin/src/components/MDXEditor.tsx - Added onImageUpload prop, image upload button, file validation, loading state, error display, and image preview in markdown
+- apps/admin/src/components/BlogEditor.tsx - Added uploadImageToR2 helper function and passed to MDXEditor
+- apps/admin/src/components/CreateBlog.tsx - Added uploadImageToR2 helper function and passed to MDXEditor
+- apps/admin/tests/components/MDXEditor.test.ts - 37 new tests for image upload functionality
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 144 warnings - all pre-existing)
+- Tests: PASSED (526 admin tests, 372 storefront tests)
+
+### Next Steps
+None for this task.
