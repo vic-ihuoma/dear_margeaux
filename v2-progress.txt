@@ -197,3 +197,41 @@ Implemented inventory history/audit log feature with admin tracking for inventor
 ### Next Steps
 None for this task.
 
+
+## 2026-01-31: admin-6 - Add low stock alerts configuration
+
+### Task Completed
+Implemented configurable low stock threshold per variant to replace hardcoded values.
+
+### Key Decisions
+- Added low_stock_threshold INTEGER column to variants table (nullable, NULL means use default of 5)
+- Used COALESCE pattern in SQL queries: COALESCE(v.low_stock_threshold, 5) for comparison
+- Added threshold input to VariantForm with validation (non-negative integer only)
+- Updated inventory page to use configurable threshold for stock status highlighting
+- Computed itemsNeedingAttention variable in page frontmatter to avoid Astro JSX fragment issues
+- Email alerts mentioned in requirements are optional enhancement (not implemented)
+
+### Files Changed
+- merchant/schema-d1.sql - Added low_stock_threshold INTEGER column to variants table
+- merchant/schema-postgres.sql - Added low_stock_threshold INTEGER column to variants table
+- packages/api/src/types.ts - Added low_stock_threshold to Variant, InventoryItem, CreateVariantParams, UpdateVariantParams
+- merchant/src/routes/catalog.ts - Added low_stock_threshold to variant CRUD operations with validation
+- merchant/src/routes/inventory.ts - Added low_stock_threshold to inventory responses, updated low_stock filter to use configurable threshold
+- apps/admin/src/components/VariantForm.tsx - Added threshold input with validation, helper text, placeholder
+- apps/admin/src/pages/inventory/index.astro - Updated getStockStatus to use configurable threshold, added highlighting logic
+- apps/admin/tests/components/LowStockAlerts.test.ts - 27 comprehensive tests for admin-6 functionality
+- apps/admin/tests/components/VariantForm.test.ts - Added 10 tests for threshold input
+- apps/admin/tests/api/inventory.test.ts - Updated mock data with low_stock_threshold
+- apps/admin/tests/api/products.test.ts - Updated mock variant with low_stock_threshold
+- apps/admin/tests/api/products-duplicate.test.ts - Updated mock variants with low_stock_threshold
+- apps/admin/tests/components/ProductEditor.test.ts - Updated mock variant with low_stock_threshold
+- apps/admin/tests/components/ProductListBulk.test.ts - Updated mock variants with low_stock_threshold
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, warnings are pre-existing)
+- Tests: PASSED (all test suites)
+
+### Next Steps
+None for this task.
+
