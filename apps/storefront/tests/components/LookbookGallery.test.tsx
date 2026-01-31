@@ -290,4 +290,77 @@ describe('LookbookGallery', () => {
       expect(container.querySelector('section')).not.toBeInTheDocument();
     });
   });
+
+  describe('lazy loading', () => {
+    it('images have loading=lazy attribute', () => {
+      render(<LookbookGallery images={mockImages} title="Spring Collection" />);
+
+      const images = screen.getAllByRole('img');
+      images.forEach((img) => {
+        expect(img).toHaveAttribute('loading', 'lazy');
+      });
+    });
+
+    it('shows skeleton placeholder for images before they load', () => {
+      render(<LookbookGallery images={mockImages} title="Spring Collection" />);
+
+      // Each image container should have a skeleton element
+      const skeletons = document.querySelectorAll('.animate-pulse');
+      expect(skeletons.length).toBeGreaterThan(0);
+    });
+
+    it('hides skeleton when image loads', () => {
+      render(<LookbookGallery images={mockImages} title="Spring Collection" />);
+
+      // Get first image and simulate load event
+      const firstImage = screen.getAllByRole('img')[0];
+      fireEvent.load(firstImage);
+
+      // Skeleton for loaded image should be hidden (opacity-0)
+      const imageContainer = firstImage.closest('.relative');
+      const skeleton = imageContainer?.querySelector('.animate-pulse');
+      expect(skeleton).toHaveClass('opacity-0');
+    });
+
+    it('images are observed by IntersectionObserver', () => {
+      render(<LookbookGallery images={mockImages} title="Spring Collection" />);
+
+      // With the mock IntersectionObserver, images are immediately "visible"
+      // so they should have src attributes set
+      const images = screen.getAllByRole('img');
+      images.forEach((img, index) => {
+        expect(img).toHaveAttribute('src', mockImages[index].url);
+      });
+    });
+
+    it('image containers have data-loaded attribute when observed', () => {
+      render(<LookbookGallery images={mockImages} title="Spring Collection" />);
+
+      // The mock IntersectionObserver calls observe which sets data-loaded
+      const containers = document.querySelectorAll('[data-loaded]');
+      expect(containers.length).toBe(mockImages.length);
+    });
+
+    it('skeleton has correct aspect ratio matching image container', () => {
+      render(<LookbookGallery images={mockImages} title="Spring Collection" />);
+
+      // Find skeleton elements
+      const skeletons = document.querySelectorAll('.animate-pulse');
+
+      // Verify skeletons exist within aspect ratio containers
+      skeletons.forEach((skeleton) => {
+        const aspectContainer = skeleton.closest('[class*="aspect-"]');
+        expect(aspectContainer).toBeInTheDocument();
+      });
+    });
+
+    it('images have data-src attribute for fallback', () => {
+      render(<LookbookGallery images={mockImages} title="Spring Collection" />);
+
+      const images = screen.getAllByRole('img');
+      images.forEach((img, index) => {
+        expect(img).toHaveAttribute('data-src', mockImages[index].url);
+      });
+    });
+  });
 });
