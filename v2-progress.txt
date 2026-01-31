@@ -575,3 +575,31 @@ Implemented real-time WebSocket updates for the admin dashboard using Cloudflare
 
 ### Next Steps
 None for this task.
+
+
+## 2026-01-31: content-1 - Add lookbook image lightbox
+
+### Task Completed
+Integrated ImageLightbox component into lookbook gallery pages for full-screen image viewing with navigation.
+
+### Key Decisions
+- Created LookbookGallery React component that wraps gallery images with click handlers
+- Reused existing ImageLightbox component (already well-tested with 20+ tests)
+- Added client:load hydration directive for immediate interactivity
+- Images passed to LookbookGallery with pre-computed alt text for accessibility
+- Gallery includes loading="lazy" attribute for performance (sets up content-2 task)
+
+### Files Changed
+- apps/storefront/src/components/LookbookGallery.tsx - New React component wrapping gallery with lightbox integration
+- apps/storefront/src/layouts/Lookbook.astro - Updated to import and use LookbookGallery with client:load
+- apps/storefront/tests/components/LookbookGallery.test.tsx - 19 tests covering all interactions
+- apps/storefront/tests/content/lookbook-images.test.ts - Updated test to reflect new alt text location
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, ~290 warnings - all pre-existing)
+- Tests: PASSED (391 storefront tests, 564 admin tests)
+- Visual: Not executed (task has visual tests but deferred)
+
+### Next Steps
+None for this task.
