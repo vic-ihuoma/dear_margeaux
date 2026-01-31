@@ -659,4 +659,186 @@ function formatOrder(order: OrderRow, items: FormatOrderItem[]) {
   };
 }
 
+// ============================================================
+// ORDER NOTES ROUTES
+// ============================================================
+
+interface OrderNoteRow {
+  id: string;
+  order_id: string;
+  admin_id: string;
+  admin_name: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// GET /v1/orders/:orderId/notes
+ordersRoutes.get('/:orderId/notes', async (c) => {
+  const orderId = c.req.param('orderId');
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+
+  // Verify order exists and belongs to this store
+  const [order] = await db.query<OrderRow>(`SELECT id FROM orders WHERE id = ? AND store_id = ?`, [
+    orderId,
+    store.id,
+  ]);
+  if (!order) throw ApiError.notFound('Order not found');
+
+  const notes = await db.query<OrderNoteRow>(
+    `SELECT * FROM order_notes WHERE order_id = ? ORDER BY created_at DESC`,
+    [orderId]
+  );
+
+  return c.json({
+    items: notes.map((note) => ({
+      id: note.id,
+      order_id: note.order_id,
+      admin_id: note.admin_id,
+      admin_name: note.admin_name,
+      content: note.content,
+      created_at: note.created_at,
+      updated_at: note.updated_at,
+    })),
+  });
+});
+
+// POST /v1/orders/:orderId/notes
+ordersRoutes.post('/:orderId/notes', async (c) => {
+  const orderId = c.req.param('orderId');
+  const body = await c.req.json().catch(() => ({}));
+  const { content, admin_id, admin_name } = body;
+
+  if (!content || typeof content !== 'string' || content.trim().length === 0) {
+    throw ApiError.invalidRequest('content is required');
+  }
+  if (!admin_id || typeof admin_id !== 'string') {
+    throw ApiError.invalidRequest('admin_id is required');
+  }
+  if (!admin_name || typeof admin_name !== 'string') {
+    throw ApiError.invalidRequest('admin_name is required');
+  }
+
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+
+  // Verify order exists and belongs to this store
+  const [order] = await db.query<OrderRow>(`SELECT id FROM orders WHERE id = ? AND store_id = ?`, [
+    orderId,
+    store.id,
+  ]);
+  if (!order) throw ApiError.notFound('Order not found');
+
+  const noteId = uuid();
+  const timestamp = now();
+
+  await db.run(
+    `INSERT INTO order_notes (id, order_id, admin_id, admin_name, content, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [noteId, orderId, admin_id, admin_name, content.trim(), timestamp, timestamp]
+  );
+
+  return c.json({
+    id: noteId,
+    order_id: orderId,
+    admin_id,
+    admin_name,
+    content: content.trim(),
+    created_at: timestamp,
+    updated_at: timestamp,
+  });
+});
+
+// PATCH /v1/orders/:orderId/notes/:noteId
+ordersRoutes.patch('/:orderId/notes/:noteId', async (c) => {
+  const orderId = c.req.param('orderId');
+  const noteId = c.req.param('noteId');
+  const body = await c.req.json().catch(() => ({}));
+  const { content, admin_id } = body;
+
+  if (!content || typeof content !== 'string' || content.trim().length === 0) {
+    throw ApiError.invalidRequest('content is required');
+  }
+  if (!admin_id || typeof admin_id !== 'string') {
+    throw ApiError.invalidRequest('admin_id is required for permission check');
+  }
+
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+
+  // Verify order exists and belongs to this store
+  const [order] = await db.query<OrderRow>(`SELECT id FROM orders WHERE id = ? AND store_id = ?`, [
+    orderId,
+    store.id,
+  ]);
+  if (!order) throw ApiError.notFound('Order not found');
+
+  // Verify note exists
+  const [note] = await db.query<OrderNoteRow>(
+    `SELECT * FROM order_notes WHERE id = ? AND order_id = ?`,
+    [noteId, orderId]
+  );
+  if (!note) throw ApiError.notFound('Note not found');
+
+  // Check if admin owns the note
+  if (note.admin_id !== admin_id) {
+    throw ApiError.forbidden('Cannot edit notes created by other admins');
+  }
+
+  const timestamp = now();
+  await db.run(`UPDATE order_notes SET content = ?, updated_at = ? WHERE id = ?`, [
+    content.trim(),
+    timestamp,
+    noteId,
+  ]);
+
+  return c.json({
+    id: note.id,
+    order_id: note.order_id,
+    admin_id: note.admin_id,
+    admin_name: note.admin_name,
+    content: content.trim(),
+    created_at: note.created_at,
+    updated_at: timestamp,
+  });
+});
+
+// DELETE /v1/orders/:orderId/notes/:noteId
+ordersRoutes.delete('/:orderId/notes/:noteId', async (c) => {
+  const orderId = c.req.param('orderId');
+  const noteId = c.req.param('noteId');
+  const adminId = c.req.query('admin_id');
+
+  if (!adminId) {
+    throw ApiError.invalidRequest('admin_id query param is required for permission check');
+  }
+
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+
+  // Verify order exists and belongs to this store
+  const [order] = await db.query<OrderRow>(`SELECT id FROM orders WHERE id = ? AND store_id = ?`, [
+    orderId,
+    store.id,
+  ]);
+  if (!order) throw ApiError.notFound('Order not found');
+
+  // Verify note exists
+  const [note] = await db.query<OrderNoteRow>(
+    `SELECT * FROM order_notes WHERE id = ? AND order_id = ?`,
+    [noteId, orderId]
+  );
+  if (!note) throw ApiError.notFound('Note not found');
+
+  // Check if admin owns the note
+  if (note.admin_id !== adminId) {
+    throw ApiError.forbidden('Cannot delete notes created by other admins');
+  }
+
+  await db.run(`DELETE FROM order_notes WHERE id = ?`, [noteId]);
+
+  return c.json({ success: true });
+});
+
 export { ordersRoutes as orders };

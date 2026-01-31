@@ -153,6 +153,17 @@ CREATE TABLE IF NOT EXISTS refunds (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Order Notes (admin comments on orders)
+CREATE TABLE IF NOT EXISTS order_notes (
+  id TEXT PRIMARY KEY,
+  order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  admin_id TEXT NOT NULL,
+  admin_name TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Discounts
 CREATE TABLE IF NOT EXISTS discounts (
   id TEXT PRIMARY KEY,
@@ -304,4 +315,6 @@ CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_webhook ON webhook_deliveries(
 CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_status ON webhook_deliveries(status);
 CREATE INDEX IF NOT EXISTS idx_inventory_logs_store_sku ON inventory_logs(store_id, sku);
 CREATE INDEX IF NOT EXISTS idx_inventory_logs_created ON inventory_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_order_notes_order ON order_notes(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_notes_admin ON order_notes(admin_id);
 

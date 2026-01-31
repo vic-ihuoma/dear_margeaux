@@ -402,6 +402,29 @@ export interface RefundParams {
   reason?: string;
 }
 
+/** Order note (admin comment on an order) */
+export interface OrderNote {
+  id: string;
+  order_id: string;
+  admin_id: string;
+  admin_name: string;
+  content: string;
+  created_at: ISODateString;
+  updated_at: ISODateString;
+}
+
+/** Parameters for creating an order note */
+export interface CreateOrderNoteParams {
+  content: string;
+  admin_id: string;
+  admin_name: string;
+}
+
+/** Parameters for updating an order note */
+export interface UpdateOrderNoteParams {
+  content: string;
+}
+
 // ============================================================================
 // Customer Types
 // ============================================================================

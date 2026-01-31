@@ -167,6 +167,17 @@ CREATE TABLE refunds (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Order Notes (admin comments on orders)
+CREATE TABLE order_notes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  admin_id UUID NOT NULL,
+  admin_name TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- Events (webhook deduplication)
 CREATE TABLE events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -201,4 +212,6 @@ CREATE INDEX idx_discount_usage_order ON discount_usage(order_id);
 CREATE INDEX idx_discount_usage_customer ON discount_usage(discount_id, customer_email);
 CREATE INDEX idx_inventory_logs_store_sku ON inventory_logs(store_id, sku);
 CREATE INDEX idx_inventory_logs_created ON inventory_logs(created_at);
+CREATE INDEX idx_order_notes_order ON order_notes(order_id);
+CREATE INDEX idx_order_notes_admin ON order_notes(admin_id);
 

@@ -40,6 +40,9 @@ import type {
   UpdateOrderParams,
   RefundParams,
   ListOrdersParams,
+  OrderNote,
+  CreateOrderNoteParams,
+  UpdateOrderNoteParams,
   // Customers
   Customer,
   UpdateCustomerParams,
@@ -579,6 +582,62 @@ export class MerchantClient {
     return this.request<Order>('POST', `/orders/${id}/refund`, {
       body: data ?? {},
     });
+  }
+
+  /**
+   * Get notes for an order (admin only)
+   */
+  async getOrderNotes(orderId: string): Promise<{ items: OrderNote[] }> {
+    return this.request<{ items: OrderNote[] }>(
+      'GET',
+      `/orders/${orderId}/notes`
+    );
+  }
+
+  /**
+   * Create a note on an order (admin only)
+   */
+  async createOrderNote(
+    orderId: string,
+    data: CreateOrderNoteParams
+  ): Promise<OrderNote> {
+    return this.request<OrderNote>('POST', `/orders/${orderId}/notes`, {
+      body: data,
+    });
+  }
+
+  /**
+   * Update a note on an order (admin only)
+   * Can only edit own notes
+   */
+  async updateOrderNote(
+    orderId: string,
+    noteId: string,
+    data: UpdateOrderNoteParams & { admin_id: string }
+  ): Promise<OrderNote> {
+    return this.request<OrderNote>(
+      'PATCH',
+      `/orders/${orderId}/notes/${noteId}`,
+      {
+        body: data,
+      }
+    );
+  }
+
+  /**
+   * Delete a note on an order (admin only)
+   * Can only delete own notes
+   */
+  async deleteOrderNote(
+    orderId: string,
+    noteId: string,
+    adminId: string
+  ): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>(
+      'DELETE',
+      `/orders/${orderId}/notes/${noteId}`,
+      { params: { admin_id: adminId } }
+    );
   }
 
   // ==========================================================================

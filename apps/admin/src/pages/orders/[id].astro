@@ -2,10 +2,16 @@
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { getAdminMerchantClient, formatPrice } from '../../lib/merchant';
 import OrderStatusUpdater from '../../components/OrderStatusUpdater';
+import OrderNotes from '../../components/OrderNotes';
 import type { Order, OrderStatus } from '@dear-margeaux/api';
 
 const { id } = Astro.params;
 const client = getAdminMerchantClient();
+
+// Get admin info from session
+const user = Astro.locals.user;
+const adminId = user?.id || 'dev-admin';
+const adminName = user?.name || user?.email || 'Admin';
 
 let order: Order | null = null;
 let error: string | null = null;
@@ -326,6 +332,21 @@ function canUpdateStatus(order: Order): boolean {
                 </div>
               </div>
             )}
+
+            {/* Order Notes */}
+            <div class="bg-background-secondary rounded-xl border border-border shadow-sm overflow-hidden">
+              <div class="px-6 py-4 border-b border-border">
+                <h2 class="text-lg font-medium text-text-primary">Notes</h2>
+              </div>
+              <div class="p-6">
+                <OrderNotes
+                  client:load
+                  orderId={order.id}
+                  adminId={adminId}
+                  adminName={adminName}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Sidebar */}
