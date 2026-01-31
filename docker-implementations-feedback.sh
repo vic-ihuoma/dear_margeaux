@@ -36,17 +36,32 @@ for ((i=1; i<=$1; i++)); do
 TASK INSTRUCTIONS
 ========================================
 
-Go through implementations.json, for the first task that has passes as false,
-change its status to implementing, implement its test first then implement
-its features to pass the tests, and use agent-browser skill for visual
-testing if it requires.
+Go through implementations.json, for the first task that has passes as false.
+Implement the feature following TDD: write tests first, then implement.
 
-For each item we use pnpm. When the item and all its test passes, update
-passes to true for the item, then commit, run pnpm build and if all build
-passes then push that change.
+For each item we use pnpm. When ALL tests pass (unit AND visual), update
+passes to true, commit, run pnpm build, and push if build passes.
 
-Use pnpm dev to start all servers if needed and kill all servers after
-pushing an item.
+Use pnpm dev to start servers when needed. Kill all servers after pushing.
+
+========================================
+CRITICAL: VISUAL TESTING REQUIREMENTS
+========================================
+
+If the task has 'visual' tests in implementations.json, you MUST:
+
+1. Load the agent-browser skill and use it
+2. Start the dev server (pnpm dev)
+3. Execute EVERY visual test step listed
+4. Take screenshots as evidence for EACH verification step
+5. Save screenshots to screenshots/ directory with descriptive names
+6. Include screenshot filenames in implementations-progress.txt
+
+DO NOT mark 'passes': true if visual tests were not executed.
+DO NOT skip visual tests - they are MANDATORY, not optional.
+DO NOT write unit tests that just check file contents as a substitute.
+
+Visual test evidence is REQUIRED. No screenshots = task NOT complete.
 
 ========================================
 QUALITY EXPECTATIONS
@@ -71,10 +86,15 @@ WORKFLOW
    - TypeScript: pnpm typecheck (must pass with no errors)
    - Tests: pnpm test (must pass)
    - Lint: pnpm lint (must pass)
-   - Visual Tests: Use the agent-browser skill to verify UI changes
-     Start dev server, navigate to pages, take screenshots, verify elements
+   - Visual Tests: MANDATORY if task has visual tests in implementations.json
+     * Load agent-browser skill
+     * Start dev server: pnpm dev
+     * Execute EACH visual test step from the task
+     * Take screenshots as proof (save to screenshots/)
+     * Log screenshot filenames in implementations-progress.txt
    
    DO NOT commit if any feedback loop fails. Fix issues first.
+   DO NOT skip visual tests - they are required evidence of completion.
 
 3. Use appropriate skills when needed:
    - agent-browser: For visual testing, UI verification, screenshots
