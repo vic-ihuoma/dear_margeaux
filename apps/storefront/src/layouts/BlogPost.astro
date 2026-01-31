@@ -5,7 +5,12 @@ import Footer from '../components/Footer.astro';
 import CartDrawer from '../components/CartDrawer';
 import SEO from '../components/SEO.astro';
 import RelatedPosts from '../components/RelatedPosts.astro';
+import NewsletterForm from '../components/NewsletterForm';
 import type { BlogPost } from '../lib/blog';
+
+// API configuration for newsletter form
+const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL || '';
+const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY || '';
 
 interface Props {
   title: string;
@@ -336,17 +341,38 @@ const breadcrumbs = [
 
       <!-- Newsletter CTA -->
       <section class="py-12 md:py-16 bg-secondary">
-        <div class="container mx-auto px-4 max-w-4xl text-center">
-          <h2 class="text-2xl font-bold text-text mb-3">Enjoyed this post?</h2>
-          <p class="text-text-secondary max-w-md mx-auto mb-6">
-            Subscribe to get notified when we publish new articles
-          </p>
-          <a
-            href="/#newsletter"
-            class="inline-flex px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
-          >
-            Subscribe to Newsletter
-          </a>
+        <div class="container mx-auto px-4 max-w-xl">
+          <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold text-text mb-3">
+              Enjoyed this post?
+            </h2>
+            <p class="text-text-secondary">
+              Subscribe to get notified when we publish new articles
+            </p>
+          </div>
+          <div class="max-w-md mx-auto">
+            {
+              apiUrl && apiKey ? (
+                <NewsletterForm client:load apiUrl={apiUrl} apiKey={apiKey} />
+              ) : (
+                <form class="flex gap-2" id="blog-post-newsletter-form">
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Enter your email"
+                    class="flex-1 px-4 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow duration-normal"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    class="px-6 py-2 bg-primary text-text-inverse text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal flex-shrink-0"
+                  >
+                    Subscribe
+                  </button>
+                </form>
+              )
+            }
+          </div>
         </div>
       </section>
     </main>
