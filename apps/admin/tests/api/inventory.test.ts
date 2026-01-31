@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { InventoryItem } from '@dear-margeaux/api';
+import type { InventoryItem, InventoryLog } from '@dear-margeaux/api';
 
 // Mock the MerchantClient
 const mockAdjustInventory = vi.fn();
+const mockGetInventoryHistory = vi.fn();
 
 vi.mock('@dear-margeaux/api', () => ({
   MerchantClient: vi.fn().mockImplementation(() => ({
     adjustInventory: mockAdjustInventory,
+    getInventoryHistory: mockGetInventoryHistory,
   })),
 }));
 
@@ -109,6 +111,41 @@ describe('Inventory API Routes', () => {
       expect(mockAdjustInventory).toHaveBeenCalledWith('TEST-001', {
         delta: 10,
         reason: 'restock',
+        admin_id: undefined,
+        admin_name: undefined,
+      });
+    });
+
+    it('passes admin_id and admin_name when provided', async () => {
+      const adjustedItem = {
+        ...sampleInventoryItem,
+        on_hand: 110,
+        available: 110,
+      };
+      mockAdjustInventory.mockResolvedValueOnce(adjustedItem);
+
+      const { POST } =
+        await import('../../src/pages/api/inventory/[sku]/adjust.ts');
+
+      const context = createMockContext({
+        method: 'POST',
+        params: { sku: 'TEST-001' },
+        body: {
+          delta: 10,
+          reason: 'restock',
+          admin_id: 'admin-123',
+          admin_name: 'John Admin',
+        },
+      });
+
+      const response = await POST(context as any);
+
+      expect(response.status).toBe(200);
+      expect(mockAdjustInventory).toHaveBeenCalledWith('TEST-001', {
+        delta: 10,
+        reason: 'restock',
+        admin_id: 'admin-123',
+        admin_name: 'John Admin',
       });
     });
 
@@ -137,6 +174,8 @@ describe('Inventory API Routes', () => {
       expect(mockAdjustInventory).toHaveBeenCalledWith('TEST-001', {
         delta: -5,
         reason: 'correction',
+        admin_id: undefined,
+        admin_name: undefined,
       });
     });
 
@@ -163,6 +202,8 @@ describe('Inventory API Routes', () => {
       expect(mockAdjustInventory).toHaveBeenCalledWith('TEST-001', {
         delta: -2,
         reason: 'damaged',
+        admin_id: undefined,
+        admin_name: undefined,
       });
     });
 
@@ -189,6 +230,8 @@ describe('Inventory API Routes', () => {
       expect(mockAdjustInventory).toHaveBeenCalledWith('TEST-001', {
         delta: 1,
         reason: 'return',
+        admin_id: undefined,
+        admin_name: undefined,
       });
     });
 
@@ -299,6 +342,152 @@ describe('Inventory API Routes', () => {
 
       expect(response.status).toBe(400);
       expect(data.error).toBe('Cannot reduce inventory below zero');
+    });
+  });
+
+  describe('GET /api/inventory/:sku/history', () => {
+    // Sample history item
+    const sampleHistoryItem: InventoryLog = {
+      id: 'log-1',
+      sku: 'TEST-001',
+      delta: 10,
+      reason: 'restock',
+      admin_id: 'admin-123',
+      admin_name: 'John Admin',
+      created_at: '2026-01-18T10:00:00.000Z',
+    };
+
+    it('returns history for a SKU', async () => {
+      mockGetInventoryHistory.mockResolvedValueOnce({
+        items: [sampleHistoryItem],
+        pagination: { has_more: false, next_cursor: null },
+      });
+
+      const { GET } =
+        await import('../../src/pages/api/inventory/[sku]/history.ts');
+
+      const context = createMockContext({
+        url: 'http://localhost/api/inventory/TEST-001/history',
+        method: 'GET',
+        params: { sku: 'TEST-001' },
+      });
+
+      const response = await GET(context as any);
+      const data = await parseResponse(response);
+
+      expect(response.status).toBe(200);
+      expect(data.items).toHaveLength(1);
+      expect(data.items[0].delta).toBe(10);
+      expect(data.items[0].reason).toBe('restock');
+      expect(data.items[0].admin_name).toBe('John Admin');
+      expect(mockGetInventoryHistory).toHaveBeenCalledWith('TEST-001', {});
+    });
+
+    it('passes date filters to API', async () => {
+      mockGetInventoryHistory.mockResolvedValueOnce({
+        items: [sampleHistoryItem],
+        pagination: { has_more: false, next_cursor: null },
+      });
+
+      const { GET } =
+        await import('../../src/pages/api/inventory/[sku]/history.ts');
+
+      const context = createMockContext({
+        url: 'http://localhost/api/inventory/TEST-001/history?start_date=2026-01-01&end_date=2026-01-31',
+        method: 'GET',
+        params: { sku: 'TEST-001' },
+      });
+
+      const response = await GET(context as any);
+
+      expect(response.status).toBe(200);
+      expect(mockGetInventoryHistory).toHaveBeenCalledWith('TEST-001', {
+        start_date: '2026-01-01',
+        end_date: '2026-01-31',
+      });
+    });
+
+    it('passes pagination params to API', async () => {
+      mockGetInventoryHistory.mockResolvedValueOnce({
+        items: [sampleHistoryItem],
+        pagination: { has_more: true, next_cursor: '2026-01-18T09:00:00.000Z' },
+      });
+
+      const { GET } =
+        await import('../../src/pages/api/inventory/[sku]/history.ts');
+
+      const context = createMockContext({
+        url: 'http://localhost/api/inventory/TEST-001/history?limit=10&cursor=2026-01-18T11:00:00.000Z',
+        method: 'GET',
+        params: { sku: 'TEST-001' },
+      });
+
+      const response = await GET(context as any);
+      const data = await parseResponse(response);
+
+      expect(response.status).toBe(200);
+      expect(data.pagination.has_more).toBe(true);
+      expect(mockGetInventoryHistory).toHaveBeenCalledWith('TEST-001', {
+        limit: 10,
+        cursor: '2026-01-18T11:00:00.000Z',
+      });
+    });
+
+    it('returns 400 when SKU is missing', async () => {
+      const { GET } =
+        await import('../../src/pages/api/inventory/[sku]/history.ts');
+
+      const context = createMockContext({
+        url: 'http://localhost/api/inventory//history',
+        method: 'GET',
+        params: {},
+      });
+
+      const response = await GET(context as any);
+      const data = await parseResponse(response);
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe('SKU is required');
+    });
+
+    it('returns 404 for non-existent SKU', async () => {
+      mockGetInventoryHistory.mockRejectedValueOnce(new Error('SKU not found'));
+
+      const { GET } =
+        await import('../../src/pages/api/inventory/[sku]/history.ts');
+
+      const context = createMockContext({
+        url: 'http://localhost/api/inventory/NONEXISTENT/history',
+        method: 'GET',
+        params: { sku: 'NONEXISTENT' },
+      });
+
+      const response = await GET(context as any);
+      const data = await parseResponse(response);
+
+      expect(response.status).toBe(404);
+      expect(data.error).toBe('SKU not found');
+    });
+
+    it('handles API errors gracefully', async () => {
+      mockGetInventoryHistory.mockRejectedValueOnce(
+        new Error('Internal server error')
+      );
+
+      const { GET } =
+        await import('../../src/pages/api/inventory/[sku]/history.ts');
+
+      const context = createMockContext({
+        url: 'http://localhost/api/inventory/TEST-001/history',
+        method: 'GET',
+        params: { sku: 'TEST-001' },
+      });
+
+      const response = await GET(context as any);
+      const data = await parseResponse(response);
+
+      expect(response.status).toBe(500);
+      expect(data.error).toBe('Internal server error');
     });
   });
 });

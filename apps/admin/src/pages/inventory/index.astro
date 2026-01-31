@@ -330,12 +330,34 @@ function getStatusLabel(
                       </span>
                     </td>
                     <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                      <InventoryAdjuster
-                        client:load
-                        sku={item.sku}
-                        currentOnHand={item.on_hand}
-                        currentAvailable={item.available}
-                      />
+                      <div class="flex items-center justify-end gap-2">
+                        <a
+                          href={`/inventory/${item.sku}/history`}
+                          class="text-text-muted hover:text-primary transition-colors"
+                          title="View history"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="1.5"
+                            stroke="currentColor"
+                            class="w-5 h-5"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                            />
+                          </svg>
+                        </a>
+                        <InventoryAdjuster
+                          client:load
+                          sku={item.sku}
+                          currentOnHand={item.on_hand}
+                          currentAvailable={item.available}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );

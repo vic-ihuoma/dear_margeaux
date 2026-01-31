@@ -63,13 +63,15 @@ CREATE TABLE IF NOT EXISTS inventory (
   UNIQUE(store_id, sku)
 );
 
--- Inventory Logs
+-- Inventory Logs (Audit Trail)
 CREATE TABLE IF NOT EXISTS inventory_logs (
   id TEXT PRIMARY KEY,
   store_id TEXT NOT NULL REFERENCES stores(id),
   sku TEXT NOT NULL,
   delta INTEGER NOT NULL,
   reason TEXT NOT NULL CHECK (reason IN ('restock', 'correction', 'damaged', 'return', 'sale', 'release')),
+  admin_id TEXT,           -- Who made the adjustment (NULL for system adjustments like sale/release)
+  admin_name TEXT,         -- Cached admin name for display
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -298,4 +300,6 @@ CREATE INDEX IF NOT EXISTS idx_customer_addresses_customer ON customer_addresses
 CREATE INDEX IF NOT EXISTS idx_webhooks_store ON webhooks(store_id);
 CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_webhook ON webhook_deliveries(webhook_id);
 CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_status ON webhook_deliveries(status);
+CREATE INDEX IF NOT EXISTS idx_inventory_logs_store_sku ON inventory_logs(store_id, sku);
+CREATE INDEX IF NOT EXISTS idx_inventory_logs_created ON inventory_logs(created_at);
 

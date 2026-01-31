@@ -71,9 +71,15 @@ export const POST: APIRoute = async ({ params, request }) => {
       );
     }
 
+    // Pass admin info for audit trail (optional fields from request)
+    const admin_id = data.admin_id;
+    const admin_name = data.admin_name;
+
     const inventoryItem = await client.adjustInventory(sku, {
       delta,
       reason,
+      admin_id,
+      admin_name,
     });
 
     return new Response(JSON.stringify(inventoryItem), {

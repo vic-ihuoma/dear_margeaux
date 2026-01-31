@@ -160,6 +160,32 @@ export interface InventoryItem {
 export interface AdjustInventoryParams {
   delta: number;
   reason: InventoryAdjustmentReason;
+  /** Admin ID who made the adjustment (for audit trail) */
+  admin_id?: string;
+  /** Admin name for display purposes */
+  admin_name?: string;
+}
+
+/** All possible reasons for inventory changes (including system) */
+export type InventoryLogReason = InventoryAdjustmentReason | 'sale' | 'release';
+
+/** Inventory adjustment log entry (audit trail) */
+export interface InventoryLog {
+  id: string;
+  sku: string;
+  delta: number;
+  reason: InventoryLogReason;
+  admin_id: string | null;
+  admin_name: string | null;
+  created_at: ISODateString;
+}
+
+/** Parameters for listing inventory history */
+export interface ListInventoryHistoryParams extends PaginationParams {
+  /** ISO 8601 date string to filter logs from this date */
+  start_date?: ISODateString;
+  /** ISO 8601 date string to filter logs until this date */
+  end_date?: ISODateString;
 }
 
 // ============================================================================

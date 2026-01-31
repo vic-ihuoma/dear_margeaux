@@ -93,11 +93,81 @@ inventoryRoutes.get('/', async (c) => {
   });
 });
 
+// GET /v1/inventory/:sku/history - Get adjustment history for a SKU
+inventoryRoutes.get('/:sku/history', async (c) => {
+  const sku = c.req.param('sku');
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+
+  // Check SKU exists
+  const [existing] = await db.query<any>(`SELECT * FROM inventory WHERE store_id = ? AND sku = ?`, [
+    store.id,
+    sku,
+  ]);
+  if (!existing) throw ApiError.notFound('SKU not found');
+
+  // Pagination params
+  const limit = Math.min(parseInt(c.req.query('limit') || '50'), 100);
+  const cursor = c.req.query('cursor');
+
+  // Date range filters
+  const startDate = c.req.query('start_date');
+  const endDate = c.req.query('end_date');
+
+  // Build query with filters
+  let query = `SELECT * FROM inventory_logs WHERE store_id = ? AND sku = ?`;
+  const params: unknown[] = [store.id, sku];
+
+  if (startDate) {
+    query += ` AND created_at >= ?`;
+    params.push(startDate);
+  }
+
+  if (endDate) {
+    // Add 1 day to include the end date fully
+    query += ` AND created_at < ?`;
+    params.push(endDate + 'T23:59:59.999Z');
+  }
+
+  if (cursor) {
+    // Cursor-based pagination using created_at (descending order)
+    query += ` AND created_at < ?`;
+    params.push(cursor);
+  }
+
+  query += ` ORDER BY created_at DESC LIMIT ?`;
+  params.push(limit + 1);
+
+  const logs = await db.query<any>(query, params);
+
+  // Check for next page
+  const hasMore = logs.length > limit;
+  if (hasMore) logs.pop();
+
+  const nextCursor = hasMore && logs.length > 0 ? logs[logs.length - 1].created_at : null;
+
+  return c.json({
+    items: logs.map((log) => ({
+      id: log.id,
+      sku: log.sku,
+      delta: log.delta,
+      reason: log.reason,
+      admin_id: log.admin_id,
+      admin_name: log.admin_name,
+      created_at: log.created_at,
+    })),
+    pagination: {
+      has_more: hasMore,
+      next_cursor: nextCursor,
+    },
+  });
+});
+
 // POST /v1/inventory/:sku/adjust
 inventoryRoutes.post('/:sku/adjust', async (c) => {
   const sku = c.req.param('sku');
   const body = await c.req.json();
-  const { delta, reason } = body;
+  const { delta, reason, admin_id, admin_name } = body;
 
   if (typeof delta !== 'number') throw ApiError.invalidRequest('delta is required');
   if (!['restock', 'correction', 'damaged', 'return'].includes(reason)) {
@@ -127,10 +197,10 @@ inventoryRoutes.post('/:sku/adjust', async (c) => {
     [delta, now(), store.id, sku]
   );
 
-  // Log
+  // Log with admin info for audit trail
   await db.run(
-    `INSERT INTO inventory_logs (id, store_id, sku, delta, reason) VALUES (?, ?, ?, ?, ?)`,
-    [uuid(), store.id, sku, delta, reason]
+    `INSERT INTO inventory_logs (id, store_id, sku, delta, reason, admin_id, admin_name) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [uuid(), store.id, sku, delta, reason, admin_id || null, admin_name || null]
   );
 
   // Fetch updated

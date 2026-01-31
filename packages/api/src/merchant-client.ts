@@ -19,8 +19,10 @@ import type {
   DeletedProduct,
   // Inventory
   InventoryItem,
+  InventoryLog,
   AdjustInventoryParams,
   ListInventoryParams,
+  ListInventoryHistoryParams,
   // Cart
   Cart,
   CreateCartParams,
@@ -411,6 +413,22 @@ export class MerchantClient {
     return this.request<InventoryItem>('POST', `/inventory/${sku}/adjust`, {
       body: data,
     });
+  }
+
+  /**
+   * Get inventory history/audit log for a SKU (admin only)
+   */
+  async getInventoryHistory(
+    sku: string,
+    params?: ListInventoryHistoryParams
+  ): Promise<PaginatedResponse<InventoryLog>> {
+    return this.request<PaginatedResponse<InventoryLog>>(
+      'GET',
+      `/inventory/${sku}/history`,
+      {
+        params: params ? { ...params } : undefined,
+      }
+    );
   }
 
   // ==========================================================================

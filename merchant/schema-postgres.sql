@@ -63,13 +63,15 @@ CREATE TABLE inventory (
   UNIQUE(store_id, sku)
 );
 
--- Inventory Logs
+-- Inventory Logs (Audit Trail)
 CREATE TABLE inventory_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   store_id UUID NOT NULL REFERENCES stores(id),
   sku TEXT NOT NULL,
   delta INTEGER NOT NULL,
   reason TEXT NOT NULL CHECK (reason IN ('restock', 'correction', 'damaged', 'return', 'sale', 'release')),
+  admin_id UUID,           -- Who made the adjustment (NULL for system adjustments like sale/release)
+  admin_name TEXT,         -- Cached admin name for display
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -195,4 +197,6 @@ CREATE INDEX idx_orders_store ON orders(store_id);
 CREATE INDEX idx_discounts_store_code ON discounts(store_id, code);
 CREATE INDEX idx_discount_usage_order ON discount_usage(order_id);
 CREATE INDEX idx_discount_usage_customer ON discount_usage(discount_id, customer_email);
+CREATE INDEX idx_inventory_logs_store_sku ON inventory_logs(store_id, sku);
+CREATE INDEX idx_inventory_logs_created ON inventory_logs(created_at);
 
