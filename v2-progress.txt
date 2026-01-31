@@ -539,3 +539,39 @@ Replaced custom CSS/HTML bar chart with Recharts LineChart for professional data
 
 ### Next Steps
 None for this task.
+
+
+## 2026-01-31: admin-18 - Add real-time WebSocket updates
+
+### Task Completed
+Implemented real-time WebSocket updates for the admin dashboard using Cloudflare Durable Objects.
+
+### Key Decisions
+- Created RealtimeDO Durable Object class to manage WebSocket connections per store
+- Store ID is used as Durable Object instance ID for isolation between stores
+- WebSocket authentication uses API key passed as query parameter (WebSocket connections can't use headers)
+- Added broadcastEvent function that's called from existing dispatchWebhooks() to broadcast events in parallel
+- Created useWebSocket React hook with auto-reconnection (exponential backoff, max 5 attempts)
+- Built ActivityFeed component that shows order events in real-time with collapsible UI
+- Activity feed automatically invalidates React Query cache when events arrive to refresh data
+- Ping/pong keepalive mechanism to maintain WebSocket connections (30 second interval)
+
+### Files Changed
+- merchant/src/durable-objects/realtime.ts - New Durable Object class for WebSocket connection management
+- merchant/wrangler.jsonc - Added durable_objects binding and migration for RealtimeDO
+- merchant/src/types.ts - Added REALTIME DurableObjectNamespace to Env type
+- merchant/src/routes/realtime.ts - New WebSocket endpoint (/v1/realtime/ws) and broadcastEvent helper
+- merchant/src/lib/webhooks.ts - Modified dispatchWebhooks to also broadcast via WebSocket
+- merchant/src/index.ts - Registered realtime routes and exported RealtimeDO class
+- merchant/admin/src/hooks/useWebSocket.ts - New React hook for WebSocket connection management
+- merchant/admin/src/components/ActivityFeed.tsx - New real-time activity feed component
+- merchant/admin/src/App.tsx - Integrated ActivityFeed component
+- merchant/tests/routes/realtime.test.ts - 13 tests for broadcast functionality
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 157 warnings - all pre-existing)
+- Tests: PASSED (586 merchant tests, including 13 new realtime tests)
+
+### Next Steps
+None for this task.

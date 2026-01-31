@@ -15,6 +15,8 @@ export type Env = {
   RESEND_API_KEY?: string;
   // Logging configuration (debug, info, warn, error)
   LOG_LEVEL?: 'debug' | 'info' | 'warn' | 'error';
+  // Durable Objects for real-time WebSocket
+  REALTIME?: DurableObjectNamespace;
 };
 
 export type Store = {

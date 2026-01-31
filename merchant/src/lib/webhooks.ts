@@ -1,5 +1,6 @@
 import { getDb } from '../db';
 import { uuid, now, type Env } from '../types';
+import { broadcastEvent } from '../routes/realtime';
 
 // ============================================================
 // OUTBOUND WEBHOOK DISPATCHER
@@ -58,6 +59,7 @@ export function generateWebhookSecret(): string {
 /**
  * Dispatch webhooks for a given event
  * Uses waitUntil for non-blocking delivery
+ * Also broadcasts to WebSocket connections for real-time updates
  */
 export async function dispatchWebhooks(
   env: Env,
@@ -67,6 +69,13 @@ export async function dispatchWebhooks(
   data: Record<string, unknown>
 ): Promise<void> {
   const db = getDb(env);
+
+  // Broadcast to WebSocket connections (non-blocking)
+  ctx.waitUntil(
+    broadcastEvent(env, storeId, eventType, data).catch((err) => {
+      console.error('WebSocket broadcast failed:', err);
+    })
+  );
 
   // Find active webhooks subscribed to this event
   const webhooks = await db.query<{

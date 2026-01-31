@@ -17,11 +17,15 @@ import { counts } from './routes/counts';
 import { emailUsage } from './routes/email-usage';
 import { newsletter } from './routes/newsletter';
 import { emailSendsRoutes } from './routes/email-sends';
+import { realtime } from './routes/realtime';
 import { handleCron } from './cron';
 import { rateLimitMiddleware } from './middleware/rate-limit';
 import { securityHeaders } from './middleware/security-headers';
 import { loggerMiddleware } from './middleware/logger';
 import { ApiError, type Env } from './types';
+
+// Export Durable Object class for Cloudflare
+export { RealtimeDO } from './durable-objects/realtime';
 
 // ============================================================
 // MERCHANT API
@@ -82,6 +86,7 @@ app.route('/v1/counts', counts);
 app.route('/v1/email-usage', emailUsage);
 app.route('/v1/newsletter', newsletter);
 app.route('/v1/email-sends', emailSendsRoutes);
+app.route('/v1/realtime', realtime);
 
 export default {
   fetch: app.fetch,

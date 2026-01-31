@@ -17,6 +17,20 @@
 			"bucket_name": "dear-margeaux-images"
 		}
 	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "REALTIME",
+				"class_name": "RealtimeDO"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_classes": ["RealtimeDO"]
+		}
+	],
 	"vars": {
 		// Update with public R2 URL after deployment
 		"IMAGES_URL": "",

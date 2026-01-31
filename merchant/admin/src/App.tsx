@@ -8,6 +8,7 @@ import { Customers } from './pages/Customers';
 import { Inventory } from './pages/Inventory';
 import { Products } from './pages/Products';
 import { Webhooks } from './pages/Webhooks';
+import { ActivityFeed } from './components/ActivityFeed';
 
 type Page = 'orders' | 'customers' | 'inventory' | 'products' | 'webhooks';
 
@@ -100,6 +101,8 @@ export default function App() {
       {currentPage === 'inventory' && <Inventory />}
       {currentPage === 'products' && <Products />}
       {currentPage === 'webhooks' && <Webhooks />}
+      {/* Real-time activity feed */}
+      <ActivityFeed />
     </Layout>
   );
 }
