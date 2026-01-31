@@ -417,3 +417,41 @@ Implemented drag-and-drop product reordering within drops with position persiste
 
 ### Next Steps
 None for this task.
+
+
+## 2026-01-31: admin-14 - Add sent notifications view
+
+### Task Completed
+Implemented email sends tracking and notifications view for admin panel visibility into sent emails.
+
+### Key Decisions
+- Created email_sends table in D1 with columns: id, store_id, email_type, recipient, subject, status, error_message, metadata, created_at
+- Integrated logging into existing sendEmailViaResend function to capture all email sends automatically
+- Email types supported: order_confirmation, shipping_update, order_status_update, drop_launch, newsletter_verification, newsletter
+- Status values: sent, failed, queued
+- Used cursor-based pagination for efficient listing with filtering by type, status, and date range
+- Created stats endpoint providing aggregated counts by status and type
+
+### Files Changed
+- merchant/migrations/020-email-sends.sql - New migration creating email_sends table with indexes
+- merchant/schema-d1.sql - Added email_sends table schema
+- merchant/schema-postgres.sql - Added email_sends table schema for PostgreSQL
+- packages/api/src/types.ts - Added EmailSend, EmailSendStatus, EmailSendType, ListEmailSendsParams, EmailSendStats types
+- merchant/src/lib/notifications.ts - Added logEmailSend function, integrated into sendEmailViaResend
+- merchant/src/routes/email-sends.ts - New routes for GET /v1/email-sends (list) and GET /v1/email-sends/stats
+- merchant/src/index.ts - Registered email-sends routes
+- packages/api/src/merchant-client.ts - Added getEmailSends and getEmailSendStats methods
+- apps/admin/src/pages/api/notifications/index.ts - New admin API proxy for email sends list
+- apps/admin/src/pages/api/notifications/stats.ts - New admin API proxy for email sends stats
+- apps/admin/src/pages/notifications/index.astro - New notifications page with filters (type, status, date range)
+- apps/admin/src/layouts/AdminLayout.astro - Added Notifications nav item with bell icon
+- apps/admin/tests/api/notifications.test.ts - Tests for admin API endpoints
+- merchant/tests/routes/email-sends.test.ts - Tests for merchant routes and logging functionality
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 143 warnings - all pre-existing)
+- Tests: PASSED (all test suites)
+
+### Next Steps
+None for this task.
