@@ -69,6 +69,8 @@ export interface Product {
   created_at: ISODateString;
   tags: string[];
   drop_id: string | null;
+  /** Position within drop for ordering (NULL for products not in drops) */
+  drop_position: number | null;
   variants: Variant[];
 }
 
@@ -83,6 +85,8 @@ export interface ProductListItem {
   created_at: ISODateString;
   tags: string[];
   drop_id: string | null;
+  /** Position within drop for ordering (NULL for products not in drops) */
+  drop_position: number | null;
 }
 
 /** Parameters for creating a product */

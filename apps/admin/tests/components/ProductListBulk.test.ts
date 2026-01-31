@@ -13,6 +13,7 @@ const mockProducts: Product[] = [
     created_at: '2026-01-01T00:00:00Z',
     tags: [],
     drop_id: null,
+    drop_position: null,
     variants: [
       {
         id: 'var-1',
@@ -37,6 +38,7 @@ const mockProducts: Product[] = [
     created_at: '2026-01-02T00:00:00Z',
     tags: [],
     drop_id: null,
+    drop_position: null,
     variants: [
       {
         id: 'var-2',
@@ -61,6 +63,7 @@ const mockProducts: Product[] = [
     created_at: '2026-01-03T00:00:00Z',
     tags: [],
     drop_id: null,
+    drop_position: null,
     variants: [
       {
         id: 'var-3',

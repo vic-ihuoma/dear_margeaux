@@ -132,16 +132,17 @@ dropsRoutes.get('/:slug/products', async (c) => {
   const limit = Math.min(parseInt(c.req.query('limit') || '20'), 100);
   const cursor = c.req.query('cursor');
 
-  // Get products for this drop
-  let productQuery = `SELECT * FROM products WHERE drop_id = ? AND store_id = ?`;
+  // Get products for this drop, ordered by drop_position (NULL last), then created_at
+  let productQuery = `SELECT * FROM products WHERE drop_id = ? AND store_id = ? AND deleted_at IS NULL`;
   const productParams: unknown[] = [drop.id, store.id];
 
   if (cursor) {
-    productQuery += ` AND created_at < ?`;
-    productParams.push(cursor);
+    // For pagination, use drop_position as cursor if available
+    productQuery += ` AND (drop_position > ? OR (drop_position IS NULL AND created_at < ?))`;
+    productParams.push(cursor, cursor);
   }
 
-  productQuery += ` ORDER BY created_at DESC LIMIT ?`;
+  productQuery += ` ORDER BY CASE WHEN drop_position IS NULL THEN 1 ELSE 0 END, drop_position ASC, created_at DESC LIMIT ?`;
   productParams.push(limit + 1);
 
   const products = await db.query<any>(productQuery, productParams);
@@ -175,6 +176,7 @@ dropsRoutes.get('/:slug/products', async (c) => {
     description: p.description,
     status: p.status,
     drop_id: p.drop_id,
+    drop_position: p.drop_position,
     created_at: p.created_at,
     variants: (variantsByProduct[p.id] || []).map((v) => ({
       id: v.id,
@@ -185,7 +187,14 @@ dropsRoutes.get('/:slug/products', async (c) => {
     })),
   }));
 
-  const nextCursor = hasMore && items.length > 0 ? items[items.length - 1].created_at : null;
+  // Use drop_position as cursor if available, otherwise created_at
+  const lastItem = items.length > 0 ? items[items.length - 1] : null;
+  const nextCursor =
+    hasMore && lastItem
+      ? lastItem.drop_position !== null
+        ? String(lastItem.drop_position)
+        : lastItem.created_at
+      : null;
 
   return c.json({
     drop: formatDrop(drop),
@@ -397,6 +406,8 @@ dropsRoutes.patch('/:id', adminOnly, async (c) => {
 });
 
 // PUT /v1/drops/:id/products - Assign products to drop (admin only)
+// Accepts: { productIds: string[] } - array of product IDs in desired order
+// Products will be assigned with drop_position based on their index in the array
 dropsRoutes.put('/:id/products', adminOnly, async (c) => {
   const id = c.req.param('id');
   const body = await c.req.json();
@@ -417,35 +428,40 @@ dropsRoutes.put('/:id/products', adminOnly, async (c) => {
 
   if (!drop) throw ApiError.notFound('Drop not found');
 
-  // First, unassign all products currently assigned to this drop
-  await db.run(`UPDATE products SET drop_id = NULL WHERE drop_id = ? AND store_id = ?`, [
-    id,
-    store.id,
-  ]);
+  // First, unassign all products currently assigned to this drop and clear their position
+  await db.run(
+    `UPDATE products SET drop_id = NULL, drop_position = NULL WHERE drop_id = ? AND store_id = ?`,
+    [id, store.id]
+  );
 
-  // Now assign the new products to this drop
+  // Now assign the new products to this drop with positions based on array order
   if (productIds.length > 0) {
     // Verify all products exist and belong to this store
     const placeholders = productIds.map(() => '?').join(',');
     const products = await db.query<any>(
-      `SELECT id FROM products WHERE id IN (${placeholders}) AND store_id = ?`,
+      `SELECT id FROM products WHERE id IN (${placeholders}) AND store_id = ? AND deleted_at IS NULL`,
       [...productIds, store.id]
     );
 
     const validProductIds = new Set(products.map((p) => p.id));
-    const invalidIds = productIds.filter((id) => !validProductIds.has(id));
+    const invalidIds = productIds.filter((pid) => !validProductIds.has(pid));
 
     if (invalidIds.length > 0) {
       throw ApiError.invalidRequest(`Products not found: ${invalidIds.join(', ')}`);
     }
 
-    // Update each product's drop_id
-    for (const productId of productIds) {
-      await db.run(`UPDATE products SET drop_id = ? WHERE id = ? AND store_id = ?`, [
-        id,
-        productId,
-        store.id,
-      ]);
+    // Update each product's drop_id and drop_position based on array index
+    for (let i = 0; i < productIds.length; i++) {
+      const productId = productIds[i];
+      await db.run(
+        `UPDATE products SET drop_id = ?, drop_position = ? WHERE id = ? AND store_id = ?`,
+        [
+          id,
+          i, // Position is 0-indexed based on array order
+          productId,
+          store.id,
+        ]
+      );
     }
   }
 

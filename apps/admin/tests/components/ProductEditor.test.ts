@@ -12,6 +12,7 @@ const mockProduct: Product = {
   created_at: '2026-01-01T00:00:00Z',
   tags: ['bags', 'luxury'],
   drop_id: 'drop_123',
+  drop_position: 0,
   variants: [
     {
       id: 'var_123',

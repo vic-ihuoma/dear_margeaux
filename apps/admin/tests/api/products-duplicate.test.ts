@@ -82,6 +82,7 @@ const sampleProduct: Product = {
   created_at: '2024-01-01T00:00:00Z',
   tags: ['tag1', 'tag2'],
   drop_id: 'drop_123',
+  drop_position: 0,
   variants: [
     {
       id: 'var_123',
@@ -119,6 +120,7 @@ const duplicatedProduct: Product = {
   created_at: '2024-01-02T00:00:00Z',
   tags: ['tag1', 'tag2'],
   drop_id: 'drop_123',
+  drop_position: null,
   variants: [],
 };
 

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Product } from '@dear-margeaux/api';
 
 export interface ProductAssignerProps {
@@ -34,6 +34,11 @@ export function ProductAssigner({
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Drag state
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragCounter = useRef(0);
 
   // Fetch all products
   useEffect(() => {
@@ -111,6 +116,120 @@ export function ProductAssigner({
     [assignedProducts, onUpdate]
   );
 
+  // Drag and drop handlers
+  const handleDragStart = useCallback((index: number) => {
+    setDraggedIndex(index);
+  }, []);
+
+  const handleDragEnd = useCallback(async () => {
+    if (
+      draggedIndex !== null &&
+      dragOverIndex !== null &&
+      draggedIndex !== dragOverIndex
+    ) {
+      // Reorder the array
+      const newAssigned = [...assignedProducts];
+      const [removed] = newAssigned.splice(draggedIndex, 1);
+      newAssigned.splice(dragOverIndex, 0, removed);
+
+      setAssignedProducts(newAssigned);
+      setIsUpdating(true);
+      setError(null);
+
+      try {
+        await onUpdate(newAssigned.map((p) => p.id));
+      } catch (err) {
+        console.error('Reorder error:', err);
+        setError(
+          err instanceof Error ? err.message : 'Failed to reorder products'
+        );
+        // Revert on error
+        setAssignedProducts(assignedProducts);
+      } finally {
+        setIsUpdating(false);
+      }
+    }
+
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    dragCounter.current = 0;
+  }, [assignedProducts, draggedIndex, dragOverIndex, onUpdate]);
+
+  const handleDragEnter = useCallback((index: number) => {
+    dragCounter.current++;
+    setDragOverIndex(index);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setDragOverIndex(null);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault(); // Allow drop
+  }, []);
+
+  // Move up/down handlers for keyboard accessibility
+  const handleMoveUp = useCallback(
+    async (index: number) => {
+      if (index === 0) return;
+
+      const newAssigned = [...assignedProducts];
+      [newAssigned[index - 1], newAssigned[index]] = [
+        newAssigned[index],
+        newAssigned[index - 1],
+      ];
+
+      setAssignedProducts(newAssigned);
+      setIsUpdating(true);
+      setError(null);
+
+      try {
+        await onUpdate(newAssigned.map((p) => p.id));
+      } catch (err) {
+        console.error('Move error:', err);
+        setError(
+          err instanceof Error ? err.message : 'Failed to reorder products'
+        );
+        setAssignedProducts(assignedProducts);
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [assignedProducts, onUpdate]
+  );
+
+  const handleMoveDown = useCallback(
+    async (index: number) => {
+      if (index === assignedProducts.length - 1) return;
+
+      const newAssigned = [...assignedProducts];
+      [newAssigned[index], newAssigned[index + 1]] = [
+        newAssigned[index + 1],
+        newAssigned[index],
+      ];
+
+      setAssignedProducts(newAssigned);
+      setIsUpdating(true);
+      setError(null);
+
+      try {
+        await onUpdate(newAssigned.map((p) => p.id));
+      } catch (err) {
+        console.error('Move error:', err);
+        setError(
+          err instanceof Error ? err.message : 'Failed to reorder products'
+        );
+        setAssignedProducts(assignedProducts);
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [assignedProducts, onUpdate]
+  );
+
   // Filter available products by search
   const filteredAvailable = searchQuery
     ? availableProducts.filter(
@@ -135,6 +254,11 @@ export function ProductAssigner({
       <div>
         <h3 className="text-sm font-medium text-text-primary mb-3">
           Products in This Drop ({assignedProducts.length})
+          {assignedProducts.length > 1 && (
+            <span className="font-normal text-text-muted ml-2">
+              Drag to reorder
+            </span>
+          )}
         </h3>
         {assignedProducts.length === 0 ? (
           <div className="bg-background-tertiary/50 rounded-lg border border-border border-dashed p-8 text-center">
@@ -160,13 +284,23 @@ export function ProductAssigner({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {assignedProducts.map((product) => (
-              <ProductCard
+          <div className="space-y-2">
+            {assignedProducts.map((product, index) => (
+              <DraggableProductCard
                 key={product.id}
                 product={product}
-                action="remove"
-                onAction={() => handleUnassignProduct(product)}
+                index={index}
+                totalCount={assignedProducts.length}
+                isDragging={draggedIndex === index}
+                isDragOver={dragOverIndex === index && draggedIndex !== index}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onRemove={() => handleUnassignProduct(product)}
+                onMoveUp={() => handleMoveUp(index)}
+                onMoveDown={() => handleMoveDown(index)}
                 isUpdating={isUpdating}
               />
             ))}
@@ -253,6 +387,198 @@ export function ProductAssigner({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+interface DraggableProductCardProps {
+  product: Product;
+  index: number;
+  totalCount: number;
+  isDragging: boolean;
+  isDragOver: boolean;
+  onDragStart: (index: number) => void;
+  onDragEnd: () => void;
+  onDragEnter: (index: number) => void;
+  onDragLeave: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onRemove: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  isUpdating: boolean;
+}
+
+function DraggableProductCard({
+  product,
+  index,
+  totalCount,
+  isDragging,
+  isDragOver,
+  onDragStart,
+  onDragEnd,
+  onDragEnter,
+  onDragLeave,
+  onDragOver,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+  isUpdating,
+}: DraggableProductCardProps) {
+  const image = getPrimaryImage(product);
+  const price = getPrimaryPrice(product);
+
+  return (
+    <div
+      draggable
+      onDragStart={() => onDragStart(index)}
+      onDragEnd={onDragEnd}
+      onDragEnter={() => onDragEnter(index)}
+      onDragLeave={onDragLeave}
+      onDragOver={onDragOver}
+      className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+        isDragging
+          ? 'opacity-50 bg-background-secondary border-primary-500'
+          : isDragOver
+            ? 'border-primary-500 bg-primary-500/10'
+            : 'bg-background-tertiary/50 border-border'
+      }`}
+    >
+      {/* Drag Handle */}
+      <div className="flex-shrink-0 cursor-grab active:cursor-grabbing text-text-muted hover:text-text-secondary">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth="1.5"
+          stroke="currentColor"
+          className="w-5 h-5"
+          aria-label="Drag handle"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+          />
+        </svg>
+      </div>
+
+      {/* Position Number */}
+      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-background-tertiary flex items-center justify-center">
+        <span className="text-xs font-medium text-text-muted">{index + 1}</span>
+      </div>
+
+      {/* Image */}
+      <div className="flex-shrink-0">
+        {image ? (
+          <img
+            src={image}
+            alt={product.title}
+            className="h-12 w-12 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="h-12 w-12 rounded-lg bg-background-tertiary flex items-center justify-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="1.5"
+              stroke="currentColor"
+              className="w-5 h-5 text-text-muted"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+              />
+            </svg>
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-text-primary truncate">
+          {product.title}
+        </p>
+        <p className="text-xs text-text-muted">
+          {formatPrice(price)} &middot; {product.variants.length} variant
+          {product.variants.length !== 1 ? 's' : ''}
+        </p>
+      </div>
+
+      {/* Up/Down Buttons for Accessibility */}
+      <div className="flex flex-col gap-0.5">
+        <button
+          type="button"
+          onClick={onMoveUp}
+          disabled={isUpdating || index === 0}
+          className="p-1 rounded text-text-muted hover:text-text-secondary hover:bg-background-tertiary disabled:opacity-30 disabled:cursor-not-allowed"
+          title="Move up"
+          aria-label="Move product up"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="1.5"
+            stroke="currentColor"
+            className="w-4 h-4"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="m4.5 15.75 7.5-7.5 7.5 7.5"
+            />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={onMoveDown}
+          disabled={isUpdating || index === totalCount - 1}
+          className="p-1 rounded text-text-muted hover:text-text-secondary hover:bg-background-tertiary disabled:opacity-30 disabled:cursor-not-allowed"
+          title="Move down"
+          aria-label="Move product down"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="1.5"
+            stroke="currentColor"
+            className="w-4 h-4"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="m19.5 8.25-7.5 7.5-7.5-7.5"
+            />
+          </svg>
+        </button>
+      </div>
+
+      {/* Remove Button */}
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={isUpdating}
+        className="flex-shrink-0 p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-status-error hover:bg-status-error/10"
+        title="Remove from drop"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth="1.5"
+          stroke="currentColor"
+          className="w-5 h-5"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 18 18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
     </div>
   );
 }
