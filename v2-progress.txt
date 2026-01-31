@@ -345,3 +345,38 @@ Implemented email notifications for order status changes (processing, delivered)
 
 ### Next Steps
 None for this task.
+
+
+## 2026-01-31: admin-12 - Add drop cover image support
+
+### Task Completed
+Implemented cover image support for drops with upload functionality and display in listings.
+
+### Key Decisions
+- Added cover_image TEXT column to drops table (nullable, stores R2 URL)
+- Reused existing ImageUploader component from DropForm for consistency
+- Falls back to URL input field when uploadHandler is not provided
+- Used existing /api/images/upload endpoint for R2 uploads (already implemented)
+- Cover image displayed as thumbnail in drops listing table
+- Test file follows project convention: documented behavior tests with placeholder assertions, visual tests via agent-browser
+
+### Files Changed
+- merchant/migrations/018-drop-cover-image.sql - New migration adding cover_image column
+- packages/api/src/types.ts - Added cover_image to Drop, CreateDropParams, UpdateDropParams
+- merchant/src/routes/drops.ts - Added cover_image to formatDrop, POST, and PATCH handlers
+- apps/admin/src/pages/api/drops/index.ts - Added cover_image to createDrop call
+- apps/admin/src/pages/api/drops/[id].ts - Added cover_image to updateDrop call
+- apps/admin/src/components/DropForm.tsx - Added ImageUploader integration with coverImage state
+- apps/admin/src/components/CreateDrop.tsx - Added uploadHandler function for R2 uploads
+- apps/admin/src/components/DropEditor.tsx - Added uploadHandler function for R2 uploads
+- apps/admin/src/pages/drops/index.astro - Added cover image thumbnail display in table
+- apps/admin/tests/api/drops.test.ts - Added cover_image to sample data, tests for create/update with cover_image
+- apps/admin/tests/components/DropForm.test.tsx - New test file for DropForm cover image functionality
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 137 warnings - all pre-existing)
+- Tests: PASSED (467 admin tests, 372 storefront tests)
+
+### Next Steps
+None for this task.
