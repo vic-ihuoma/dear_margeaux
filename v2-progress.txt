@@ -380,3 +380,40 @@ Implemented cover image support for drops with upload functionality and display 
 
 ### Next Steps
 None for this task.
+
+
+## 2026-01-31: admin-13 - Add drag-and-drop product reordering in drops
+
+### Task Completed
+Implemented drag-and-drop product reordering within drops with position persistence.
+
+### Key Decisions
+- Added drop_position INTEGER column to products table (nullable, NULL for products not in drops)
+- Used native HTML5 drag-and-drop API instead of external library due to dependency installation issues
+- Added up/down arrow buttons for keyboard accessibility alongside drag handles
+- Position is 0-indexed internally but displayed as 1-indexed for users
+- Products ordered by drop_position ASC with NULLs last in API queries
+- Position assigned based on array index when saving products to drop via PUT endpoint
+
+### Files Changed
+- merchant/migrations/019-product-drop-position.sql - New migration adding drop_position column
+- merchant/schema-d1.sql - Added drop_position column and index to products table
+- merchant/schema-postgres.sql - Added drop_position column and index to products table
+- packages/api/src/types.ts - Added drop_position to Product and ProductListItem interfaces
+- merchant/src/routes/drops.ts - Updated GET /v1/drops/:slug/products ordering, PUT /v1/drops/:id/products saves positions
+- merchant/src/routes/catalog.ts - Added drop_position to product responses
+- apps/admin/src/components/ProductAssigner.tsx - Complete rewrite with native drag-and-drop, drag handles, and up/down buttons
+- apps/admin/tests/components/ProductAssigner.test.ts - New test file with 15 tests for product ordering
+- merchant/tests/routes/drops.test.ts - New test file for position assignment behavior
+- apps/admin/tests/api/products.test.ts - Added drop_position to mock data
+- apps/admin/tests/api/products-duplicate.test.ts - Added drop_position to mock data
+- apps/admin/tests/components/ProductEditor.test.ts - Added drop_position to mock data
+- apps/admin/tests/components/ProductListBulk.test.ts - Added drop_position to mock data
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 136 warnings - all pre-existing)
+- Tests: PASSED (482 admin tests, 372 storefront tests)
+
+### Next Steps
+None for this task.
