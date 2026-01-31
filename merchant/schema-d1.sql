@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS products (
   description TEXT DEFAULT '',
   image_url TEXT,
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'draft')),
+  deleted_at TEXT,  -- Soft delete timestamp (NULL = not deleted)
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -278,6 +279,7 @@ CREATE TABLE IF NOT EXISTS webhook_deliveries (
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash);
 CREATE INDEX IF NOT EXISTS idx_products_store ON products(store_id);
+CREATE INDEX IF NOT EXISTS idx_products_deleted ON products(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_variants_store_sku ON variants(store_id, sku);
 CREATE INDEX IF NOT EXISTS idx_inventory_store_sku ON inventory(store_id, sku);
 CREATE INDEX IF NOT EXISTS idx_carts_store ON carts(store_id);

@@ -16,6 +16,7 @@ import type {
   ListProductsParams,
   Variant,
   TagsResponse,
+  DeletedProduct,
   // Inventory
   InventoryItem,
   AdjustInventoryParams,
@@ -333,10 +334,19 @@ export class MerchantClient {
   }
 
   /**
-   * Delete a product (admin only)
+   * Delete a product (admin only) - Soft delete with undo support
+   * Returns the deleted product data for undo functionality
    */
-  async deleteProduct(id: string): Promise<void> {
-    return this.request<void>('DELETE', `/products/${id}`);
+  async deleteProduct(id: string): Promise<DeletedProduct> {
+    return this.request<DeletedProduct>('DELETE', `/products/${id}`);
+  }
+
+  /**
+   * Restore a soft-deleted product (admin only)
+   * Only works within 30 seconds of deletion
+   */
+  async restoreProduct(id: string): Promise<Product> {
+    return this.request<Product>('POST', `/products/${id}/restore`);
   }
 
   /**

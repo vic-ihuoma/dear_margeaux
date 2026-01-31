@@ -121,6 +121,11 @@ export interface UpdateVariantParams {
   image_alt?: string | null;
 }
 
+/** Deleted product response (for soft delete with undo support) */
+export interface DeletedProduct extends Product {
+  deleted_at: ISODateString;
+}
+
 /** Tag with count of products */
 export interface TagInfo {
   tag: string;

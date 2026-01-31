@@ -1,12 +1,14 @@
 import { useState, useCallback } from 'react';
 import { ProductForm } from './ProductForm';
 import { VariantForm } from './VariantForm';
+import { UndoToast } from './UndoToast';
 import type {
   Product,
   Variant,
   UpdateProductParams,
   CreateVariantParams,
   UpdateVariantParams,
+  DeletedProduct,
 } from '@dear-margeaux/api';
 
 export interface ProductEditorProps {
@@ -37,6 +39,10 @@ export function ProductEditor({
     null
   );
   const [isDuplicating, setIsDuplicating] = useState(false);
+  const [deletedProduct, setDeletedProduct] = useState<DeletedProduct | null>(
+    null
+  );
+  const [showUndoToast, setShowUndoToast] = useState(false);
 
   const handleProductSubmit = useCallback(
     async (data: UpdateProductParams) => {
@@ -75,7 +81,7 @@ export function ProductEditor({
   const handleDeleteProduct = useCallback(async () => {
     if (
       !confirm(
-        'Are you sure you want to delete this product? This action cannot be undone.'
+        'Are you sure you want to delete this product? You can undo within 30 seconds.'
       )
     ) {
       return;
@@ -94,14 +100,53 @@ export function ProductEditor({
         throw new Error(result.error || 'Failed to delete product');
       }
 
-      window.location.href = deleteRedirect;
+      const deleted = await response.json();
+      setDeletedProduct(deleted);
+      setShowUndoToast(true);
     } catch (err) {
       console.error('Delete product error:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete product');
     } finally {
       setDeletingProductId(false);
     }
-  }, [product.id, deleteRedirect]);
+  }, [product.id]);
+
+  const handleUndoDelete = useCallback(async () => {
+    if (!deletedProduct) return;
+
+    try {
+      const response = await fetch(
+        `/api/products/${deletedProduct.id}/restore`,
+        {
+          method: 'POST',
+        }
+      );
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to restore product');
+      }
+
+      const restoredProduct = await response.json();
+      setProduct(restoredProduct);
+      setDeletedProduct(null);
+      setShowUndoToast(false);
+    } catch (err) {
+      console.error('Restore product error:', err);
+      setError(
+        err instanceof Error ? err.message : 'Failed to restore product'
+      );
+      // Still dismiss the toast and redirect on error
+      setShowUndoToast(false);
+      window.location.href = deleteRedirect;
+    }
+  }, [deletedProduct, deleteRedirect]);
+
+  const handleDismissUndo = useCallback(() => {
+    setShowUndoToast(false);
+    setDeletedProduct(null);
+    window.location.href = deleteRedirect;
+  }, [deleteRedirect]);
 
   const handleDuplicateProduct = useCallback(async () => {
     if (
@@ -260,6 +305,16 @@ export function ProductEditor({
 
   return (
     <div className="space-y-8">
+      {/* Undo Toast */}
+      {showUndoToast && deletedProduct && (
+        <UndoToast
+          message={`"${deletedProduct.title}" was deleted`}
+          onUndo={handleUndoDelete}
+          onDismiss={handleDismissUndo}
+          duration={30000}
+        />
+      )}
+
       {/* Product Details Section */}
       <div className="bg-background-secondary rounded-xl border border-border shadow-sm">
         <div className="px-6 py-4 border-b border-border">

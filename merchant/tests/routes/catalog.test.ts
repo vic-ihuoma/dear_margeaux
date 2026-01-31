@@ -1256,15 +1256,25 @@ describe('Catalog Routes - Product Tags', () => {
     });
   });
 
-  describe('DELETE /v1/products/:id - Delete Product with Tags', () => {
-    it('deletes product and its tags are cascaded', async () => {
+  describe('DELETE /v1/products/:id - Delete Product with Tags (Soft Delete)', () => {
+    it('soft deletes product and returns deleted product data with deleted_at timestamp', async () => {
       mockDbQuery
-        .mockResolvedValueOnce([{ id: 'prod-1', store_id: 'store-1' }]) // Product exists
-        .mockResolvedValueOnce([]); // No variants
+        .mockResolvedValueOnce([
+          {
+            id: 'prod-1',
+            store_id: 'store-1',
+            title: 'Test Product',
+            description: 'Test description',
+            featured_image_url: null,
+            featured_image_alt: null,
+            drop_id: null,
+            status: 'active',
+          },
+        ]) // Product exists (not deleted)
+        .mockResolvedValueOnce([]) // No variants
+        .mockResolvedValueOnce([]); // Tags query
 
-      mockDbRun
-        .mockResolvedValueOnce({ changes: 1 }) // Delete product (tags cascade automatically)
-        .mockResolvedValueOnce({ changes: 0 }); // Delete variants (none)
+      mockDbRun.mockResolvedValueOnce({ changes: 1 }); // Update deleted_at
 
       const catalogRoutes = await getCatalogRoutes();
       const app = createTestApp();
@@ -1276,7 +1286,9 @@ describe('Catalog Routes - Product Tags', () => {
 
       expect(res.status).toBe(200);
       const body = await res.json();
-      expect(body.deleted).toBe(true);
+      expect(body.id).toBe('prod-1');
+      expect(body.title).toBe('Test Product');
+      expect(body.deleted_at).toBeDefined();
     });
   });
 });

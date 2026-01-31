@@ -34,8 +34,8 @@ catalogRoutes.get('/', async (c) => {
   const status = c.req.query('status'); // Filter by status
   const tag = c.req.query('tag'); // Filter by tag (case-insensitive)
 
-  // Build query
-  let query = `SELECT * FROM products WHERE store_id = ?`;
+  // Build query (exclude soft-deleted products)
+  let query = `SELECT * FROM products WHERE store_id = ? AND deleted_at IS NULL`;
   const params: unknown[] = [store.id];
 
   if (status) {
@@ -157,10 +157,10 @@ catalogRoutes.get('/:id', async (c) => {
   const db = getDb(c.env);
   const id = c.req.param('id');
 
-  const [product] = await db.query<any>(`SELECT * FROM products WHERE id = ? AND store_id = ?`, [
-    id,
-    store.id,
-  ]);
+  const [product] = await db.query<any>(
+    `SELECT * FROM products WHERE id = ? AND store_id = ? AND deleted_at IS NULL`,
+    [id, store.id]
+  );
 
   if (!product) throw ApiError.notFound('Product not found');
 
@@ -511,20 +511,20 @@ catalogRoutes.patch('/:id/variants/:variantId', adminOnly, async (c) => {
   });
 });
 
-// DELETE /v1/products/:id (admin only)
+// DELETE /v1/products/:id (admin only) - Soft delete with undo support
 catalogRoutes.delete('/:id', adminOnly, async (c) => {
   const id = c.req.param('id');
   const { store } = c.get('auth');
   const db = getDb(c.env);
 
-  const [product] = await db.query<any>(`SELECT * FROM products WHERE id = ? AND store_id = ?`, [
-    id,
-    store.id,
-  ]);
+  const [product] = await db.query<any>(
+    `SELECT * FROM products WHERE id = ? AND store_id = ? AND deleted_at IS NULL`,
+    [id, store.id]
+  );
   if (!product) throw ApiError.notFound('Product not found');
 
   // Check if any variants have been used in orders
-  const variants = await db.query<any>(`SELECT sku FROM variants WHERE product_id = ?`, [id]);
+  const variants = await db.query<any>(`SELECT * FROM variants WHERE product_id = ?`, [id]);
 
   if (variants.length > 0) {
     const skus = variants.map((v) => v.sku);
@@ -541,18 +541,106 @@ catalogRoutes.delete('/:id', adminOnly, async (c) => {
     }
   }
 
-  // Delete inventory records for all variants
-  for (const v of variants) {
-    await db.run(`DELETE FROM inventory WHERE sku = ? AND store_id = ?`, [v.sku, store.id]);
+  // Soft delete: set deleted_at timestamp
+  const timestamp = now();
+  await db.run(`UPDATE products SET deleted_at = ? WHERE id = ?`, [timestamp, id]);
+
+  // Fetch tags for the response
+  const tags = await db.query<{ tag: string }>(
+    `SELECT tag FROM product_tags WHERE product_id = ? ORDER BY created_at ASC`,
+    [id]
+  );
+
+  // Return the deleted product data for undo functionality
+  return c.json({
+    id: product.id,
+    title: product.title,
+    description: product.description,
+    featured_image_url: product.featured_image_url,
+    featured_image_alt: product.featured_image_alt,
+    drop_id: product.drop_id,
+    status: product.status,
+    deleted_at: timestamp,
+    tags: tags.map((t) => t.tag),
+    variants: variants.map((v) => ({
+      id: v.id,
+      sku: v.sku,
+      title: v.title,
+      price_cents: v.price_cents,
+      image_url: v.image_url,
+      image_alt: v.image_alt,
+    })),
+  });
+});
+
+// POST /v1/products/:id/restore (admin only) - Restore soft-deleted product
+catalogRoutes.post('/:id/restore', adminOnly, async (c) => {
+  const id = c.req.param('id');
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+
+  // Find the soft-deleted product
+  const [product] = await db.query<any>(
+    `SELECT * FROM products WHERE id = ? AND store_id = ? AND deleted_at IS NOT NULL`,
+    [id, store.id]
+  );
+
+  if (!product) {
+    // Check if the product exists but isn't deleted
+    const [existingProduct] = await db.query<any>(
+      `SELECT id FROM products WHERE id = ? AND store_id = ?`,
+      [id, store.id]
+    );
+
+    if (existingProduct) {
+      throw ApiError.invalidRequest('Product is not deleted');
+    }
+
+    throw ApiError.notFound('Product not found');
   }
 
-  // Delete variants
-  await db.run(`DELETE FROM variants WHERE product_id = ?`, [id]);
+  // Check if the undo window (30 seconds) has expired
+  const deletedAt = new Date(product.deleted_at);
+  const now_date = new Date();
+  const secondsSinceDeletion = (now_date.getTime() - deletedAt.getTime()) / 1000;
 
-  // Delete product
-  await db.run(`DELETE FROM products WHERE id = ?`, [id]);
+  if (secondsSinceDeletion > 30) {
+    throw ApiError.invalidRequest('Cannot restore: undo window expired (30 seconds)');
+  }
 
-  return c.json({ deleted: true });
+  // Restore the product by clearing deleted_at
+  await db.run(`UPDATE products SET deleted_at = NULL WHERE id = ?`, [id]);
+
+  // Fetch updated product with variants and tags
+  const variants = await db.query<any>(
+    `SELECT * FROM variants WHERE product_id = ? ORDER BY created_at ASC`,
+    [id]
+  );
+
+  const tags = await db.query<{ tag: string }>(
+    `SELECT tag FROM product_tags WHERE product_id = ? ORDER BY created_at ASC`,
+    [id]
+  );
+
+  return c.json({
+    id: product.id,
+    title: product.title,
+    description: product.description,
+    featured_image_url: product.featured_image_url,
+    featured_image_alt: product.featured_image_alt,
+    drop_id: product.drop_id,
+    status: product.status,
+    deleted_at: null,
+    tags: tags.map((t) => t.tag),
+    variants: variants.map((v) => ({
+      id: v.id,
+      sku: v.sku,
+      title: v.title,
+      price_cents: v.price_cents,
+      image_url: v.image_url,
+      image_alt: v.image_alt,
+    })),
+  });
 });
 
 // DELETE /v1/products/:id/variants/:variantId (admin only)

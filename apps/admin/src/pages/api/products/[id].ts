@@ -80,9 +80,10 @@ export const DELETE: APIRoute = async ({ params }) => {
   }
 
   try {
-    await client.deleteProduct(id);
+    // Soft delete returns the deleted product data for undo functionality
+    const deletedProduct = await client.deleteProduct(id);
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify(deletedProduct), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

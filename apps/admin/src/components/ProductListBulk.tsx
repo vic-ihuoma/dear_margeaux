@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { Product } from '@dear-margeaux/api';
+import type { Product, DeletedProduct } from '@dear-margeaux/api';
+import { UndoToast } from './UndoToast';
 
 interface ProductListBulkProps {
   products: Product[];
@@ -16,6 +17,10 @@ interface OperationProgress {
   inProgress: boolean;
 }
 
+interface DeletedProducts {
+  items: DeletedProduct[];
+}
+
 export function ProductListBulk({
   products: initialProducts,
   formatPrice,
@@ -27,6 +32,9 @@ export function ProductListBulk({
   const [progress, setProgress] = useState<OperationProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [deletedProducts, setDeletedProducts] =
+    useState<DeletedProducts | null>(null);
+  const [showUndoToast, setShowUndoToast] = useState(false);
   const selectAllRef = useRef<HTMLInputElement>(null);
 
   // Update products when prop changes
@@ -157,6 +165,7 @@ export function ProductListBulk({
 
     let completed = 0;
     let failed = 0;
+    const deleted: DeletedProduct[] = [];
 
     for (const id of ids) {
       try {
@@ -167,6 +176,8 @@ export function ProductListBulk({
         if (!response.ok) {
           failed++;
         } else {
+          const deletedProduct = await response.json();
+          deleted.push(deletedProduct);
           completed++;
           // Remove from local state
           setProducts((prev) => prev.filter((p) => p.id !== id));
@@ -185,15 +196,58 @@ export function ProductListBulk({
 
     if (failed > 0) {
       setError(`Failed to delete ${failed} product${failed > 1 ? 's' : ''}`);
-    } else {
-      setSuccessMessage(
-        `Successfully deleted ${completed} product${completed > 1 ? 's' : ''}`
-      );
+    } else if (deleted.length > 0) {
+      // Show undo toast for soft-deleted products
+      setDeletedProducts({ items: deleted });
+      setShowUndoToast(true);
     }
 
     setTimeout(() => setProgress(null), 2000);
     onProductsChanged?.();
   }, [selectedIds, onProductsChanged]);
+
+  const handleUndoBulkDelete = useCallback(async () => {
+    if (!deletedProducts || deletedProducts.items.length === 0) return;
+
+    let restored = 0;
+    let failed = 0;
+
+    for (const product of deletedProducts.items) {
+      try {
+        const response = await fetch(`/api/products/${product.id}/restore`, {
+          method: 'POST',
+        });
+
+        if (response.ok) {
+          const restoredProduct = await response.json();
+          restored++;
+          // Add back to local state
+          setProducts((prev) => [...prev, restoredProduct]);
+        } else {
+          failed++;
+        }
+      } catch {
+        failed++;
+      }
+    }
+
+    if (failed > 0) {
+      setError(`Failed to restore ${failed} product${failed > 1 ? 's' : ''}`);
+    } else {
+      setSuccessMessage(
+        `Successfully restored ${restored} product${restored > 1 ? 's' : ''}`
+      );
+    }
+
+    setDeletedProducts(null);
+    setShowUndoToast(false);
+    onProductsChanged?.();
+  }, [deletedProducts, onProductsChanged]);
+
+  const handleDismissUndo = useCallback(() => {
+    setShowUndoToast(false);
+    setDeletedProducts(null);
+  }, []);
 
   const getPrimaryPrice = (product: Product): number => {
     return product.variants[0]?.price_cents || 0;
@@ -207,6 +261,16 @@ export function ProductListBulk({
 
   return (
     <div className="relative">
+      {/* Undo Toast for bulk delete */}
+      {showUndoToast && deletedProducts && (
+        <UndoToast
+          message={`${deletedProducts.items.length} product${deletedProducts.items.length > 1 ? 's' : ''} deleted`}
+          onUndo={handleUndoBulkDelete}
+          onDismiss={handleDismissUndo}
+          duration={30000}
+        />
+      )}
+
       {/* Bulk Action Toolbar */}
       {showToolbar && (
         <div className="sticky top-0 z-10 mb-4 bg-primary/5 border border-primary/20 rounded-lg p-4 flex items-center justify-between gap-4">

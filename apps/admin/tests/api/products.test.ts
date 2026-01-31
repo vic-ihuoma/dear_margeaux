@@ -326,7 +326,12 @@ describe('Products API Routes', () => {
 
   describe('DELETE /api/products/:id', () => {
     it('deletes product successfully', async () => {
-      mockDeleteProduct.mockResolvedValueOnce(undefined);
+      const deletedProduct = {
+        id: 'prod_123',
+        title: 'Test Product',
+        deleted_at: new Date().toISOString(),
+      };
+      mockDeleteProduct.mockResolvedValueOnce(deletedProduct);
 
       const { DELETE } = await import('../../src/pages/api/products/[id].ts');
 
@@ -339,7 +344,8 @@ describe('Products API Routes', () => {
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
+      expect(data.id).toBe('prod_123');
+      expect(data.deleted_at).toBeDefined();
       expect(mockDeleteProduct).toHaveBeenCalledWith('prod_123');
     });
 
