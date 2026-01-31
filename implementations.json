@@ -967,7 +967,7 @@
         "integration": ["Full navigation flow across all main routes"],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-20",

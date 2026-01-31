@@ -685,3 +685,33 @@ Added inline newsletter subscription form to the end of individual blog posts, r
 
 ### Next Steps
 None for this task.
+
+
+## 2026-01-31: nav-15 - Test all navigation flows end-to-end
+
+### Task Completed
+Created comprehensive navigation E2E tests and executed visual tests via agent-browser
+to verify all main navigation flows across the storefront.
+
+### Key Decisions
+- Created file-based unit tests that read Astro templates to verify navigation structure
+- Used regex patterns to match link text with multiline Astro template syntax
+- Used agent-browser for visual testing: recorded navigation-e2e.webm video
+- Visual tests covered all routes: homepage, /drops, /drops/archive, /blog, /lookbook
+- Verified "Our Story" section links to /blog/about-dear-margeaux
+- Verified footer Journal link works consistently with header
+- Verified newsletter signup form in footer accepts input
+
+### Files Changed
+- apps/storefront/tests/navigation/navigation-e2e.test.ts - 23 new tests for navigation structure
+- screenshots/navigation-e2e.webm - Video recording of full navigation flow
+- screenshots/nav-15-*.png - 7 screenshots of key pages (gitignored)
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 158 warnings - all pre-existing)
+- Tests: PASSED (434 storefront tests, including 23 new navigation tests)
+- Visual: EXECUTED - navigation-e2e.webm recorded, 7 screenshots captured
+
+### Next Steps
+None for this task.
