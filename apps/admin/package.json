@@ -21,15 +21,16 @@
     "@dear-margeaux/api": "workspace:*",
     "@dear-margeaux/auth": "workspace:*",
     "@dear-margeaux/ui": "workspace:*",
-    "lucia": "^3.2.2",
+    "@nanostores/react": "^1.0.0",
     "@tailwindcss/vite": "^4.1.18",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
     "astro": "^5.16.11",
+    "lucia": "^3.2.2",
     "nanostores": "^1.1.0",
-    "@nanostores/react": "^1.0.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "recharts": "^3.7.0",
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {

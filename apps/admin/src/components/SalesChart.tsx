@@ -1,4 +1,13 @@
 import { useMemo } from 'react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 export interface SalesDataPoint {
   /** Date label (e.g., "Jan 15") */
@@ -17,7 +26,7 @@ export interface SalesChartProps {
 }
 
 /**
- * Format cents to a currency string (e.g., 1999 -> "$19.99")
+ * Format cents to a currency string without decimals (e.g., 1999 -> "$20")
  */
 function formatCurrency(cents: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -29,17 +38,58 @@ function formatCurrency(cents: number): string {
 }
 
 /**
- * SalesChart component displays revenue over time as a simple bar chart
- * Uses pure CSS/HTML for chart rendering (no external charting library)
+ * Format cents to a currency string with decimals for tooltip (e.g., 1999 -> "$19.99")
+ */
+function formatTooltipCurrency(cents: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
+}
+
+/**
+ * Custom tooltip props interface
+ */
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    payload: SalesDataPoint;
+    value: number;
+    name: string;
+  }>;
+  label?: string;
+}
+
+/**
+ * Custom tooltip component for the chart
+ */
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
+  if (active && payload && payload.length > 0) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-text-primary text-background-secondary px-3 py-2 rounded-lg shadow-lg">
+        <p className="font-medium text-sm mb-1">{label}</p>
+        <p className="text-sm">
+          <span className="text-primary-300">Revenue:</span>{' '}
+          {formatTooltipCurrency(data.revenue)}
+        </p>
+        <p className="text-sm text-text-muted">
+          {data.orders} {data.orders === 1 ? 'order' : 'orders'}
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
+
+/**
+ * SalesChart component displays revenue over time as a line chart
+ * Uses Recharts for professional charting with tooltips and responsive behavior
  */
 export function SalesChart({ data, loading = false }: SalesChartProps) {
-  // Calculate max revenue for scaling
-  const maxRevenue = useMemo(() => {
-    if (data.length === 0) return 0;
-    return Math.max(...data.map((d) => d.revenue));
-  }, [data]);
-
-  // Calculate totals
+  // Calculate totals for summary stats
   const totals = useMemo(() => {
     return data.reduce(
       (acc, d) => ({
@@ -106,39 +156,44 @@ export function SalesChart({ data, loading = false }: SalesChartProps) {
         </div>
       </div>
 
-      {/* Bar chart */}
-      <div className="h-48 flex items-end gap-1">
-        {data.map((point, index) => {
-          const heightPercent =
-            maxRevenue > 0 ? (point.revenue / maxRevenue) * 100 : 0;
-
-          return (
-            <div
-              key={index}
-              className="flex-1 flex flex-col items-center group"
-            >
-              {/* Tooltip */}
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity mb-2 bg-text-primary text-background-secondary px-2 py-1 rounded text-xs whitespace-nowrap">
-                <p className="font-medium">{formatCurrency(point.revenue)}</p>
-                <p className="text-text-muted">{point.orders} orders</p>
-              </div>
-
-              {/* Bar */}
-              <div
-                className="w-full bg-primary-500 rounded-t-sm transition-all duration-200 hover:bg-primary-600 min-h-[4px]"
-                style={{ height: `${Math.max(heightPercent, 2)}%` }}
-                title={`${point.date}: ${formatCurrency(point.revenue)}`}
-              />
-
-              {/* Date label (only show every nth label to avoid crowding) */}
-              {index % Math.ceil(data.length / 7) === 0 && (
-                <p className="text-xs text-text-muted mt-2 -rotate-45 origin-left">
-                  {point.date}
-                </p>
-              )}
-            </div>
-          );
-        })}
+      {/* Line chart */}
+      <div className="h-[300px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={data}
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 12, fill: 'var(--color-text-secondary)' }}
+              tickLine={false}
+              axisLine={{ stroke: 'var(--color-border)' }}
+              interval="preserveStartEnd"
+            />
+            <YAxis
+              tickFormatter={(value: number) => formatCurrency(value)}
+              tick={{ fontSize: 12, fill: 'var(--color-text-secondary)' }}
+              tickLine={false}
+              axisLine={{ stroke: 'var(--color-border)' }}
+              width={80}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Line
+              type="monotone"
+              dataKey="revenue"
+              stroke="var(--color-primary-500)"
+              strokeWidth={2}
+              dot={{ fill: 'var(--color-primary-500)', strokeWidth: 0, r: 4 }}
+              activeDot={{
+                r: 6,
+                fill: 'var(--color-primary-600)',
+                stroke: 'var(--color-background-secondary)',
+                strokeWidth: 2,
+              }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
