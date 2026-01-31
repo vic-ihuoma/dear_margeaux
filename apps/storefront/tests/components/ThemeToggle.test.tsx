@@ -4,9 +4,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { atom } from 'nanostores';
 
 // Mock the theme store module - must be before any imports that use it
-vi.mock('../../src/stores/theme', () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const nanostores = require('nanostores');
+vi.mock('../../src/stores/theme', async () => {
+  const nanostores = await import('nanostores');
   const activeTheme = nanostores.atom('light');
   const themePreference = nanostores.atom('system');
 
