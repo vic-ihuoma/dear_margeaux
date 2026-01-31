@@ -137,7 +137,7 @@ describe('Lookbook Content Images (assets-11)', () => {
     it('lookbook layout uses title in alt text (verified by code inspection)', () => {
       // The Lookbook.astro layout uses the lookbook title in alt text:
       // Hero: alt={`${title} - Hero`}
-      // Gallery: alt={`${title} - Image ${index + 2}`}
+      // Gallery images are passed to LookbookGallery with alt={`${title} - Image ${index + 2}`}
       // This test documents this behavior and ensures it's expected
 
       const lookbookLayout = fs.readFileSync(
@@ -145,9 +145,12 @@ describe('Lookbook Content Images (assets-11)', () => {
         'utf-8'
       );
 
-      // Verify the images use title-based alt text
+      // Verify the hero image uses title-based alt text
       expect(lookbookLayout).toContain('alt={`${title} - Hero`}');
-      expect(lookbookLayout).toContain('alt={`${title} - Image ${index + 2}`}');
+
+      // Verify the gallery images are passed with title-based alt text to LookbookGallery
+      // The alt text is constructed in the map function when passing images to LookbookGallery
+      expect(lookbookLayout).toContain('alt: `${title} - Image ${index + 2}`');
     });
   });
 });
