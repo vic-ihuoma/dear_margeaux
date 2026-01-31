@@ -631,3 +631,31 @@ Implemented lazy loading for lookbook gallery images using IntersectionObserver 
 
 ### Next Steps
 None for this task.
+
+
+## 2026-01-31: content-4 - Add MDX component preview in editor
+
+### Task Completed
+Implemented MDX component preview in the blog editor with toolbar buttons for inserting supported components.
+
+### Key Decisions
+- Defined 5 supported MDX components: Callout, Note, Tip, Warning, ProductCard
+- Callout component supports 4 variants: info, success, warning, error (via type prop)
+- Used styled HTML with colored backgrounds and left borders for visual distinction
+- Unsupported components show clear error message listing valid component names
+- Added toolbar buttons with intuitive icons for Callout, Note, Tip, Warning
+- Components render with data-component attribute for easy testing/inspection
+- Processing happens after HTML escaping to prevent XSS while preserving component syntax
+
+### Files Changed
+- apps/admin/src/components/MDXEditor.tsx - Added processMDXComponents function, renderMDXComponentToHtml helper, isSupportedMDXComponent type guard, and componentButtons toolbar array
+- apps/admin/tests/components/MDXComponentPreview.test.ts - 33 tests covering component parsing, rendering, error handling, and toolbar buttons
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 157 warnings - all pre-existing)
+- Tests: PASSED (597 admin tests, including 33 new MDX component preview tests)
+- Visual: Not executed (task has visual tests but deferred)
+
+### Next Steps
+None for this task.
