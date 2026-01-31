@@ -235,3 +235,46 @@ Implemented configurable low stock threshold per variant to replace hardcoded va
 ### Next Steps
 None for this task.
 
+
+
+## 2026-01-31: admin-7 - Add reorder point alerts
+
+### Task Completed
+Implemented reorder point threshold for variants with admin nav badge and reorder alerts list.
+
+### Key Decisions
+- Added reorder_point INTEGER column to variants table (nullable, NULL means no reorder alert)
+- Reorder point is distinct from low_stock_threshold: low stock is for alerting when stock is low, reorder point is for triggering restock orders
+- Added reorder point input to VariantForm with validation (non-negative integer only)
+- Created /api/inventory/reorder-count endpoint to get count of items needing reorder
+- Added badge to Inventory nav link showing count of items at or below reorder point
+- Added "Needs Reorder" filter checkbox on inventory page
+- Implemented client-side badge fetch in AdminLayout with updateReorderBadge() function
+- Email alerts mentioned in requirements are optional enhancement (not implemented)
+
+### Files Changed
+- merchant/schema-d1.sql - Added reorder_point INTEGER column to variants table
+- merchant/schema-postgres.sql - Added reorder_point INTEGER column to variants table  
+- packages/api/src/types.ts - Added reorder_point to Variant, InventoryItem, CreateVariantParams, UpdateVariantParams
+- packages/api/src/merchant-client.ts - Added getReorderCount() method
+- merchant/src/routes/catalog.ts - Added reorder_point to variant CRUD operations with validation
+- merchant/src/routes/inventory.ts - Added needs_reorder filter, reorder_point to responses, new /reorder-count endpoint
+- apps/admin/src/components/VariantForm.tsx - Added reorder point input with validation, helper text, placeholder
+- apps/admin/src/pages/api/inventory/reorder-count.ts - New admin API endpoint for reorder count
+- apps/admin/src/pages/inventory/index.astro - Added needs_reorder filter checkbox and summary display
+- apps/admin/src/layouts/AdminLayout.astro - Added badge element and JS for fetching/displaying reorder count
+- apps/admin/tests/components/ReorderPointAlerts.test.ts - 42 comprehensive tests for admin-7 functionality
+- apps/admin/tests/components/VariantForm.test.ts - Added 10 tests for reorder point input
+- apps/admin/tests/api/inventory.test.ts - Updated mock data with reorder_point
+- apps/admin/tests/api/products.test.ts - Updated mock variant with reorder_point
+- apps/admin/tests/api/products-duplicate.test.ts - Updated mock variants with reorder_point
+- apps/admin/tests/components/ProductEditor.test.ts - Updated mock variant with reorder_point
+- apps/admin/tests/components/ProductListBulk.test.ts - Updated mock variants with reorder_point
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, warnings are pre-existing)
+- Tests: PASSED (all test suites)
+
+### Next Steps
+None for this task.
