@@ -36,3 +36,22 @@ Key decisions:
 
 Visual verification: Lookbook listing shows entry, detail page displays both R2 images in hero and gallery
 
+
+## 2026-01-31: assets-12 - Update site logo to use R2 branding images
+
+Completed: Logo already implemented, created unit tests to verify
+
+Files changed:
+- apps/storefront/tests/components/Header.test.ts (new test file)
+- implementations.json (set passes: true)
+
+Key decisions:
+- Header.astro already uses ${PUBLIC_IMAGES_URL}/branding/logo-main.webp
+- Footer.astro already uses ${PUBLIC_IMAGES_URL}/branding/logo-light.webp (for dark backgrounds)
+- Both logos have alt="Dear Margeaux" and are wrapped in <a href="/">
+- Header uses loading="eager" (above fold), Footer uses loading="lazy"
+- .env already has PUBLIC_IMAGES_URL=https://pub-bf88a85e013c44b6a3a965d48812aa90.r2.dev
+- Created unit tests matching Footer.test.ts pattern
+
+Visual verification: Could not run agent-browser (missing Playwright deps), verified via code inspection
+
