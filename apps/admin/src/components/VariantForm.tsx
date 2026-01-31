@@ -8,6 +8,7 @@ export interface VariantFormData {
   price: string;
   image_url: string;
   image_alt: string;
+  low_stock_threshold: string;
 }
 
 /** The data shape that VariantForm submits */
@@ -17,6 +18,7 @@ export interface VariantFormSubmitData {
   price_cents: number;
   image_url?: string;
   image_alt?: string;
+  low_stock_threshold?: number | null;
 }
 
 export interface VariantFormProps {
@@ -48,6 +50,10 @@ export function VariantForm({
     price: variant ? (variant.price_cents / 100).toFixed(2) : '',
     image_url: variant?.image_url || '',
     image_alt: variant?.image_alt || '',
+    low_stock_threshold:
+      variant?.low_stock_threshold != null
+        ? String(variant.low_stock_threshold)
+        : '',
   });
 
   const [formErrors, setFormErrors] = useState<
@@ -82,6 +88,19 @@ export function VariantForm({
       errors.image_alt = 'Alt text is required when an image is uploaded';
     }
 
+    // Validate low_stock_threshold if provided
+    if (formData.low_stock_threshold.trim()) {
+      const thresholdValue = parseInt(formData.low_stock_threshold, 10);
+      if (
+        isNaN(thresholdValue) ||
+        thresholdValue < 0 ||
+        !Number.isInteger(thresholdValue)
+      ) {
+        errors.low_stock_threshold =
+          'Threshold must be a non-negative whole number';
+      }
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   }, [formData]);
@@ -95,12 +114,17 @@ export function VariantForm({
 
     const priceCents = Math.round(parseFloat(formData.price) * 100);
 
+    // Parse low_stock_threshold: empty string = null (use default), otherwise integer
+    const threshold = formData.low_stock_threshold.trim();
+    const lowStockThreshold = threshold ? parseInt(threshold, 10) : null;
+
     await onSubmit({
       sku: formData.sku.trim().toUpperCase(),
       title: formData.title.trim(),
       price_cents: priceCents,
       image_url: formData.image_url.trim() || undefined,
       image_alt: formData.image_alt.trim() || undefined,
+      low_stock_threshold: lowStockThreshold,
     });
   };
 
@@ -240,6 +264,43 @@ export function VariantForm({
         {formErrors.price && (
           <p className="mt-1 text-xs text-status-error">{formErrors.price}</p>
         )}
+      </div>
+
+      {/* Low Stock Threshold */}
+      <div>
+        <label
+          htmlFor="variant-low-stock-threshold"
+          className="block text-sm font-medium text-text-primary mb-1"
+        >
+          Low Stock Threshold
+        </label>
+        <input
+          type="number"
+          id="variant-low-stock-threshold"
+          name="low_stock_threshold"
+          value={formData.low_stock_threshold}
+          onChange={(e) =>
+            setFormData({ ...formData, low_stock_threshold: e.target.value })
+          }
+          step="1"
+          min="0"
+          className={`block w-full rounded-lg border ${
+            formErrors.low_stock_threshold
+              ? 'border-status-error focus:border-status-error focus:ring-status-error'
+              : 'border-border focus:border-primary-500 focus:ring-primary-500'
+          } bg-background-primary py-2 px-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1`}
+          placeholder="5"
+          disabled={isSubmitting}
+        />
+        {formErrors.low_stock_threshold && (
+          <p className="mt-1 text-xs text-status-error">
+            {formErrors.low_stock_threshold}
+          </p>
+        )}
+        <p className="mt-1 text-xs text-text-muted">
+          Alert when stock falls below this level. Leave empty to use default
+          (5).
+        </p>
       </div>
 
       {/* Variant Image Section */}

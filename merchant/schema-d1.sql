@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS variants (
   weight_g INTEGER NOT NULL,
   dims_cm TEXT,
   image_url TEXT,
+  low_stock_threshold INTEGER,  -- Low stock alert threshold (NULL = use default of 5)
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'draft')),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

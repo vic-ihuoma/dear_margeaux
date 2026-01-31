@@ -78,6 +78,7 @@ const sampleInventoryItem: InventoryItem = {
   on_hand: 100,
   reserved: 0,
   available: 100,
+  low_stock_threshold: null,
 };
 
 describe('Inventory API Routes', () => {

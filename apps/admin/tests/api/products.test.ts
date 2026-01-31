@@ -97,6 +97,7 @@ const sampleProduct: Product = {
       price_cents: 2999,
       image_url: null,
       image_alt: null,
+      low_stock_threshold: null,
     },
   ],
 };

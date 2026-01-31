@@ -52,6 +52,8 @@ export interface Variant {
   image_url: string | null;
   image_alt: string | null;
   product_id: string;
+  /** Low stock alert threshold (NULL = use default of 5) */
+  low_stock_threshold: number | null;
 }
 
 /** Product with variants */
@@ -110,6 +112,8 @@ export interface CreateVariantParams {
   price_cents: number;
   image_url?: string;
   image_alt?: string;
+  /** Low stock alert threshold (NULL = use default of 5) */
+  low_stock_threshold?: number | null;
 }
 
 /** Parameters for updating a variant */
@@ -119,6 +123,8 @@ export interface UpdateVariantParams {
   price_cents?: number;
   image_url?: string | null;
   image_alt?: string | null;
+  /** Low stock alert threshold (NULL = use default of 5) */
+  low_stock_threshold?: number | null;
 }
 
 /** Deleted product response (for soft delete with undo support) */
@@ -154,6 +160,8 @@ export interface InventoryItem {
   on_hand: number;
   reserved: number;
   available: number;
+  /** Low stock alert threshold (NULL = use default of 5) */
+  low_stock_threshold: number | null;
 }
 
 /** Parameters for adjusting inventory */

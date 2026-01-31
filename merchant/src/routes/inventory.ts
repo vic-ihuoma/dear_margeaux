@@ -24,7 +24,7 @@ inventoryRoutes.get('/', async (c) => {
   // If sku provided, return single item (with product/variant info for consistency)
   if (sku) {
     const [level] = await db.query<any>(
-      `SELECT i.*, v.title as variant_title, p.title as product_title
+      `SELECT i.*, v.title as variant_title, v.low_stock_threshold, p.title as product_title
        FROM inventory i
        LEFT JOIN variants v ON i.sku = v.sku AND v.store_id = i.store_id
        LEFT JOIN products p ON v.product_id = p.id
@@ -39,6 +39,7 @@ inventoryRoutes.get('/', async (c) => {
       on_hand: level.on_hand,
       reserved: level.reserved,
       available: level.on_hand - level.reserved,
+      low_stock_threshold: level.low_stock_threshold,
       variant_title: level.variant_title,
       product_title: level.product_title,
     });
@@ -50,7 +51,7 @@ inventoryRoutes.get('/', async (c) => {
   const lowStock = c.req.query('low_stock') === 'true'; // Filter for low stock items
 
   // Build query with pagination
-  let query = `SELECT i.*, v.title as variant_title, p.title as product_title
+  let query = `SELECT i.*, v.title as variant_title, v.low_stock_threshold, p.title as product_title
      FROM inventory i
      LEFT JOIN variants v ON i.sku = v.sku AND v.store_id = i.store_id
      LEFT JOIN products p ON v.product_id = p.id
@@ -58,7 +59,8 @@ inventoryRoutes.get('/', async (c) => {
   const params: unknown[] = [store.id];
 
   if (lowStock) {
-    query += ` AND (i.on_hand - i.reserved) <= 10`;
+    // Use variant's configured threshold, or default to 5 if not set
+    query += ` AND (i.on_hand - i.reserved) <= COALESCE(v.low_stock_threshold, 5)`;
   }
 
   if (cursor) {
@@ -83,6 +85,7 @@ inventoryRoutes.get('/', async (c) => {
       on_hand: i.on_hand,
       reserved: i.reserved,
       available: i.on_hand - i.reserved,
+      low_stock_threshold: i.low_stock_threshold,
       variant_title: i.variant_title,
       product_title: i.product_title,
     })),

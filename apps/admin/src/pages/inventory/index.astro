@@ -7,10 +7,19 @@ import type { InventoryItem } from '@dear-margeaux/api';
 // Fetch inventory and products from the API
 const client = getAdminMerchantClient();
 
-let inventoryItems: InventoryItem[] = [];
+interface InventoryItemWithThreshold extends InventoryItem {
+  low_stock_threshold: number | null;
+}
+
+let inventoryItems: InventoryItemWithThreshold[] = [];
 let skuToProduct: Map<
   string,
-  { productId: string; productTitle: string; variantTitle: string }
+  {
+    productId: string;
+    productTitle: string;
+    variantTitle: string;
+    low_stock_threshold: number | null;
+  }
 > = new Map();
 let error: string | null = null;
 
@@ -29,7 +38,7 @@ if (client) {
       inventoryParams.low_stock = true;
     }
     const inventoryResponse = await client.getInventory(inventoryParams);
-    inventoryItems = inventoryResponse.items;
+    inventoryItems = inventoryResponse.items as InventoryItemWithThreshold[];
 
     // Fetch products to get SKU to product mapping
     const productsResponse = await client.getProducts({ limit: 100 });
@@ -40,6 +49,7 @@ if (client) {
           productId: product.id,
           productTitle: product.title,
           variantTitle: variant.title,
+          low_stock_threshold: variant.low_stock_threshold,
         });
       }
     }
@@ -62,12 +72,22 @@ if (client) {
   }
 }
 
-// Helper to get stock status
+// Default threshold if not configured
+const DEFAULT_LOW_STOCK_THRESHOLD = 5;
+
+// Calculate items needing attention
+const itemsNeedingAttention = inventoryItems.filter(
+  (item) =>
+    item.available <= (item.low_stock_threshold ?? DEFAULT_LOW_STOCK_THRESHOLD)
+).length;
+
+// Helper to get stock status using configurable threshold
 function getStockStatus(
-  item: InventoryItem
+  item: InventoryItemWithThreshold
 ): 'in_stock' | 'low_stock' | 'out_of_stock' {
+  const threshold = item.low_stock_threshold ?? DEFAULT_LOW_STOCK_THRESHOLD;
   if (item.available <= 0) return 'out_of_stock';
-  if (item.available <= 5) return 'low_stock';
+  if (item.available <= threshold) return 'low_stock';
   return 'in_stock';
 }
 
@@ -321,7 +341,9 @@ function getStatusLabel(
                           'font-medium',
                           item.available <= 0
                             ? 'text-status-error'
-                            : item.available <= 5
+                            : item.available <=
+                                (item.low_stock_threshold ??
+                                  DEFAULT_LOW_STOCK_THRESHOLD)
                               ? 'text-status-warning'
                               : 'text-status-success',
                         ]}
@@ -377,10 +399,9 @@ function getStatusLabel(
           Showing {inventoryItems.length}{' '}
           {inventoryItems.length === 1 ? 'item' : 'items'}
         </p>
-        {inventoryItems.some((item) => item.available <= 5) && (
+        {itemsNeedingAttention > 0 && (
           <p class="text-sm text-status-warning">
-            {inventoryItems.filter((item) => item.available <= 5).length} items
-            need attention
+            {itemsNeedingAttention} items need attention
           </p>
         )}
       </div>
