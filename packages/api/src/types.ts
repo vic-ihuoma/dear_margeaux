@@ -54,6 +54,8 @@ export interface Variant {
   product_id: string;
   /** Low stock alert threshold (NULL = use default of 5) */
   low_stock_threshold: number | null;
+  /** Reorder point threshold (NULL = no reorder alert) */
+  reorder_point: number | null;
 }
 
 /** Product with variants */
@@ -114,6 +116,8 @@ export interface CreateVariantParams {
   image_alt?: string;
   /** Low stock alert threshold (NULL = use default of 5) */
   low_stock_threshold?: number | null;
+  /** Reorder point threshold (NULL = no reorder alert) */
+  reorder_point?: number | null;
 }
 
 /** Parameters for updating a variant */
@@ -125,6 +129,8 @@ export interface UpdateVariantParams {
   image_alt?: string | null;
   /** Low stock alert threshold (NULL = use default of 5) */
   low_stock_threshold?: number | null;
+  /** Reorder point threshold (NULL = no reorder alert) */
+  reorder_point?: number | null;
 }
 
 /** Deleted product response (for soft delete with undo support) */
@@ -162,6 +168,8 @@ export interface InventoryItem {
   available: number;
   /** Low stock alert threshold (NULL = use default of 5) */
   low_stock_threshold: number | null;
+  /** Reorder point threshold (NULL = no reorder alert) */
+  reorder_point: number | null;
 }
 
 /** Parameters for adjusting inventory */

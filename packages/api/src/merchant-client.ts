@@ -431,6 +431,13 @@ export class MerchantClient {
     );
   }
 
+  /**
+   * Get count of items needing reorder (admin only)
+   */
+  async getReorderCount(): Promise<CountResponse> {
+    return this.request<CountResponse>('GET', '/inventory/reorder-count');
+  }
+
   // ==========================================================================
   // Cart
   // ==========================================================================

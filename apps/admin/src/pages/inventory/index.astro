@@ -7,11 +7,12 @@ import type { InventoryItem } from '@dear-margeaux/api';
 // Fetch inventory and products from the API
 const client = getAdminMerchantClient();
 
-interface InventoryItemWithThreshold extends InventoryItem {
+interface InventoryItemWithAlerts extends InventoryItem {
   low_stock_threshold: number | null;
+  reorder_point: number | null;
 }
 
-let inventoryItems: InventoryItemWithThreshold[] = [];
+let inventoryItems: InventoryItemWithAlerts[] = [];
 let skuToProduct: Map<
   string,
   {
@@ -19,6 +20,7 @@ let skuToProduct: Map<
     productTitle: string;
     variantTitle: string;
     low_stock_threshold: number | null;
+    reorder_point: number | null;
   }
 > = new Map();
 let error: string | null = null;
@@ -27,18 +29,28 @@ let error: string | null = null;
 const url = Astro.url;
 const searchQuery = url.searchParams.get('search') || '';
 const lowStockOnly = url.searchParams.get('low_stock') === 'true';
+const needsReorderOnly = url.searchParams.get('needs_reorder') === 'true';
 
 if (client) {
   try {
     // Fetch inventory items
-    const inventoryParams: { limit: number; low_stock?: boolean } = {
+    const inventoryParams: {
+      limit: number;
+      low_stock?: boolean;
+      needs_reorder?: boolean;
+    } = {
       limit: 100,
     };
     if (lowStockOnly) {
       inventoryParams.low_stock = true;
     }
-    const inventoryResponse = await client.getInventory(inventoryParams);
-    inventoryItems = inventoryResponse.items as InventoryItemWithThreshold[];
+    if (needsReorderOnly) {
+      inventoryParams.needs_reorder = true;
+    }
+    const inventoryResponse = await client.getInventory(
+      inventoryParams as Parameters<typeof client.getInventory>[0]
+    );
+    inventoryItems = inventoryResponse.items as InventoryItemWithAlerts[];
 
     // Fetch products to get SKU to product mapping
     const productsResponse = await client.getProducts({ limit: 100 });
@@ -50,6 +62,7 @@ if (client) {
           productTitle: product.title,
           variantTitle: variant.title,
           low_stock_threshold: variant.low_stock_threshold,
+          reorder_point: variant.reorder_point,
         });
       }
     }
@@ -75,15 +88,20 @@ if (client) {
 // Default threshold if not configured
 const DEFAULT_LOW_STOCK_THRESHOLD = 5;
 
-// Calculate items needing attention
+// Calculate items needing attention (low stock)
 const itemsNeedingAttention = inventoryItems.filter(
   (item) =>
     item.available <= (item.low_stock_threshold ?? DEFAULT_LOW_STOCK_THRESHOLD)
 ).length;
 
+// Calculate items needing reorder
+const itemsNeedingReorder = inventoryItems.filter(
+  (item) => item.reorder_point !== null && item.available <= item.reorder_point
+).length;
+
 // Helper to get stock status using configurable threshold
 function getStockStatus(
-  item: InventoryItemWithThreshold
+  item: InventoryItemWithAlerts
 ): 'in_stock' | 'low_stock' | 'out_of_stock' {
   const threshold = item.low_stock_threshold ?? DEFAULT_LOW_STOCK_THRESHOLD;
   if (item.available <= 0) return 'out_of_stock';
@@ -179,6 +197,20 @@ function getStatusLabel(
               class="h-4 w-4 rounded border-border text-primary focus:ring-primary-500"
             />
             <span class="text-sm text-text-secondary">Low stock only</span>
+          </label>
+        </div>
+
+        <!-- Needs Reorder Filter -->
+        <div class="flex items-center">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              name="needs_reorder"
+              value="true"
+              checked={needsReorderOnly}
+              class="h-4 w-4 rounded border-border text-status-warning focus:ring-status-warning"
+            />
+            <span class="text-sm text-text-secondary">Needs reorder</span>
           </label>
         </div>
 
@@ -394,16 +426,51 @@ function getStatusLabel(
   <!-- Inventory count -->
   {
     inventoryItems.length > 0 && (
-      <div class="mt-4 flex items-center justify-between">
+      <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
         <p class="text-sm text-text-muted">
           Showing {inventoryItems.length}{' '}
           {inventoryItems.length === 1 ? 'item' : 'items'}
         </p>
-        {itemsNeedingAttention > 0 && (
-          <p class="text-sm text-status-warning">
-            {itemsNeedingAttention} items need attention
-          </p>
-        )}
+        <div class="flex flex-wrap gap-4">
+          {itemsNeedingReorder > 0 && (
+            <p class="text-sm text-status-warning flex items-center gap-1">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="w-4 h-4"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+                />
+              </svg>
+              {itemsNeedingReorder} need reorder
+            </p>
+          )}
+          {itemsNeedingAttention > 0 && (
+            <p class="text-sm text-status-error flex items-center gap-1">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="w-4 h-4"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+                />
+              </svg>
+              {itemsNeedingAttention} low stock
+            </p>
+          )}
+        </div>
       </div>
     )
   }

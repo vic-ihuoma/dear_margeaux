@@ -117,6 +117,7 @@ catalogRoutes.get('/', async (c) => {
       image_url: v.image_url,
       image_alt: v.image_alt,
       low_stock_threshold: v.low_stock_threshold,
+      reorder_point: v.reorder_point,
     })),
   }));
 
@@ -194,6 +195,7 @@ catalogRoutes.get('/:id', async (c) => {
       image_url: v.image_url,
       image_alt: v.image_alt,
       low_stock_threshold: v.low_stock_threshold,
+      reorder_point: v.reorder_point,
     })),
   });
 });
@@ -372,6 +374,7 @@ catalogRoutes.patch('/:id', adminOnly, async (c) => {
       image_url: v.image_url,
       image_alt: v.image_alt,
       low_stock_threshold: v.low_stock_threshold,
+      reorder_point: v.reorder_point,
     })),
   });
 });
@@ -380,7 +383,8 @@ catalogRoutes.patch('/:id', adminOnly, async (c) => {
 catalogRoutes.post('/:id/variants', adminOnly, async (c) => {
   const productId = c.req.param('id');
   const body = await c.req.json();
-  const { sku, title, price_cents, image_url, image_alt, low_stock_threshold } = body;
+  const { sku, title, price_cents, image_url, image_alt, low_stock_threshold, reorder_point } =
+    body;
 
   if (!sku) throw ApiError.invalidRequest('sku is required');
   if (!title) throw ApiError.invalidRequest('title is required');
@@ -419,10 +423,21 @@ catalogRoutes.post('/:id/variants', adminOnly, async (c) => {
     }
   }
 
+  // Validate reorder_point if provided
+  if (reorder_point !== undefined && reorder_point !== null) {
+    if (
+      typeof reorder_point !== 'number' ||
+      reorder_point < 0 ||
+      !Number.isInteger(reorder_point)
+    ) {
+      throw ApiError.invalidRequest('reorder_point must be a non-negative integer');
+    }
+  }
+
   // Insert variant (with required fields)
   await db.run(
-    `INSERT INTO variants (id, product_id, store_id, sku, title, price_cents, weight_g, image_url, image_alt, low_stock_threshold, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO variants (id, product_id, store_id, sku, title, price_cents, weight_g, image_url, image_alt, low_stock_threshold, reorder_point, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       productId,
@@ -434,6 +449,7 @@ catalogRoutes.post('/:id/variants', adminOnly, async (c) => {
       image_url || null,
       image_alt || null,
       low_stock_threshold ?? null,
+      reorder_point ?? null,
       timestamp,
     ]
   );
@@ -454,6 +470,7 @@ catalogRoutes.post('/:id/variants', adminOnly, async (c) => {
       image_url: image_url || null,
       image_alt: image_alt || null,
       low_stock_threshold: low_stock_threshold ?? null,
+      reorder_point: reorder_point ?? null,
     },
     201
   );
@@ -464,7 +481,8 @@ catalogRoutes.patch('/:id/variants/:variantId', adminOnly, async (c) => {
   const productId = c.req.param('id');
   const variantId = c.req.param('variantId');
   const body = await c.req.json();
-  const { sku, title, price_cents, image_url, image_alt, low_stock_threshold } = body;
+  const { sku, title, price_cents, image_url, image_alt, low_stock_threshold, reorder_point } =
+    body;
 
   const { store } = c.get('auth');
   const db = getDb(c.env);
@@ -530,6 +548,20 @@ catalogRoutes.patch('/:id/variants/:variantId', adminOnly, async (c) => {
     updates.push('low_stock_threshold = ?');
     params.push(low_stock_threshold);
   }
+  if (reorder_point !== undefined) {
+    // Validate reorder_point if not null
+    if (reorder_point !== null) {
+      if (
+        typeof reorder_point !== 'number' ||
+        reorder_point < 0 ||
+        !Number.isInteger(reorder_point)
+      ) {
+        throw ApiError.invalidRequest('reorder_point must be a non-negative integer');
+      }
+    }
+    updates.push('reorder_point = ?');
+    params.push(reorder_point);
+  }
 
   if (updates.length > 0) {
     params.push(variantId);
@@ -546,6 +578,7 @@ catalogRoutes.patch('/:id/variants/:variantId', adminOnly, async (c) => {
     image_url: variant.image_url,
     image_alt: variant.image_alt,
     low_stock_threshold: variant.low_stock_threshold,
+    reorder_point: variant.reorder_point,
   });
 });
 
@@ -608,6 +641,7 @@ catalogRoutes.delete('/:id', adminOnly, async (c) => {
       image_url: v.image_url,
       image_alt: v.image_alt,
       low_stock_threshold: v.low_stock_threshold,
+      reorder_point: v.reorder_point,
     })),
   });
 });
@@ -679,6 +713,7 @@ catalogRoutes.post('/:id/restore', adminOnly, async (c) => {
       image_url: v.image_url,
       image_alt: v.image_alt,
       low_stock_threshold: v.low_stock_threshold,
+      reorder_point: v.reorder_point,
     })),
   });
 });

@@ -98,6 +98,7 @@ const sampleProduct: Product = {
       image_url: null,
       image_alt: null,
       low_stock_threshold: null,
+      reorder_point: null,
     },
   ],
 };

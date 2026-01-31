@@ -92,6 +92,7 @@ const sampleProduct: Product = {
       image_url: 'https://example.com/small.jpg',
       image_alt: 'Small variant',
       low_stock_threshold: null,
+      reorder_point: null,
     },
     {
       id: 'var_456',
@@ -102,6 +103,7 @@ const sampleProduct: Product = {
       image_url: 'https://example.com/large.jpg',
       image_alt: 'Large variant',
       low_stock_threshold: null,
+      reorder_point: null,
     },
   ],
 };
@@ -174,6 +176,7 @@ describe('Products Duplicate API Route', () => {
         image_url: 'https://example.com/small.jpg',
         image_alt: 'Small variant',
         low_stock_threshold: null,
+        reorder_point: null,
       };
       const duplicatedVariant2: Variant = {
         id: 'var_new_2',
@@ -184,6 +187,7 @@ describe('Products Duplicate API Route', () => {
         image_url: 'https://example.com/large.jpg',
         image_alt: 'Large variant',
         low_stock_threshold: null,
+        reorder_point: null,
       };
 
       mockGetProduct.mockResolvedValueOnce(sampleProduct);
@@ -221,6 +225,7 @@ describe('Products Duplicate API Route', () => {
           image_url: null,
           image_alt: null,
           low_stock_threshold: null,
+          reorder_point: null,
         })
         .mockResolvedValueOnce({
           id: 'var_new_2',
@@ -231,6 +236,7 @@ describe('Products Duplicate API Route', () => {
           image_url: null,
           image_alt: null,
           low_stock_threshold: null,
+          reorder_point: null,
         });
 
       const { POST } =

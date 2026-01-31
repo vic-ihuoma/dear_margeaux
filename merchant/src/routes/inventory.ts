@@ -24,7 +24,7 @@ inventoryRoutes.get('/', async (c) => {
   // If sku provided, return single item (with product/variant info for consistency)
   if (sku) {
     const [level] = await db.query<any>(
-      `SELECT i.*, v.title as variant_title, v.low_stock_threshold, p.title as product_title
+      `SELECT i.*, v.title as variant_title, v.low_stock_threshold, v.reorder_point, p.title as product_title
        FROM inventory i
        LEFT JOIN variants v ON i.sku = v.sku AND v.store_id = i.store_id
        LEFT JOIN products p ON v.product_id = p.id
@@ -40,6 +40,7 @@ inventoryRoutes.get('/', async (c) => {
       reserved: level.reserved,
       available: level.on_hand - level.reserved,
       low_stock_threshold: level.low_stock_threshold,
+      reorder_point: level.reorder_point,
       variant_title: level.variant_title,
       product_title: level.product_title,
     });
@@ -49,9 +50,10 @@ inventoryRoutes.get('/', async (c) => {
   const limit = Math.min(parseInt(c.req.query('limit') || '100'), 500);
   const cursor = c.req.query('cursor');
   const lowStock = c.req.query('low_stock') === 'true'; // Filter for low stock items
+  const needsReorder = c.req.query('needs_reorder') === 'true'; // Filter for items at reorder point
 
   // Build query with pagination
-  let query = `SELECT i.*, v.title as variant_title, v.low_stock_threshold, p.title as product_title
+  let query = `SELECT i.*, v.title as variant_title, v.low_stock_threshold, v.reorder_point, p.title as product_title
      FROM inventory i
      LEFT JOIN variants v ON i.sku = v.sku AND v.store_id = i.store_id
      LEFT JOIN products p ON v.product_id = p.id
@@ -61,6 +63,11 @@ inventoryRoutes.get('/', async (c) => {
   if (lowStock) {
     // Use variant's configured threshold, or default to 5 if not set
     query += ` AND (i.on_hand - i.reserved) <= COALESCE(v.low_stock_threshold, 5)`;
+  }
+
+  if (needsReorder) {
+    // Only items with reorder_point set and available <= reorder_point
+    query += ` AND v.reorder_point IS NOT NULL AND (i.on_hand - i.reserved) <= v.reorder_point`;
   }
 
   if (cursor) {
@@ -86,6 +93,7 @@ inventoryRoutes.get('/', async (c) => {
       reserved: i.reserved,
       available: i.on_hand - i.reserved,
       low_stock_threshold: i.low_stock_threshold,
+      reorder_point: i.reorder_point,
       variant_title: i.variant_title,
       product_title: i.product_title,
     })),
@@ -164,6 +172,25 @@ inventoryRoutes.get('/:sku/history', async (c) => {
       next_cursor: nextCursor,
     },
   });
+});
+
+// GET /v1/inventory/reorder-count - Get count of items needing reorder
+inventoryRoutes.get('/reorder-count', async (c) => {
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+
+  // Count items where reorder_point is set and available <= reorder_point
+  const [result] = await db.query<{ count: number }>(
+    `SELECT COUNT(*) as count
+     FROM inventory i
+     LEFT JOIN variants v ON i.sku = v.sku AND v.store_id = i.store_id
+     WHERE i.store_id = ?
+       AND v.reorder_point IS NOT NULL
+       AND (i.on_hand - i.reserved) <= v.reorder_point`,
+    [store.id]
+  );
+
+  return c.json({ count: result?.count || 0 });
 });
 
 // POST /v1/inventory/:sku/adjust

@@ -16,15 +16,20 @@ const userEmail = user?.email || 'admin@dearmargeaux.com';
 const userInitial = userName.charAt(0).toUpperCase();
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: 'home' },
-  { name: 'Products', href: '/products', icon: 'package' },
-  { name: 'Orders', href: '/orders', icon: 'shopping-cart' },
-  { name: 'Inventory', href: '/inventory', icon: 'archive' },
-  { name: 'Drops', href: '/drops', icon: 'calendar' },
-  { name: 'Discounts', href: '/discounts', icon: 'tag' },
-  { name: 'Analytics', href: '/analytics', icon: 'chart' },
-  { name: 'Blog', href: '/blog', icon: 'document' },
-  { name: 'Subscribers', href: '/subscribers', icon: 'users' },
+  { name: 'Dashboard', href: '/', icon: 'home', badgeId: null },
+  { name: 'Products', href: '/products', icon: 'package', badgeId: null },
+  { name: 'Orders', href: '/orders', icon: 'shopping-cart', badgeId: null },
+  {
+    name: 'Inventory',
+    href: '/inventory',
+    icon: 'archive',
+    badgeId: 'inventory-reorder-badge',
+  },
+  { name: 'Drops', href: '/drops', icon: 'calendar', badgeId: null },
+  { name: 'Discounts', href: '/discounts', icon: 'tag', badgeId: null },
+  { name: 'Analytics', href: '/analytics', icon: 'chart', badgeId: null },
+  { name: 'Blog', href: '/blog', icon: 'document', badgeId: null },
+  { name: 'Subscribers', href: '/subscribers', icon: 'users', badgeId: null },
 ];
 
 function isActive(href: string): boolean {
@@ -231,7 +236,13 @@ function isActive(href: string): boolean {
                       </svg>
                     )}
                   </span>
-                  {item.name}
+                  <span class="flex-1">{item.name}</span>
+                  {item.badgeId && (
+                    <span
+                      id={item.badgeId}
+                      class="hidden ml-auto inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-status-warning/20 text-status-warning"
+                    />
+                  )}
                 </a>
               ))
             }
@@ -389,6 +400,29 @@ function isActive(href: string): boolean {
       menuButton?.addEventListener('click', toggleMenu);
       menuBackdrop?.addEventListener('click', toggleMenu);
       menuClose?.addEventListener('click', toggleMenu);
+
+      // Fetch and display reorder count badge
+      async function updateReorderBadge() {
+        try {
+          const response = await fetch('/api/inventory/reorder-count');
+          if (response.ok) {
+            const data = await response.json();
+            const badge = document.getElementById('inventory-reorder-badge');
+            if (badge && data.count > 0) {
+              badge.textContent = data.count > 99 ? '99+' : String(data.count);
+              badge.classList.remove('hidden');
+            } else if (badge) {
+              badge.classList.add('hidden');
+            }
+          }
+        } catch (error) {
+          // Silently fail - badge will just not show
+          console.error('Failed to fetch reorder count:', error);
+        }
+      }
+
+      // Update badge on page load
+      updateReorderBadge();
     </script>
   </body>
 </html>

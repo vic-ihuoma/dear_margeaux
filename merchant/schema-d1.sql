@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS variants (
   dims_cm TEXT,
   image_url TEXT,
   low_stock_threshold INTEGER,  -- Low stock alert threshold (NULL = use default of 5)
+  reorder_point INTEGER,        -- Reorder point threshold (NULL = no reorder alert)
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'draft')),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
