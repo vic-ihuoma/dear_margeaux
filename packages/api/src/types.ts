@@ -614,6 +614,7 @@ export interface Drop {
   name: string;
   description: string | null;
   slug: string;
+  cover_image: string | null;
   start_date: ISODateString | null;
   end_date: ISODateString | null;
   status: DropStatus;
@@ -631,6 +632,7 @@ export interface CreateDropParams {
   name: string;
   slug: string;
   description?: string;
+  cover_image?: string;
   start_date?: ISODateString;
   end_date?: ISODateString;
   status?: DropStatus;
@@ -641,6 +643,7 @@ export interface UpdateDropParams {
   name?: string;
   slug?: string;
   description?: string | null;
+  cover_image?: string | null;
   start_date?: ISODateString | null;
   end_date?: ISODateString | null;
   status?: DropStatus;

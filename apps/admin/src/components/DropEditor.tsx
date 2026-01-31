@@ -10,6 +10,26 @@ export interface DropEditorProps {
   deleteRedirect?: string;
 }
 
+/** Upload handler for cover image */
+async function uploadHandler(
+  file: File
+): Promise<{ url: string; key: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/images/upload', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const result = await response.json();
+    throw new Error(result.error || 'Failed to upload image');
+  }
+
+  return response.json();
+}
+
 export function DropEditor({
   drop: initialDrop,
   assignedProducts: initialProducts,
@@ -117,6 +137,7 @@ export function DropEditor({
             onCancel={() => window.history.back()}
             isSubmitting={isSubmitting}
             error={error}
+            uploadHandler={uploadHandler}
           />
         </div>
       </div>

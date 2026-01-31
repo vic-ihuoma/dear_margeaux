@@ -85,6 +85,7 @@ const sampleDrop: Drop = {
   name: 'Spring Collection',
   slug: 'spring-collection',
   description: 'Our spring collection featuring vibrant colors',
+  cover_image: 'https://example.com/cover.jpg',
   status: 'active',
   start_date: '2024-03-01T00:00:00Z',
   end_date: '2024-04-01T00:00:00Z',
@@ -202,10 +203,42 @@ describe('Drops API Routes', () => {
         name: 'Spring Collection',
         slug: 'spring-collection',
         description: 'Our spring collection',
+        cover_image: undefined,
         status: 'draft',
         start_date: '2024-03-01T00:00:00Z',
         end_date: '2024-04-01T00:00:00Z',
       });
+    });
+
+    it('creates drop with cover_image', async () => {
+      const dropWithCover = {
+        ...sampleDrop,
+        cover_image: 'https://example.com/new-cover.jpg',
+      };
+      mockCreateDrop.mockResolvedValueOnce(dropWithCover);
+
+      const { POST } = await import('../../src/pages/api/drops/index.ts');
+
+      const context = createMockContext({
+        method: 'POST',
+        body: {
+          name: 'Spring Collection',
+          slug: 'spring-collection',
+          cover_image: 'https://example.com/new-cover.jpg',
+          status: 'draft',
+        },
+      });
+
+      const response = await POST(context as any);
+      const data = await parseResponse(response);
+
+      expect(response.status).toBe(201);
+      expect(data.cover_image).toBe('https://example.com/new-cover.jpg');
+      expect(mockCreateDrop).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cover_image: 'https://example.com/new-cover.jpg',
+        })
+      );
     });
 
     it('handles validation errors', async () => {
@@ -293,6 +326,53 @@ describe('Drops API Routes', () => {
 
       expect(response.status).toBe(200);
       expect(data.name).toBe('Summer Collection');
+    });
+
+    it('updates cover_image successfully', async () => {
+      const updatedDrop = {
+        ...sampleDrop,
+        cover_image: 'https://example.com/updated-cover.jpg',
+      };
+      mockUpdateDrop.mockResolvedValueOnce(updatedDrop);
+
+      const { PATCH } = await import('../../src/pages/api/drops/[id].ts');
+
+      const context = createMockContext({
+        method: 'PATCH',
+        params: { id: 'drop_123' },
+        body: { cover_image: 'https://example.com/updated-cover.jpg' },
+      });
+
+      const response = await PATCH(context as any);
+      const data = await parseResponse(response);
+
+      expect(response.status).toBe(200);
+      expect(data.cover_image).toBe('https://example.com/updated-cover.jpg');
+      expect(mockUpdateDrop).toHaveBeenCalledWith(
+        'drop_123',
+        expect.objectContaining({
+          cover_image: 'https://example.com/updated-cover.jpg',
+        })
+      );
+    });
+
+    it('clears cover_image when set to null', async () => {
+      const updatedDrop = { ...sampleDrop, cover_image: null };
+      mockUpdateDrop.mockResolvedValueOnce(updatedDrop);
+
+      const { PATCH } = await import('../../src/pages/api/drops/[id].ts');
+
+      const context = createMockContext({
+        method: 'PATCH',
+        params: { id: 'drop_123' },
+        body: { cover_image: null },
+      });
+
+      const response = await PATCH(context as any);
+      const data = await parseResponse(response);
+
+      expect(response.status).toBe(200);
+      expect(data.cover_image).toBeNull();
     });
 
     it('returns 400 when drop ID is missing', async () => {

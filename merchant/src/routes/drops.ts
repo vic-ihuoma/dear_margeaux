@@ -39,6 +39,7 @@ function formatDrop(drop: any, products?: any[]) {
     name: drop.name,
     description: drop.description,
     slug: drop.slug,
+    cover_image: drop.cover_image,
     start_date: drop.start_date,
     end_date: drop.end_date,
     status: drop.status,
@@ -199,7 +200,7 @@ dropsRoutes.get('/:slug/products', async (c) => {
 // POST /v1/drops - Create drop (admin only)
 dropsRoutes.post('/', adminOnly, async (c) => {
   const body = await c.req.json();
-  const { name, description, slug, start_date, end_date, status } = body;
+  const { name, description, slug, cover_image, start_date, end_date, status } = body;
 
   if (!name) throw ApiError.invalidRequest('name is required');
   if (!slug) throw ApiError.invalidRequest('slug is required');
@@ -242,14 +243,15 @@ dropsRoutes.post('/', adminOnly, async (c) => {
   const timestamp = now();
 
   await db.run(
-    `INSERT INTO drops (id, store_id, name, description, slug, start_date, end_date, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO drops (id, store_id, name, description, slug, cover_image, start_date, end_date, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       store.id,
       name,
       description || null,
       normalizedSlug,
+      cover_image || null,
       start_date || null,
       end_date || null,
       dropStatus,
@@ -267,7 +269,7 @@ dropsRoutes.post('/', adminOnly, async (c) => {
 dropsRoutes.patch('/:id', adminOnly, async (c) => {
   const id = c.req.param('id');
   const body = await c.req.json();
-  const { name, description, slug, start_date, end_date, status } = body;
+  const { name, description, slug, cover_image, start_date, end_date, status } = body;
 
   const { store } = c.get('auth');
   const db = getDb(c.env);
@@ -310,6 +312,11 @@ dropsRoutes.patch('/:id', adminOnly, async (c) => {
 
     updates.push('slug = ?');
     params.push(normalizedSlug);
+  }
+
+  if (cover_image !== undefined) {
+    updates.push('cover_image = ?');
+    params.push(cover_image || null);
   }
 
   if (start_date !== undefined) {

@@ -59,6 +59,7 @@ export const POST: APIRoute = async ({ request }) => {
       name: data.name,
       slug: data.slug,
       description: data.description,
+      cover_image: data.cover_image,
       status: data.status,
       start_date: data.start_date,
       end_date: data.end_date,

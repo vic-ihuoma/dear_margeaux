@@ -5,6 +5,7 @@ import type {
   UpdateDropParams,
   DropStatus,
 } from '@dear-margeaux/api';
+import { ImageUploader } from './ImageUploader';
 
 export interface DropFormProps {
   /** Existing drop for editing, or undefined for create mode */
@@ -17,6 +18,8 @@ export interface DropFormProps {
   isSubmitting?: boolean;
   /** Error message to display */
   error?: string | null;
+  /** Handler function for image upload */
+  uploadHandler?: (file: File) => Promise<{ url: string; key: string }>;
 }
 
 export function DropForm({
@@ -25,10 +28,12 @@ export function DropForm({
   onCancel,
   isSubmitting = false,
   error,
+  uploadHandler,
 }: DropFormProps) {
   const [name, setName] = useState(drop?.name || '');
   const [slug, setSlug] = useState(drop?.slug || '');
   const [description, setDescription] = useState(drop?.description || '');
+  const [coverImage, setCoverImage] = useState(drop?.cover_image || '');
   const [status, setStatus] = useState<DropStatus>(drop?.status || 'draft');
   const [startDate, setStartDate] = useState(
     drop?.start_date ? drop.start_date.split('T')[0] : ''
@@ -100,6 +105,7 @@ export function DropForm({
         name: name.trim(),
         slug: slug.trim(),
         description: description.trim() || undefined,
+        cover_image: coverImage.trim() || undefined,
         status,
         start_date: startDate ? new Date(startDate).toISOString() : undefined,
         end_date: endDate ? new Date(endDate).toISOString() : undefined,
@@ -107,8 +113,26 @@ export function DropForm({
 
       await onSubmit(data);
     },
-    [name, slug, description, status, startDate, endDate, validate, onSubmit]
+    [
+      name,
+      slug,
+      description,
+      coverImage,
+      status,
+      startDate,
+      endDate,
+      validate,
+      onSubmit,
+    ]
   );
+
+  const handleCoverImageUpload = (url: string) => {
+    setCoverImage(url);
+  };
+
+  const handleCoverImageRemove = () => {
+    setCoverImage('');
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -207,6 +231,52 @@ export function DropForm({
         <p className="mt-1 text-xs text-text-muted">
           {description.length}/2000
         </p>
+      </div>
+
+      {/* Cover Image Field */}
+      <div>
+        <label
+          htmlFor="cover-image"
+          className="block text-sm font-medium text-text-primary mb-1.5"
+        >
+          Cover Image
+        </label>
+        <p className="text-xs text-text-muted mb-3">
+          This image will be displayed in the drop listing and on the drop page
+        </p>
+        {uploadHandler ? (
+          <ImageUploader
+            value={coverImage || null}
+            onUpload={handleCoverImageUpload}
+            onRemove={handleCoverImageRemove}
+            isUploading={isSubmitting}
+            uploadHandler={uploadHandler}
+          />
+        ) : (
+          <div>
+            <input
+              type="url"
+              id="cover-image"
+              name="cover_image"
+              value={coverImage}
+              onChange={(e) => setCoverImage(e.target.value)}
+              className="block w-full rounded-lg border border-border bg-background-primary py-2 px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              placeholder="https://example.com/cover-image.jpg"
+            />
+            {coverImage && (
+              <div className="mt-2 relative inline-block">
+                <img
+                  src={coverImage}
+                  alt="Cover preview"
+                  className="h-32 w-auto rounded-lg object-cover border border-border"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Status Field */}
