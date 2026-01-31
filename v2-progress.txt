@@ -33,3 +33,35 @@ Self-hosted Inter variable fonts replacing Google Fonts CDN for improved perform
 ### Next Steps
 None for this task.
 
+
+## 2026-01-31: sf-10 - Add saved addresses feature
+
+### Task Completed
+Implemented customer self-service address management for account pages.
+
+### Key Decisions
+- Added self-service API endpoints separate from admin endpoints for security
+- Used existing customer_addresses table schema (already in database)
+- Created reusable AddressForm component for both add and edit modes
+- Implemented set default address functionality
+- Note: Checkout pre-fill requires Stripe Customer integration (future enhancement)
+
+### Files Changed
+- merchant/src/routes/customer-auth.ts - Added 5 self-service address endpoints (GET, POST, PATCH, DELETE, set default)
+- packages/api/src/merchant-client.ts - Added 5 client methods for self-service addresses
+- apps/storefront/src/components/AddressList.tsx - New component for address management
+- apps/storefront/src/components/AddressForm.tsx - New component for address entry/editing
+- apps/storefront/src/pages/account/addresses.astro - New account addresses page
+- apps/storefront/src/components/AccountNav.tsx - Added "Saved Addresses" navigation item
+- apps/storefront/tests/components/AddressList.test.tsx - 15 tests for AddressList component
+- apps/storefront/tests/components/AddressForm.test.tsx - 23 tests for AddressForm component
+
+### Test Results
+- Typecheck: PASSED
+- Lint: PASSED (0 errors, 99 warnings - all pre-existing)
+- Tests: PASSED (372 storefront tests, 252 admin tests)
+- Visual: Verified authentication flow - addresses page correctly redirects to login when unauthenticated
+
+### Next Steps
+Checkout pre-fill with default address would require deeper Stripe Customer integration in future task.
+
