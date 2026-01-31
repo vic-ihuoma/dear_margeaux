@@ -36,6 +36,7 @@ export function ProductEditor({
   const [deletingVariantId, setDeletingVariantId] = useState<string | null>(
     null
   );
+  const [isDuplicating, setIsDuplicating] = useState(false);
 
   const handleProductSubmit = useCallback(
     async (data: UpdateProductParams) => {
@@ -101,6 +102,44 @@ export function ProductEditor({
       setDeletingProductId(false);
     }
   }, [product.id, deleteRedirect]);
+
+  const handleDuplicateProduct = useCallback(async () => {
+    if (
+      !confirm(
+        'This will create a copy of this product with all variants. The new product will be in Draft status. Continue?'
+      )
+    ) {
+      return;
+    }
+
+    setIsDuplicating(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/products/${product.id}/duplicate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to duplicate product');
+      }
+
+      const newProduct = await response.json();
+      // Navigate to the new product's edit page
+      window.location.href = `/products/${newProduct.id}`;
+    } catch (err) {
+      console.error('Duplicate product error:', err);
+      setError(
+        err instanceof Error ? err.message : 'Failed to duplicate product'
+      );
+    } finally {
+      setIsDuplicating(false);
+    }
+  }, [product.id]);
 
   const handleAddVariant = useCallback(
     async (data: CreateVariantParams) => {
@@ -377,6 +416,78 @@ export function ProductEditor({
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Product Actions */}
+      <div className="bg-background-secondary rounded-xl border border-border shadow-sm">
+        <div className="px-6 py-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-text-primary">
+            Product Actions
+          </h2>
+        </div>
+        <div className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-text-primary">
+                Duplicate this product
+              </h3>
+              <p className="text-sm text-text-muted">
+                Create a copy with all variants. The copy will be set to Draft
+                status.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleDuplicateProduct}
+              disabled={isDuplicating}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isDuplicating ? (
+                <>
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Duplicating...
+                </>
+              ) : (
+                <>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                    stroke="currentColor"
+                    className="w-4 h-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
+                    />
+                  </svg>
+                  Duplicate Product
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
