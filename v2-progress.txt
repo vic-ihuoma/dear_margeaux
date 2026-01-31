@@ -603,3 +603,31 @@ Integrated ImageLightbox component into lookbook gallery pages for full-screen i
 
 ### Next Steps
 None for this task.
+
+
+## 2026-01-31: content-2 - Add lookbook image lazy loading
+
+### Task Completed
+Implemented lazy loading for lookbook gallery images using IntersectionObserver with skeleton placeholders.
+
+### Key Decisions
+- Used IntersectionObserver API for efficient lazy loading (starts loading 100px before entering viewport)
+- Added skeleton placeholder with animate-pulse animation that fades out when image loads
+- Images only receive their src attribute when observed by IntersectionObserver (true lazy loading)
+- Added data-src attribute as fallback/reference for original URL
+- Added global IntersectionObserver mock in test setup since jsdom doesn't support it natively
+- Skeleton and image have coordinated opacity transitions for smooth loading UX
+
+### Files Changed
+- apps/storefront/src/components/LookbookGallery.tsx - Added IntersectionObserver, skeleton placeholders, and load state tracking
+- apps/storefront/tests/components/LookbookGallery.test.tsx - Added 7 lazy loading tests (now 26 total)
+- apps/storefront/tests/setup.ts - Added global IntersectionObserver mock for test environment
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 289 warnings - all pre-existing)
+- Tests: PASSED (398 storefront tests)
+- Visual: Not executed (task has visual tests but deferred)
+
+### Next Steps
+None for this task.
