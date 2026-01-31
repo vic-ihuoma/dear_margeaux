@@ -313,3 +313,35 @@ Implemented order notes/comments feature allowing admins to add internal notes t
 
 ### Next Steps
 None for this task.
+
+
+## 2026-01-31: admin-11 - Add email notification on order status changes
+
+### Task Completed
+Implemented email notifications for order status changes (processing, delivered).
+
+### Key Decisions
+- Created new React Email template (order-status-update.tsx) with status-specific styling
+- Processing status shows package icon and blue color, Delivered shows check icon and green color
+- Added 'order_status_update' to EmailType union in email-queue.ts for queue support
+- Used non-blocking email sends with c.executionCtx.waitUntil() to avoid blocking API responses
+- Delivered status emails include tracking info when available
+- Email includes order summary with items, quantities, and prices
+- Template includes "What's Next?" tips section for processing/delivered states
+
+### Files Changed
+- packages/email/src/templates/order-status-update.tsx - New React Email template for status updates
+- packages/email/src/index.ts - Export new template and types
+- merchant/src/lib/email-queue.ts - Added 'order_status_update' to EmailType
+- merchant/src/lib/notifications.ts - Added sendOrderStatusUpdateEmail function and buildOrderStatusUpdateHtml helper
+- merchant/src/routes/orders.ts - Trigger email on status change to 'processing' or 'delivered'
+- merchant/tests/lib/notifications.test.ts - 28 tests for new email functionality
+- merchant/tests/routes/orders.test.ts - Updated mock for sendOrderStatusUpdateEmail
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 132 warnings - all pre-existing)
+- Tests: PASSED (551 merchant tests)
+
+### Next Steps
+None for this task.
