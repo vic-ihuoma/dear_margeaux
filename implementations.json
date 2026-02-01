@@ -1699,7 +1699,7 @@
         "visual": [],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "lookbook-admin-6",
