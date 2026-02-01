@@ -181,3 +181,166 @@ export const GET: APIRoute = async ({ url }) => {
     });
   }
 };
+
+/**
+ * Generate a slug from a title
+ */
+function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+}
+
+/**
+ * Generate MDX content from lookbook data
+ */
+function generateMDX(data: {
+  title: string;
+  description?: string;
+  date: string;
+  drop?: string;
+  coverImage?: string;
+  images: string[];
+  draft: boolean;
+}): string {
+  let frontmatter = `---
+title: "${data.title.replace(/"/g, '\\"')}"`;
+
+  if (data.description) {
+    frontmatter += `
+description: "${data.description.replace(/"/g, '\\"')}"`;
+  }
+
+  frontmatter += `
+date: "${data.date}"`;
+
+  if (data.drop) {
+    frontmatter += `
+drop: "${data.drop}"`;
+  }
+
+  if (data.coverImage) {
+    frontmatter += `
+coverImage: "${data.coverImage}"`;
+  }
+
+  frontmatter += `
+draft: ${data.draft}`;
+
+  if (data.images && data.images.length > 0) {
+    frontmatter += `
+images:`;
+    for (const img of data.images) {
+      frontmatter += `
+  - "${img}"`;
+    }
+  } else {
+    frontmatter += `
+images: []`;
+  }
+
+  frontmatter += `
+---
+
+`;
+
+  return frontmatter;
+}
+
+/**
+ * POST /api/lookbook - Create a new lookbook
+ */
+export const POST: APIRoute = async ({ request }) => {
+  try {
+    const data = await request.json();
+
+    // Validate required fields
+    if (!data.title?.trim()) {
+      return new Response(JSON.stringify({ error: 'Title is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!data.date) {
+      return new Response(JSON.stringify({ error: 'Date is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Generate slug
+    const slug = generateSlug(data.title);
+
+    // Ensure lookbook directory exists
+    try {
+      await fs.access(LOOKBOOK_CONTENT_DIR);
+    } catch {
+      await fs.mkdir(LOOKBOOK_CONTENT_DIR, { recursive: true });
+    }
+
+    // Check for slug conflicts
+    const filePath = path.join(LOOKBOOK_CONTENT_DIR, `${slug}.mdx`);
+    let counter = 1;
+    let finalPath = filePath;
+    let finalSlug = slug;
+
+    while (true) {
+      try {
+        await fs.access(finalPath);
+        // File exists, try with suffix
+        finalSlug = `${slug}-${counter}`;
+        finalPath = path.join(LOOKBOOK_CONTENT_DIR, `${finalSlug}.mdx`);
+        counter++;
+      } catch {
+        // File doesn't exist, we can use this path
+        break;
+      }
+    }
+
+    // Generate MDX content
+    const mdxContent = generateMDX({
+      title: data.title.trim(),
+      description: data.description?.trim(),
+      date: data.date,
+      drop: data.drop,
+      coverImage: data.coverImage,
+      images: data.images || [],
+      draft: data.draft ?? true,
+    });
+
+    // Write file
+    await fs.writeFile(finalPath, mdxContent, 'utf-8');
+
+    // Return created lookbook
+    return new Response(
+      JSON.stringify({
+        slug: finalSlug,
+        title: data.title.trim(),
+        description: data.description?.trim(),
+        date: data.date,
+        drop: data.drop,
+        coverImage: data.coverImage,
+        images: data.images || [],
+        draft: data.draft ?? true,
+      }),
+      {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  } catch (error) {
+    console.error('Failed to create lookbook:', error);
+
+    const message =
+      error instanceof Error ? error.message : 'Failed to create lookbook';
+
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+};

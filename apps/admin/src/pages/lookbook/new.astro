@@ -1,0 +1,61 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { CreateLookbook } from '../../components/CreateLookbook';
+import type { Drop } from '@dear-margeaux/api';
+
+// Fetch drops for the drop selector
+let drops: Drop[] = [];
+try {
+  const dropsResponse = await fetch(new URL('/api/drops', Astro.url));
+  if (dropsResponse.ok) {
+    const data = await dropsResponse.json();
+    drops = data.items || [];
+  }
+} catch (e) {
+  console.error('Failed to fetch drops:', e);
+}
+---
+
+<AdminLayout title="New Lookbook">
+  <!-- Breadcrumb -->
+  <nav class="flex mb-6" aria-label="Breadcrumb">
+    <ol class="flex items-center space-x-2">
+      <li>
+        <a
+          href="/lookbook"
+          class="text-text-muted hover:text-text-primary text-sm"
+        >
+          Lookbook
+        </a>
+      </li>
+      <li>
+        <svg
+          class="h-5 w-5 text-text-muted"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+            clip-rule="evenodd"></path>
+        </svg>
+      </li>
+      <li>
+        <span class="text-text-primary text-sm font-medium">New Lookbook</span>
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="text-2xl font-semibold text-text-primary">New Lookbook</h1>
+    <p class="mt-1 text-sm text-text-secondary">
+      Create a new lookbook collection to showcase your products and brand
+      aesthetic.
+    </p>
+  </div>
+
+  <!-- Create Lookbook Component -->
+  <CreateLookbook client:load drops={drops} />
+</AdminLayout>
