@@ -513,6 +513,14 @@ export function ProductFormComplete({
   const [templateDropdownOpen, setTemplateDropdownOpen] = useState(false);
   const [customTemplates, setCustomTemplates] = useState<VariantTemplate[]>([]);
 
+  // Bulk price update modal state
+  const [bulkPriceModalOpen, setBulkPriceModalOpen] = useState(false);
+  const [bulkPriceMode, setBulkPriceMode] = useState<'fixed' | 'percentage'>(
+    'fixed'
+  );
+  const [bulkPriceValue, setBulkPriceValue] = useState('');
+  const [bulkPriceError, setBulkPriceError] = useState<string | null>(null);
+
   // Load custom templates on mount
   useEffect(() => {
     setCustomTemplates(loadCustomTemplates());
@@ -567,6 +575,123 @@ export function ProductFormComplete({
 
   // Check if existing variants have data (for confirmation)
   const hasExistingVariantData = formData.variants.some(variantHasData);
+
+  // Bulk price modal helpers
+  const openBulkPriceModal = () => {
+    setBulkPriceModalOpen(true);
+    setBulkPriceMode('fixed');
+    setBulkPriceValue('');
+    setBulkPriceError(null);
+  };
+
+  const closeBulkPriceModal = () => {
+    setBulkPriceModalOpen(false);
+    setBulkPriceError(null);
+  };
+
+  const validateBulkPriceInput = (): string | null => {
+    if (!bulkPriceValue.trim()) {
+      return bulkPriceMode === 'fixed'
+        ? 'Please enter a price'
+        : 'Please enter a percentage';
+    }
+
+    const numValue = parseFloat(bulkPriceValue);
+    if (isNaN(numValue)) {
+      return 'Please enter a valid number';
+    }
+
+    if (bulkPriceMode === 'fixed' && numValue <= 0) {
+      return 'Price must be positive';
+    }
+
+    if (bulkPriceMode === 'percentage' && numValue <= -100) {
+      return 'Cannot reduce prices by 100% or more';
+    }
+
+    return null;
+  };
+
+  const generatePricePreview = (): Array<{
+    identifier: string;
+    before: string;
+    after: string;
+  }> => {
+    const numValue = parseFloat(bulkPriceValue);
+    if (isNaN(numValue) && bulkPriceMode === 'percentage') return [];
+    if (
+      isNaN(numValue) &&
+      bulkPriceMode === 'fixed' &&
+      bulkPriceValue.trim() === ''
+    )
+      return [];
+
+    return formData.variants
+      .filter((v) => v.price.trim() !== '' || bulkPriceMode === 'fixed')
+      .map((v, index) => {
+        const original = parseFloat(v.price) || 0;
+        let newPrice: number;
+
+        if (bulkPriceMode === 'fixed') {
+          newPrice = numValue;
+        } else {
+          // Percentage mode
+          newPrice = original * (1 + numValue / 100);
+        }
+
+        // Round to 2 decimal places
+        newPrice = Math.round(newPrice * 100) / 100;
+
+        return {
+          identifier: v.sku || v.title || `Variant ${index + 1}`,
+          before: v.price || '—',
+          after: newPrice >= 0 ? newPrice.toFixed(2) : '—',
+        };
+      });
+  };
+
+  const applyBulkPrice = () => {
+    const error = validateBulkPriceInput();
+    if (error) {
+      setBulkPriceError(error);
+      return;
+    }
+
+    const numValue = parseFloat(bulkPriceValue);
+
+    setFormData((prev) => ({
+      ...prev,
+      variants: prev.variants.map((v) => {
+        if (bulkPriceMode === 'fixed') {
+          // Apply fixed price to all variants
+          return {
+            ...v,
+            price: numValue.toFixed(2),
+          };
+        } else {
+          // Apply percentage adjustment
+          const original = parseFloat(v.price);
+          if (isNaN(original) || !v.price.trim()) {
+            // Skip empty prices for percentage mode
+            return v;
+          }
+          const newPrice = original * (1 + numValue / 100);
+          const rounded = Math.round(newPrice * 100) / 100;
+          return {
+            ...v,
+            price: rounded.toFixed(2),
+          };
+        }
+      }),
+    }));
+
+    closeBulkPriceModal();
+  };
+
+  // Check if any variant has empty price (for percentage mode warning)
+  const hasVariantsWithoutPrice = formData.variants.some(
+    (v) => !v.price.trim()
+  );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -869,15 +994,13 @@ export function ProductFormComplete({
             </span>
           </h2>
 
-          {/* Quick Add Dropdown */}
-          <div className="relative">
+          <div className="flex items-center gap-2">
+            {/* Set All Prices Button */}
             <button
               type="button"
-              onClick={() => setTemplateDropdownOpen(!templateDropdownOpen)}
+              onClick={openBulkPriceModal}
               disabled={isSubmitting}
-              aria-haspopup="listbox"
-              aria-expanded={templateDropdownOpen}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-text-muted hover:text-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-text-muted hover:text-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg
                 className="w-4 h-4"
@@ -889,75 +1012,102 @@ export function ProductFormComplete({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              Quick Add
-              <svg
-                className={`w-4 h-4 transition-transform ${templateDropdownOpen ? 'rotate-180' : ''}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+              Set All Prices
             </button>
 
-            {templateDropdownOpen && (
-              <div
-                role="listbox"
-                className="absolute right-0 z-10 mt-1 w-64 rounded-lg border border-border bg-background-primary shadow-lg"
+            {/* Quick Add Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setTemplateDropdownOpen(!templateDropdownOpen)}
+                disabled={isSubmitting}
+                aria-haspopup="listbox"
+                aria-expanded={templateDropdownOpen}
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-text-muted hover:text-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <div className="py-1">
-                  <div className="px-3 py-2 text-xs font-medium text-text-muted uppercase tracking-wide">
-                    Templates
-                  </div>
-                  {allTemplates.map((template) => (
-                    <button
-                      key={template.id}
-                      type="button"
-                      role="option"
-                      aria-selected={false}
-                      onClick={() => {
-                        if (hasExistingVariantData) {
-                          // Show confirmation before replacing variants with data
-                          if (
-                            confirm(
-                              `This will replace your existing ${formData.variants.length} variant(s) with ${template.variants.length} variants from the "${template.name}" template. Continue?`
-                            )
-                          ) {
-                            applyTemplate(template);
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+                Quick Add
+                <svg
+                  className={`w-4 h-4 transition-transform ${templateDropdownOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              {templateDropdownOpen && (
+                <div
+                  role="listbox"
+                  className="absolute right-0 z-10 mt-1 w-64 rounded-lg border border-border bg-background-primary shadow-lg"
+                >
+                  <div className="py-1">
+                    <div className="px-3 py-2 text-xs font-medium text-text-muted uppercase tracking-wide">
+                      Templates
+                    </div>
+                    {allTemplates.map((template) => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        role="option"
+                        aria-selected={false}
+                        onClick={() => {
+                          if (hasExistingVariantData) {
+                            // Show confirmation before replacing variants with data
+                            if (
+                              confirm(
+                                `This will replace your existing ${formData.variants.length} variant(s) with ${template.variants.length} variants from the "${template.name}" template. Continue?`
+                              )
+                            ) {
+                              applyTemplate(template);
+                            } else {
+                              setTemplateDropdownOpen(false);
+                            }
                           } else {
-                            setTemplateDropdownOpen(false);
+                            applyTemplate(template);
                           }
-                        } else {
-                          applyTemplate(template);
-                        }
-                      }}
-                      className="w-full px-3 py-2 text-sm text-left text-text-primary hover:bg-background-secondary flex items-center justify-between"
-                    >
-                      <span>{template.name}</span>
-                      <span className="text-xs text-text-muted">
-                        {template.variants.length} variants
-                      </span>
-                    </button>
-                  ))}
-                  {customTemplates.length > 0 && (
-                    <>
-                      <div className="my-1 border-t border-border" />
-                      <div className="px-3 py-2 text-xs font-medium text-text-muted uppercase tracking-wide">
-                        Custom Templates
-                      </div>
-                    </>
-                  )}
+                        }}
+                        className="w-full px-3 py-2 text-sm text-left text-text-primary hover:bg-background-secondary flex items-center justify-between"
+                      >
+                        <span>{template.name}</span>
+                        <span className="text-xs text-text-muted">
+                          {template.variants.length} variants
+                        </span>
+                      </button>
+                    ))}
+                    {customTemplates.length > 0 && (
+                      <>
+                        <div className="my-1 border-t border-border" />
+                        <div className="px-3 py-2 text-xs font-medium text-text-muted uppercase tracking-wide">
+                          Custom Templates
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
         <p className="text-sm text-text-muted mb-4">
@@ -1058,6 +1208,195 @@ export function ProductFormComplete({
           )}
         </button>
       </div>
+
+      {/* Bulk Price Update Modal */}
+      {bulkPriceModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <button
+            type="button"
+            data-testid="modal-backdrop"
+            className="absolute inset-0 bg-black/50"
+            onClick={closeBulkPriceModal}
+            aria-label="Close modal"
+          />
+
+          {/* Modal Dialog */}
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bulk-price-title"
+            className="relative w-full max-w-md mx-4 bg-background-primary rounded-lg shadow-xl"
+          >
+            <div className="p-6">
+              <h3
+                id="bulk-price-title"
+                className="text-lg font-semibold text-text-primary mb-4"
+              >
+                Set All Prices
+              </h3>
+
+              {/* Mode Selection */}
+              <div className="mb-4">
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="bulk-price-mode"
+                      value="fixed"
+                      checked={bulkPriceMode === 'fixed'}
+                      onChange={() => {
+                        setBulkPriceMode('fixed');
+                        setBulkPriceError(null);
+                      }}
+                      className="text-primary-500 focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-text-primary">
+                      Fixed Price
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="bulk-price-mode"
+                      id="percentage-adjustment"
+                      value="percentage"
+                      checked={bulkPriceMode === 'percentage'}
+                      onChange={() => {
+                        setBulkPriceMode('percentage');
+                        setBulkPriceError(null);
+                      }}
+                      className="text-primary-500 focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-text-primary">
+                      Percentage Adjustment
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Price Input */}
+              <div className="mb-4">
+                <label
+                  htmlFor="bulk-price-value"
+                  className="block text-sm font-medium text-text-primary mb-1"
+                >
+                  {bulkPriceMode === 'fixed' ? 'New Price' : 'Percentage'}
+                </label>
+                <div className="relative">
+                  {bulkPriceMode === 'fixed' && (
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
+                      $
+                    </span>
+                  )}
+                  <input
+                    type="number"
+                    id="bulk-price-value"
+                    value={bulkPriceValue}
+                    onChange={(e) => {
+                      setBulkPriceValue(e.target.value);
+                      setBulkPriceError(null);
+                    }}
+                    step={bulkPriceMode === 'fixed' ? '0.01' : '1'}
+                    placeholder={
+                      bulkPriceMode === 'fixed' ? '0.00' : 'e.g., 10 or -5'
+                    }
+                    className={`block w-full rounded-lg border ${
+                      bulkPriceError
+                        ? 'border-status-error focus:border-status-error focus:ring-status-error'
+                        : 'border-border focus:border-primary-500 focus:ring-primary-500'
+                    } bg-background-primary py-2 ${bulkPriceMode === 'fixed' ? 'pl-7' : 'pl-3'} pr-${bulkPriceMode === 'percentage' ? '8' : '3'} text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1`}
+                  />
+                  {bulkPriceMode === 'percentage' && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted">
+                      %
+                    </span>
+                  )}
+                </div>
+                {bulkPriceError && (
+                  <p className="mt-1 text-sm text-status-error">
+                    {bulkPriceError}
+                  </p>
+                )}
+                {bulkPriceMode === 'percentage' && hasVariantsWithoutPrice && (
+                  <p className="mt-1 text-xs text-amber-600">
+                    Variants without prices will be skipped
+                  </p>
+                )}
+              </div>
+
+              {/* Price Preview */}
+              {bulkPriceValue.trim() !== '' && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-text-primary mb-2">
+                    Price Preview
+                  </h4>
+                  <div className="max-h-40 overflow-y-auto border border-border rounded-lg">
+                    <table className="w-full text-sm">
+                      <thead className="bg-background-secondary sticky top-0">
+                        <tr>
+                          <th className="text-left px-3 py-2 text-text-muted font-medium">
+                            Variant
+                          </th>
+                          <th className="text-right px-3 py-2 text-text-muted font-medium">
+                            Before
+                          </th>
+                          <th className="text-center px-2 py-2 text-text-muted font-medium">
+                            →
+                          </th>
+                          <th className="text-right px-3 py-2 text-text-muted font-medium">
+                            After
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {generatePricePreview().map((preview, idx) => (
+                          <tr key={idx} className="border-t border-border">
+                            <td className="px-3 py-2 text-text-primary truncate max-w-[120px]">
+                              {preview.identifier}
+                            </td>
+                            <td className="px-3 py-2 text-right text-text-muted">
+                              {preview.before === '—'
+                                ? '—'
+                                : `$${preview.before}`}
+                            </td>
+                            <td className="px-2 py-2 text-center text-text-muted">
+                              →
+                            </td>
+                            <td className="px-3 py-2 text-right font-medium text-primary-600">
+                              {preview.after === '—'
+                                ? '—'
+                                : `$${preview.after}`}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeBulkPriceModal}
+                  className="px-4 py-2 text-sm font-medium text-text-primary bg-background-tertiary border border-border rounded-lg hover:bg-background-primary transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={applyBulkPrice}
+                  className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-600 transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }
