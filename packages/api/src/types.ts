@@ -408,6 +408,16 @@ export interface RefundParams {
   reason?: string;
 }
 
+/** Refund record */
+export interface Refund {
+  id: string;
+  order_id: string;
+  stripe_refund_id: string;
+  amount_cents: number;
+  status: string;
+  created_at: ISODateString;
+}
+
 /** Order note (admin comment on an order) */
 export interface OrderNote {
   id: string;

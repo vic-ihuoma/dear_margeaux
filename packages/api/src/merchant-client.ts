@@ -39,6 +39,7 @@ import type {
   OrderListItem,
   UpdateOrderParams,
   RefundParams,
+  Refund,
   ListOrdersParams,
   OrderNote,
   CreateOrderNoteParams,
@@ -589,6 +590,16 @@ export class MerchantClient {
     return this.request<Order>('POST', `/orders/${id}/refund`, {
       body: data ?? {},
     });
+  }
+
+  /**
+   * Get refunds for an order (admin only)
+   */
+  async getOrderRefunds(orderId: string): Promise<{ items: Refund[] }> {
+    return this.request<{ items: Refund[] }>(
+      'GET',
+      `/orders/${orderId}/refunds`
+    );
   }
 
   /**

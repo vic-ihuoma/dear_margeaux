@@ -354,6 +354,45 @@ ordersRoutes.patch('/:orderId', async (c) => {
   return c.json(formattedOrder);
 });
 
+// GET /v1/orders/:orderId/refunds - List refunds for an order
+ordersRoutes.get('/:orderId/refunds', async (c) => {
+  const orderId = c.req.param('orderId');
+  const { store } = c.get('auth');
+  const db = getDb(c.env);
+
+  // Verify order exists and belongs to this store
+  const [order] = await db.query<OrderRow>(`SELECT id FROM orders WHERE id = ? AND store_id = ?`, [
+    orderId,
+    store.id,
+  ]);
+  if (!order) throw ApiError.notFound('Order not found');
+
+  interface RefundRow {
+    id: string;
+    order_id: string;
+    stripe_refund_id: string;
+    amount_cents: number;
+    status: string;
+    created_at: string;
+  }
+
+  const refunds = await db.query<RefundRow>(
+    `SELECT * FROM refunds WHERE order_id = ? ORDER BY created_at DESC`,
+    [orderId]
+  );
+
+  return c.json({
+    items: refunds.map((r) => ({
+      id: r.id,
+      order_id: r.order_id,
+      stripe_refund_id: r.stripe_refund_id,
+      amount_cents: r.amount_cents,
+      status: r.status,
+      created_at: r.created_at,
+    })),
+  });
+});
+
 // POST /v1/orders/:orderId/refund
 ordersRoutes.post('/:orderId/refund', async (c) => {
   const orderId = c.req.param('orderId');
