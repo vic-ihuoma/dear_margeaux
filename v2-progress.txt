@@ -1220,3 +1220,37 @@ Created LookbookGallery component for managing lookbook image collections with f
 
 ### Next Steps
 Remaining lookbook-admin tasks: lookbook-admin-4 (editor page), lookbook-admin-5 (API endpoints), lookbook-admin-6 (workflow test).
+
+
+## 2026-02-01: lookbook-admin-4 - Create lookbook editor page
+
+### Task Completed
+Created lookbook editor pages with full CRUD functionality for creating and editing lookbook collections.
+
+### Key Decisions
+- Created CreateLookbook.tsx wrapper that combines LookbookForm and LookbookGallery components
+- Created EditLookbook.tsx for editing existing lookbooks with success feedback messaging
+- New lookbook page at /lookbook/new.astro uses CreateLookbook with drops passed as props
+- Edit lookbook page at /lookbook/[slug].astro fetches lookbook data before rendering EditLookbook
+- Extended lookbook API with POST handler for creation with slug generation and conflict handling
+- Created [slug].ts API endpoint with GET, PATCH, DELETE handlers
+- MDX file format used for storage with YAML frontmatter for metadata and images array
+- Upload handler reused from existing /api/images/upload for R2 storage consistency
+
+### Files Changed
+- apps/admin/src/components/CreateLookbook.tsx - New wrapper component for creating lookbooks
+- apps/admin/src/components/EditLookbook.tsx - New wrapper component for editing lookbooks
+- apps/admin/src/pages/lookbook/new.astro - New lookbook page with breadcrumb navigation
+- apps/admin/src/pages/lookbook/[slug].astro - Edit lookbook page with status badge and error handling
+- apps/admin/src/pages/api/lookbook/index.ts - Added POST handler, generateSlug and generateMDX helpers
+- apps/admin/src/pages/api/lookbook/[slug].ts - New API with GET, PATCH, DELETE endpoints
+- apps/admin/tests/pages/lookbook-editor.test.ts - 42 tests covering page structure and API endpoints
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 183 warnings - all pre-existing)
+- Tests: PASSED (1213 admin tests, including 42 new lookbook editor tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining lookbook-admin task: lookbook-admin-6 (workflow test).
