@@ -1551,3 +1551,27 @@ Verified and tested the initial inventory configuration for all 7 products in se
 ### Next Steps
 Remaining tasks starting with initial-content-10.
 
+## 2026-02-01: initial-content-10 - Create 'About Dear Margeaux' blog post
+
+### Task Completed
+Updated the 'About Dear Margeaux' blog post to be pinned, ensuring it appears first on the /blog page.
+
+### Key Decisions
+- Blog post already existed at apps/storefront/src/content/blog/about-dear-margeaux.mdx
+- Changed pinned field from false to true to make it the featured post
+- Blog index page already has logic to sort pinned posts first and display "Pinned" badge
+- Blog post already had correct R2 image URL, slug, draft: false, and brand story content
+
+### Files Changed
+- apps/storefront/src/content/blog/about-dear-margeaux.mdx - Set pinned: true (was false)
+- apps/storefront/tests/content/initial-content-10.test.ts - 18 new tests verifying all task requirements
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 183 warnings - all pre-existing)
+- Tests: PASSED (493 storefront tests, including 18 new initial-content-10 tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining tasks starting with initial-content-11.
+
