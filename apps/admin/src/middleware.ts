@@ -22,12 +22,32 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const runtime = context.locals.runtime;
   const db = runtime?.env?.DB as D1Database | undefined;
 
-  // If no D1 binding, we're in development without Cloudflare
-  // Allow access but set user to null
+  // If no D1 binding, authentication cannot be verified
+  // Only allow bypass in explicit development mode to prevent security issues
   if (!db) {
-    context.locals.user = null;
-    context.locals.session = null;
-    return next();
+    const isDevelopment = import.meta.env.DEV;
+    const allowDevBypass = import.meta.env.ALLOW_AUTH_BYPASS === 'true';
+
+    if (isDevelopment && allowDevBypass) {
+      // Development mode with explicit bypass enabled
+      console.warn(
+        'Auth bypass enabled in development mode. Set ALLOW_AUTH_BYPASS=false for production-like testing.'
+      );
+      context.locals.user = null;
+      context.locals.session = null;
+      return next();
+    }
+
+    // Production or development without explicit bypass - deny access
+    console.error(
+      'D1 database not available. Authentication cannot be verified.'
+    );
+    return new Response(
+      'Service unavailable - authentication system not configured',
+      {
+        status: 503,
+      }
+    );
   }
 
   // Validate session

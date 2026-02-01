@@ -12,20 +12,26 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   try {
-    const limit = parseInt(url.searchParams.get('limit') || '100', 10);
+    const limit = parseInt(url.searchParams.get('limit') || '50', 10);
     const status = url.searchParams.get('status') as 'active' | 'draft' | null;
 
+    // Cap limit to prevent excessive API calls
+    const cappedLimit = Math.min(limit, 50);
+
     const response = await client.getProducts({
-      limit,
+      limit: cappedLimit,
       ...(status && { status }),
     });
 
-    // Fetch full product details for each product to get variants
-    const products = await Promise.all(
-      response.items.map(async (item) => {
-        return client.getProduct(item.id);
-      })
-    );
+    // Fetch full product details sequentially to avoid rate limiting
+    // Note: The Merchant API doesn't support batch fetching products with variants,
+    // so we must fetch each product individually. Sequential fetching is more reliable
+    // than parallel fetching which could hit rate limits.
+    const products = [];
+    for (const item of response.items) {
+      const product = await client.getProduct(item.id);
+      products.push(product);
+    }
 
     return new Response(JSON.stringify({ items: products }), {
       status: 200,
@@ -107,12 +113,12 @@ export const POST: APIRoute = async ({ request }) => {
     // Check if we have a variants array (new format takes precedence)
     if (data.variants && data.variants.length > 0) {
       // Validate each variant in the array
-      for (let i = 0; i < data.variants.length; i++) {
-        const variant = data.variants[i];
+      for (const [index, variant] of data.variants.entries()) {
+        const variantNum = index + 1;
         if (!variant.sku) {
           return new Response(
             JSON.stringify({
-              error: `Variant ${i + 1}: SKU is required`,
+              error: `Variant ${variantNum}: SKU is required`,
             }),
             {
               status: 400,
@@ -123,7 +129,7 @@ export const POST: APIRoute = async ({ request }) => {
         if (!variant.title) {
           return new Response(
             JSON.stringify({
-              error: `Variant ${i + 1}: title is required`,
+              error: `Variant ${variantNum}: title is required`,
             }),
             {
               status: 400,
@@ -134,7 +140,7 @@ export const POST: APIRoute = async ({ request }) => {
         if (variant.price_cents === undefined || variant.price_cents === null) {
           return new Response(
             JSON.stringify({
-              error: `Variant ${i + 1}: price is required`,
+              error: `Variant ${variantNum}: price is required`,
             }),
             {
               status: 400,

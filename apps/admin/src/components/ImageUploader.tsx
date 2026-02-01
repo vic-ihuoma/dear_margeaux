@@ -1,5 +1,8 @@
 import { useState, useRef, useCallback, type DragEvent } from 'react';
 
+/** Default maximum file size in bytes (5MB) */
+const DEFAULT_MAX_FILE_SIZE = 5 * 1024 * 1024;
+
 export interface ImageUploaderProps {
   /** Current image URL */
   value?: string | null;
@@ -13,6 +16,8 @@ export interface ImageUploaderProps {
   error?: string | null;
   /** Upload handler function */
   uploadHandler: (file: File) => Promise<{ url: string; key: string }>;
+  /** Maximum file size in bytes (defaults to 5MB) */
+  maxFileSizeBytes?: number;
 }
 
 export function ImageUploader({
@@ -22,29 +27,38 @@ export function ImageUploader({
   isUploading = false,
   error,
   uploadHandler,
+  maxFileSizeBytes = DEFAULT_MAX_FILE_SIZE,
 }: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const validateFile = useCallback((file: File): string | null => {
-    const acceptedTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'image/gif',
-    ];
-    const maxFileSize = 5 * 1024 * 1024; // 5MB
-
-    if (!acceptedTypes.includes(file.type)) {
-      return 'Please upload a JPEG, PNG, WebP, or GIF image';
-    }
-    if (file.size > maxFileSize) {
-      return 'File size must be less than 5MB';
-    }
-    return null;
+  // Format file size for display (e.g., "5MB", "10MB")
+  const formatFileSize = useCallback((bytes: number): string => {
+    const mb = bytes / (1024 * 1024);
+    return mb >= 1 ? `${Math.round(mb)}MB` : `${Math.round(bytes / 1024)}KB`;
   }, []);
+
+  const validateFile = useCallback(
+    (file: File): string | null => {
+      const acceptedTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'image/gif',
+      ];
+
+      if (!acceptedTypes.includes(file.type)) {
+        return 'Please upload a JPEG, PNG, WebP, or GIF image';
+      }
+      if (file.size > maxFileSizeBytes) {
+        return `File size must be less than ${formatFileSize(maxFileSizeBytes)}`;
+      }
+      return null;
+    },
+    [maxFileSizeBytes, formatFileSize]
+  );
 
   const acceptedTypesStr = 'image/jpeg,image/png,image/webp,image/gif';
 
@@ -246,7 +260,7 @@ export function ImageUploader({
                 : 'Drop an image here or click to browse'}
             </p>
             <p className="text-xs text-text-muted">
-              JPEG, PNG, WebP, or GIF up to 5MB
+              JPEG, PNG, WebP, or GIF up to {formatFileSize(maxFileSizeBytes)}
             </p>
           </>
         )}

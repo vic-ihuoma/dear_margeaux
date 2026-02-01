@@ -100,6 +100,7 @@ export const GET: APIRoute = async () => {
     const inventoryItems = inventoryResponse.items;
 
     // Fetch products to build SKU to product mapping
+    // Paginate through all products to ensure complete data
     const skuToProduct = new Map<
       string,
       {
@@ -110,18 +111,28 @@ export const GET: APIRoute = async () => {
       }
     >();
 
-    const productsResponse = await client.getProducts({ limit: 100 });
-    for (const productItem of productsResponse.items) {
-      const product = await client.getProduct(productItem.id);
-      for (const variant of product.variants) {
-        skuToProduct.set(variant.sku, {
-          productTitle: product.title,
-          variantTitle: variant.title,
-          low_stock_threshold: variant.low_stock_threshold,
-          reorder_point: variant.reorder_point,
-        });
+    let nextCursor: string | null = null;
+    do {
+      const productsResponse = await client.getProducts({
+        limit: 100,
+        ...(nextCursor && { cursor: nextCursor }),
+      });
+
+      // Fetch full product details sequentially to avoid rate limiting
+      for (const productItem of productsResponse.items) {
+        const product = await client.getProduct(productItem.id);
+        for (const variant of product.variants) {
+          skuToProduct.set(variant.sku, {
+            productTitle: product.title,
+            variantTitle: variant.title,
+            low_stock_threshold: variant.low_stock_threshold,
+            reorder_point: variant.reorder_point,
+          });
+        }
       }
-    }
+
+      nextCursor = productsResponse.pagination.next_cursor;
+    } while (nextCursor);
 
     // Generate CSV
     const csvContent = generateInventoryCsv(inventoryItems, skuToProduct);

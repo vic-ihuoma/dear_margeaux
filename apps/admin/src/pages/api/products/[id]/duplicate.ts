@@ -35,18 +35,19 @@ export const POST: APIRoute = async ({ params }) => {
       drop_id: originalProduct.drop_id ?? undefined,
     });
 
-    // 3. Duplicate all variants with new SKUs
-    const duplicatedVariants = await Promise.all(
-      originalProduct.variants.map(async (variant) => {
-        return client.createVariant(duplicatedProduct.id, {
-          sku: `${variant.sku}-COPY`,
-          title: variant.title,
-          price_cents: variant.price_cents,
-          image_url: variant.image_url ?? undefined,
-          image_alt: variant.image_alt ?? undefined,
-        });
-      })
-    );
+    // 3. Duplicate all variants with new SKUs (sequentially to avoid race conditions)
+    // Sequential creation prevents issues with rate limits and SKU uniqueness checks
+    const duplicatedVariants = [];
+    for (const variant of originalProduct.variants) {
+      const createdVariant = await client.createVariant(duplicatedProduct.id, {
+        sku: `${variant.sku}-COPY`,
+        title: variant.title,
+        price_cents: variant.price_cents,
+        image_url: variant.image_url ?? undefined,
+        image_alt: variant.image_alt ?? undefined,
+      });
+      duplicatedVariants.push(createdVariant);
+    }
 
     // 4. Return the complete duplicated product with variants
     return new Response(

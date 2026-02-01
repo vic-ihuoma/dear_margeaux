@@ -184,7 +184,7 @@ describe('Products API Routes', () => {
       await GET(context);
 
       expect(mockGetProducts).toHaveBeenCalledWith({
-        limit: 100,
+        limit: 50,
         status: 'draft',
       });
     });
