@@ -1450,3 +1450,28 @@ Verified and tested The Margot product configuration in seed-config for database
 
 ### Next Steps
 Remaining tasks starting with initial-content-6.
+
+## 2026-02-01: initial-content-6 - Create product: The Vivienne
+
+### Task Completed
+Verified and tested The Vivienne product configuration in seed-config for database creation.
+
+### Key Decisions
+- Added dedicated test file for initial-content-6 to verify The Vivienne product specifically
+- Tests verify all 4 unit test requirements from implementations.json
+- Product is correctly configured with SKU VIVIENNE-001, price $595 (59500 cents), and R2 image URL
+- Product is in PRODUCTS array which seed script uses to assign to "The Debut" drop
+- Tests verify product is included in TEST_ORDERS for demo order creation
+- Inventory configured at 10 units (premium, more exclusive)
+
+### Files Changed
+- merchant/tests/scripts/initial-content-6.test.ts - 14 new tests covering product, variant, drop assignment, and inventory configuration
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 289 warnings - all pre-existing)
+- Tests: PASSED (683 merchant tests, including 14 new initial-content-6 tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining tasks starting with initial-content-7.
