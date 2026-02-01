@@ -115,6 +115,29 @@ function variantHasData(variant: VariantFormData): boolean {
   );
 }
 
+/** Build a list of error messages for the error summary */
+function buildErrorSummary(
+  productErrors: Partial<Record<string, string>>,
+  variantErrors: Record<number, Partial<Record<string, string>>>
+): string[] {
+  const messages: string[] = [];
+
+  // Add product-level errors
+  Object.values(productErrors).forEach((error) => {
+    if (error) messages.push(error);
+  });
+
+  // Add variant-level errors with variant identification
+  Object.entries(variantErrors).forEach(([indexStr, errors]) => {
+    const variantNum = parseInt(indexStr, 10) + 1;
+    Object.values(errors).forEach((error) => {
+      if (error) messages.push(`Variant ${variantNum}: ${error}`);
+    });
+  });
+
+  return messages;
+}
+
 export function ProductFormComplete({
   product,
   onSubmit,
@@ -156,6 +179,8 @@ export function ProductFormComplete({
   const [variantErrors, setVariantErrors] = useState<
     Record<number, Partial<Record<keyof VariantFormData, string>>>
   >({});
+  // Track whether we've attempted to submit (to show error summary)
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
   // Track newly added variant index for auto-focus
   const [focusVariantIndex, setFocusVariantIndex] = useState<number | null>(
@@ -282,6 +307,20 @@ export function ProductFormComplete({
 
     setFormErrors(errors);
     setVariantErrors(vErrors);
+
+    // Auto-expand any collapsed variants that have errors
+    const variantIndicesWithErrors = Object.keys(vErrors).map(Number);
+    if (variantIndicesWithErrors.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        variants: prev.variants.map((v, i) =>
+          variantIndicesWithErrors.includes(i) && !v.isExpanded
+            ? { ...v, isExpanded: true }
+            : v
+        ),
+      }));
+    }
+
     return (
       Object.keys(errors).length === 0 && Object.keys(vErrors).length === 0
     );
@@ -289,6 +328,7 @@ export function ProductFormComplete({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setHasAttemptedSubmit(true);
 
     if (!validate()) {
       return;
@@ -425,6 +465,49 @@ export function ProductFormComplete({
           </div>
         </div>
       )}
+
+      {/* Validation Error Summary */}
+      {hasAttemptedSubmit &&
+        (Object.keys(formErrors).length > 0 ||
+          Object.keys(variantErrors).length > 0) && (
+          <div
+            role="alert"
+            className="rounded-lg bg-status-error/10 border border-status-error/20 p-4"
+          >
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-5 w-5 text-status-error"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-status-error">
+                  Please fix the following errors (
+                  {buildErrorSummary(formErrors, variantErrors).length} issue
+                  {buildErrorSummary(formErrors, variantErrors).length !== 1
+                    ? 's'
+                    : ''}
+                  )
+                </h3>
+                <ul className="mt-2 text-sm text-status-error list-disc list-inside space-y-1">
+                  {buildErrorSummary(formErrors, variantErrors).map(
+                    (message, i) => (
+                      <li key={i}>{message}</li>
+                    )
+                  )}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Product Details Section */}
       <section>

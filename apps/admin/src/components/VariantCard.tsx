@@ -117,6 +117,7 @@ export function VariantCard({
     <div
       data-testid="variant-card"
       data-variant-card
+      data-has-error={hasErrors ? 'true' : 'false'}
       className={`border rounded-lg ${hasErrors ? 'border-status-error' : 'border-border'} bg-background-secondary`}
     >
       {/* Variant Header - Collapsible Toggle */}
