@@ -1162,3 +1162,31 @@ Created lookbook admin listing page with full CRUD-ready infrastructure for mana
 
 ### Next Steps
 Remaining lookbook-admin tasks: lookbook-admin-2 (form component), lookbook-admin-3 (gallery manager), etc.
+
+
+## 2026-02-01: lookbook-admin-2 - Create lookbook form component
+
+### Task Completed
+Created LookbookForm component for managing lookbook metadata with support for create and edit modes.
+
+### Key Decisions
+- Created LookbookFormData interface with title, description, date, draft, drop (optional), and coverImage (optional) fields
+- Created LookbookFormProps interface with lookbook (optional for edit mode), onSubmit, onCancel, isSubmitting, error, drops array, and uploadHandler (optional)
+- Draft defaults to true in create mode (new lookbooks are drafts by default)
+- Drop selector is optional - lookbooks can exist without being associated with a drop
+- Used same patterns as DropForm for consistency: ImageUploader when uploadHandler provided, URL input fallback otherwise
+- Added validation for required fields (title, date) and title max length (200 characters)
+- Form displays "Create Lookbook" button in create mode, "Save Changes" in edit mode
+
+### Files Changed
+- apps/admin/src/components/LookbookForm.tsx - New component with form fields, validation, and submit handling
+- apps/admin/tests/components/LookbookForm.test.ts - 43 tests covering component structure, interfaces, fields, validation, and modes
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 183 warnings - all pre-existing)
+- Tests: PASSED (1131 admin tests, including 43 new LookbookForm tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining lookbook-admin tasks: lookbook-admin-3 (gallery manager), lookbook-admin-4 (editor page), etc.
