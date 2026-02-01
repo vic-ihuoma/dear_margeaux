@@ -1217,7 +1217,7 @@ describe('MerchantClient', () => {
           updated_at: '2024-01-01',
         },
       ];
-      mockFetch.mockResolvedValue(createMockResponse(mockDiscounts));
+      mockFetch.mockResolvedValue(createMockResponse({ items: mockDiscounts }));
 
       const result = await client.getDiscounts();
 

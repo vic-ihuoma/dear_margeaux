@@ -515,7 +515,11 @@ export class MerchantClient {
    * List all discounts (admin only)
    */
   async getDiscounts(): Promise<Discount[]> {
-    return this.request<Discount[]>('GET', '/discounts');
+    const response = await this.request<{ items: Discount[] }>(
+      'GET',
+      '/discounts'
+    );
+    return response.items;
   }
 
   /**
