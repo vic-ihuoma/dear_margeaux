@@ -1575,3 +1575,28 @@ Updated the 'About Dear Margeaux' blog post to be pinned, ensuring it appears fi
 ### Next Steps
 Remaining tasks starting with initial-content-11.
 
+## 2026-02-01: initial-content-11 - Create 'The Debut' lookbook
+
+### Task Completed
+Created 'The Debut' lookbook MDX file with 3 images for the inaugural collection.
+
+### Key Decisions
+- Created new lookbook MDX file at apps/storefront/src/content/lookbook/the-debut.mdx
+- Included 3 images from R2: lookbook-1.webp, lookbook-2.webp, and branding-hero.webp
+- Used 'the-debut' as the drop reference (matching seed-config.ts DROP_CONFIG)
+- Set draft: false to publish the lookbook
+- Added brand story content referencing all 7 products by name (Colette, Amélie, Giselle, Margot, Vivienne, Eloise, Céline)
+
+### Files Changed
+- apps/storefront/src/content/lookbook/the-debut.mdx - New lookbook MDX file with frontmatter and content
+- apps/storefront/tests/content/initial-content-11.test.ts - 16 new tests verifying all task requirements
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 289 warnings - all pre-existing)
+- Tests: PASSED (509 storefront tests, including 16 new initial-content-11 tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining tasks starting with initial-content-12.
+
