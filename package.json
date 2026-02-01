@@ -35,13 +35,18 @@
     ]
   },
   "devDependencies": {
+    "@esbuild/linux-arm64": "^0.25.12",
     "@playwright/test": "^1.57.0",
-    "@rollup/rollup-linux-arm64-gnu": "^4.55.1",
+    "@rollup/rollup-linux-arm64-gnu": "^4.57.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
     "prettier-plugin-astro": "^0.14.1",
     "sharp": "^0.34.5",
     "turbo": "^2.7.3"
+  },
+  "optionalDependencies": {
+    "@esbuild/darwin-arm64": "^0.25.6",
+    "@rollup/rollup-darwin-arm64": "^4.55.1"
   }
 }

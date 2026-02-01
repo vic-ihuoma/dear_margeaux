@@ -2,12 +2,19 @@
 
 IMPORTANT: Prefer retrieval-led reasoning. This file provides context for all tasks.
 
+## CRITICAL: DO NOT RUN PNPM INSTALL
+
+**NEVER run `pnpm install` or `pnpm add` inside Docker.**
+Dependencies are pre-installed on the host with multi-platform support.
+Running pnpm install will break cross-platform compatibility.
+
+If you see missing dependency errors, output `<promise>PLATFORM_ERROR</promise>` and stop.
+
 ## Platform Constraints
 
 - Host: Mac (darwin-arm64)
 - Docker: Linux (linux-arm64)
 - Dependencies configured for cross-platform via optionalDependencies
-- DO NOT run pnpm install inside Docker
 - FAIL FAST if you see rollup/esbuild/sharp platform errors → output `<promise>PLATFORM_ERROR</promise>`
 
 ## Quality Standards
