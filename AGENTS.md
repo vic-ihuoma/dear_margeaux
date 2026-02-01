@@ -15,7 +15,20 @@ If you see missing dependency errors, output `<promise>PLATFORM_ERROR</promise>`
 - Host: Mac (darwin-arm64)
 - Docker: Linux (linux-arm64)
 - Dependencies configured for cross-platform via optionalDependencies
-- FAIL FAST if you see rollup/esbuild/sharp platform errors → output `<promise>PLATFORM_ERROR</promise>`
+
+### IMPORTANT: Version mismatch warnings are SAFE TO IGNORE
+
+If you see warnings like:
+
+- "Host version X does not match binary version Y"
+- "esbuild version mismatch"
+
+These are **NOT platform errors** - they are version warnings that do not affect functionality.
+ONLY output `<promise>PLATFORM_ERROR</promise>` if you see errors about missing platform binaries like:
+
+- "Unsupported platform: linux-arm64"
+- "Cannot find module '@esbuild/linux-arm64'"
+- "Cannot find module '@rollup/rollup-linux-arm64-gnu'"
 
 ## Quality Standards
 
