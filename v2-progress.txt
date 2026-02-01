@@ -893,4 +893,35 @@ Transformed the single "Default Variant" section into a full multi-variant manag
 - Visual: Not executed (browser dependencies unavailable in sandbox)
 
 ### Next Steps
-Remaining 29 tasks with passes:false starting with pm-37
+Remaining 28 tasks with passes:false starting with pm-38
+
+
+## 2026-02-01: pm-37 - Create VariantCard component for inline variant editing
+
+### Task Completed
+Created reusable VariantCard component extracted from ProductFormComplete for inline variant editing with compact/expanded views.
+
+### Key Decisions
+- Extracted variant card logic from ProductFormComplete into standalone VariantCard component
+- Compact view displays thumbnail, SKU, title, price summary with collapse/expand toggle
+- Expanded view shows full edit form with all variant fields (SKU, title, price, image, alt text)
+- Delete button shows confirmation dialog for variants with data, immediate delete for empty variants
+- Drag handle indicator included for future reordering support
+- Uses variantHasData() helper to determine if confirmation is needed before deletion
+- Accessibility: aria-expanded attribute on toggle button, proper labeling
+- Removed unused handlers (handleVariantImageUpload/Remove, formatPricePreview) from ProductFormComplete
+
+### Files Changed
+- apps/admin/src/components/VariantCard.tsx - New component with compact/expanded views, delete confirmation, error display
+- apps/admin/src/components/ProductFormComplete.tsx - Import VariantCard, replace inline variant cards with component usage
+- apps/admin/tests/components/VariantCard.test.tsx - 52 tests for VariantCard functionality
+- apps/admin/tests/integration/product-creation-e2e.test.ts - Updated tests to check VariantCard instead of inline content
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 158 warnings - all pre-existing)
+- Tests: PASSED (823 admin tests, including 52 new VariantCard tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining 28 tasks with passes:false starting with pm-38
