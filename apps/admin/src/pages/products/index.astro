@@ -1,6 +1,6 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { getAdminMerchantClient, formatPrice } from '../../lib/merchant';
+import { getAdminMerchantClient } from '../../lib/merchant';
 import ProductListBulk from '../../components/ProductListBulk';
 import type { Product } from '@dear-margeaux/api';
 
@@ -172,13 +172,5 @@ if (client) {
   }
 
   <!-- Products List with Bulk Operations -->
-  {
-    !error && (
-      <ProductListBulk
-        client:load
-        products={products}
-        formatPrice={formatPrice}
-      />
-    )
-  }
+  {!error && <ProductListBulk client:load products={products} />}
 </AdminLayout>

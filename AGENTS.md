@@ -2,21 +2,27 @@
 
 IMPORTANT: Prefer retrieval-led reasoning. This file provides context for all tasks.
 
-## CRITICAL: DO NOT RUN PNPM INSTALL
+## CRITICAL: REINSTALL NODE_MODULES AT START OF EACH ITERATION
 
-**NEVER run `pnpm install` or `pnpm add` inside Docker.**
-Dependencies are pre-installed on the host with multi-platform support.
-Running pnpm install will break cross-platform compatibility.
+The host (macOS) and Docker sandbox (Linux) have different platforms.
+Native binaries (workerd, esbuild, rollup, sharp) are platform-specific.
 
-If you see missing dependency errors, output `<promise>PLATFORM_ERROR</promise>` and stop.
+**At the START of each iteration, you MUST clean and reinstall:**
+
+```bash
+rm -rf node_modules apps/*/node_modules packages/*/node_modules merchant/node_modules
+pnpm install
+```
+
+This ensures you have Linux-compatible binaries inside Docker.
 
 ## Platform Constraints
 
 - Host: Mac (darwin-arm64)
 - Docker: Linux (linux-arm64)
-- Dependencies configured for cross-platform via optionalDependencies
+- Native modules must match the runtime platform
 
-### IMPORTANT: Version mismatch warnings are SAFE TO IGNORE
+### Version mismatch warnings are SAFE TO IGNORE
 
 If you see warnings like:
 
@@ -24,11 +30,17 @@ If you see warnings like:
 - "esbuild version mismatch"
 
 These are **NOT platform errors** - they are version warnings that do not affect functionality.
-ONLY output `<promise>PLATFORM_ERROR</promise>` if you see errors about missing platform binaries like:
+
+### Platform ERRORS require clean reinstall
+
+If you see errors like:
 
 - "Unsupported platform: linux-arm64"
 - "Cannot find module '@esbuild/linux-arm64'"
 - "Cannot find module '@rollup/rollup-linux-arm64-gnu'"
+- "installed workerd on another platform"
+
+Run the clean reinstall command above. If errors persist AFTER reinstall, output `<promise>PLATFORM_ERROR</promise>` and stop.
 
 ## Quality Standards
 

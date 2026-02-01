@@ -71,11 +71,15 @@ for ((i=1; i<=$1; i++)); do
 ITERATION $i INSTRUCTIONS
 ========================================
 
-1. PLATFORM CHECK
-   Run: pnpm typecheck
-   If you see errors mentioning rollup, esbuild, or sharp with 
-   'platform' or 'linux' or 'darwin' in the message, this is a 
-   platform mismatch. Output <promise>PLATFORM_ERROR</promise> and stop.
+1. PLATFORM CHECK - CLEAN REINSTALL NODE_MODULES
+   The host (macOS) and Docker (Linux) have different platforms.
+   You MUST reinstall node_modules for Linux before any other work:
+   
+   rm -rf node_modules apps/*/node_modules packages/*/node_modules merchant/node_modules
+   pnpm install
+   
+   Then run: pnpm typecheck
+   If you STILL see platform errors after reinstall, output <promise>PLATFORM_ERROR</promise> and stop.
 
 2. TASK SELECTION  
    Find the first task in implementations.json with passes:false

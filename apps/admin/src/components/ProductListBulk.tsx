@@ -2,9 +2,19 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Product, DeletedProduct } from '@dear-margeaux/api';
 import { UndoToast } from './UndoToast';
 
+/**
+ * Format cents to a currency string (e.g., 1999 -> "$19.99")
+ * Defined inline to avoid SSR hydration issues with function props
+ */
+function formatPrice(cents: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(cents / 100);
+}
+
 interface ProductListBulkProps {
   products: Product[];
-  formatPrice: (cents: number) => string;
   onProductsChanged?: () => void;
 }
 
@@ -23,7 +33,6 @@ interface DeletedProducts {
 
 export function ProductListBulk({
   products: initialProducts,
-  formatPrice,
   onProductsChanged,
 }: ProductListBulkProps) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
