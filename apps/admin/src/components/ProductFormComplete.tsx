@@ -1,4 +1,10 @@
-import { useState, useCallback, type FormEvent, useEffect } from 'react';
+import {
+  useState,
+  useCallback,
+  type FormEvent,
+  useEffect,
+  useRef,
+} from 'react';
 import type { Product, ProductStatus } from '@dear-margeaux/api';
 import { TagInput } from './TagInput';
 import { DropSelector } from './DropSelector';
@@ -150,6 +156,23 @@ export function ProductFormComplete({
   const [variantErrors, setVariantErrors] = useState<
     Record<number, Partial<Record<keyof VariantFormData, string>>>
   >({});
+
+  // Track newly added variant index for auto-focus
+  const [focusVariantIndex, setFocusVariantIndex] = useState<number | null>(
+    null
+  );
+  const variantSkuRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // Auto-focus SKU field when new variant is added
+  useEffect(() => {
+    if (
+      focusVariantIndex !== null &&
+      variantSkuRefs.current[focusVariantIndex]
+    ) {
+      variantSkuRefs.current[focusVariantIndex]?.focus();
+      setFocusVariantIndex(null);
+    }
+  }, [focusVariantIndex, formData.variants.length]);
 
   // Auto-generate SKU from title when title changes and first variant SKU is empty
   useEffect(() => {
@@ -341,18 +364,19 @@ export function ProductFormComplete({
   };
 
   const addVariant = () => {
+    const newIndex = formData.variants.length;
     setFormData((prev) => ({
       ...prev,
       variants: [...prev.variants, createEmptyVariant(true)],
     }));
+    // Set focus to the new variant's SKU field after render
+    setFocusVariantIndex(newIndex);
   };
 
   const removeVariant = (index: number) => {
     if (formData.variants.length <= 1) return; // Prevent removing last variant
 
-    const variant = formData.variants[index];
-    // If variant has data, could add confirmation here
-    // For now, just remove it
+    // Note: Confirmation dialog is handled in VariantCard component
     setFormData((prev) => ({
       ...prev,
       variants: prev.variants.filter((_, i) => i !== index),
@@ -652,6 +676,9 @@ export function ProductFormComplete({
               isEditing={!!product}
               errors={variantErrors[index] || {}}
               uploadHandler={uploadHandler}
+              skuInputRef={(el) => {
+                variantSkuRefs.current[index] = el;
+              }}
             />
           ))}
 

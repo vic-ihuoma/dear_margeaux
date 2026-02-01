@@ -23,6 +23,8 @@ export interface VariantCardProps {
   errors: Partial<Record<keyof VariantFormData, string>>;
   /** Optional handler for image uploads (shows ImageUploader when provided) */
   uploadHandler?: (file: File) => Promise<{ url: string; key: string }>;
+  /** Optional ref callback for the SKU input (for auto-focus) */
+  skuInputRef?: (el: HTMLInputElement | null) => void;
 }
 
 /**
@@ -70,6 +72,7 @@ export function VariantCard({
   isEditing,
   errors,
   uploadHandler,
+  skuInputRef,
 }: VariantCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -237,6 +240,7 @@ export function VariantCard({
               <input
                 type="text"
                 id={`variant-${index}-sku`}
+                ref={skuInputRef}
                 value={variant.sku}
                 onChange={(e) =>
                   onUpdate(index, { sku: e.target.value.toUpperCase() })
