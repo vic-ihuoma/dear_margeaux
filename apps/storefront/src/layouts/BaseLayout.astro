@@ -1,0 +1,169 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import CartDrawer from '../components/CartDrawer';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Set to true for pages with LCP images to preload */
+  preloadLcpImage?: string;
+  /** Open Graph image URL */
+  ogImage?: string;
+  /** RSS feed URL for pages that have an RSS feed */
+  rssUrl?: string;
+}
+
+const {
+  title,
+  description = 'Boutique bags, limited drops.',
+  preloadLcpImage,
+  ogImage = '/og-default.png',
+  rssUrl,
+} = Astro.props;
+
+const canonicalUrl = new URL(
+  Astro.url.pathname,
+  Astro.site || 'https://dearmargeaux.com'
+);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Performance: DNS prefetch for external resources -->
+    <link rel="dns-prefetch" href="https://js.stripe.com" />
+
+    <!-- Performance: Preload self-hosted Inter font -->
+    <link
+      rel="preload"
+      href="/fonts/inter-variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <!-- Performance: Preload LCP image if specified -->
+    {
+      preloadLcpImage && (
+        <link
+          rel="preload"
+          href={preloadLcpImage}
+          as="image"
+          fetchpriority="high"
+        />
+      )
+    }
+
+    <!-- Primary Meta Tags -->
+    <title>{title} | Dear Margeaux</title>
+    <meta name="title" content={`${title} | Dear Margeaux`} />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={`${title} | Dear Margeaux`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalUrl} />
+    <meta property="twitter:title" content={`${title} | Dear Margeaux`} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={ogImage} />
+
+    <!-- Theme Color for mobile browsers -->
+    <meta name="theme-color" content="#8B4513" />
+    <meta name="msapplication-TileColor" content="#8B4513" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- RSS Feed -->
+    {
+      rssUrl && (
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="Dear Margeaux | The Journal RSS Feed"
+          href={rssUrl}
+        />
+      )
+    }
+
+    <!-- View Transitions for smooth page navigation -->
+    <ClientRouter />
+
+    <!-- Theme: Apply dark mode early to prevent flash -->
+    <script is:inline>
+      (function () {
+        const theme = localStorage.getItem('dear-margeaux-theme');
+        const prefersDark = window.matchMedia(
+          '(prefers-color-scheme: dark)'
+        ).matches;
+        const shouldBeDark =
+          theme === 'dark' ||
+          (theme === 'system' && prefersDark) ||
+          (!theme && prefersDark);
+
+        if (shouldBeDark) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
+
+    <!-- Performance: Hint the browser about the critical rendering path -->
+    <style>
+      /* Critical CSS for above-the-fold content - prevents FOUC */
+      body {
+        font-family:
+          'Inter',
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background-color: #fafafa;
+        margin: 0;
+      }
+      html.dark body {
+        background-color: #1a1a1a;
+      }
+    </style>
+  </head>
+  <body class="bg-background min-h-screen flex flex-col">
+    <Header />
+    <main class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+    <!-- Cart Drawer (React component hydrated on client) -->
+    <CartDrawer client:load />
+
+    <!-- Performance: Register service worker for caching -->
+    <script>
+      // Only register SW in production
+      if ('serviceWorker' in navigator && import.meta.env.PROD) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {
+            // Service worker registration failed, continue without it
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

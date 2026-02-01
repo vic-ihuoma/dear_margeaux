@@ -1,0 +1,377 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { getAdminMerchantClient, formatPrice } from '../../lib/merchant';
+
+// Fetch all discounts from the API
+interface Discount {
+  id: string;
+  code: string;
+  type: 'percentage' | 'fixed_amount';
+  value: number;
+  status: 'active' | 'inactive';
+  min_purchase_cents: number;
+  max_discount_cents: number | null;
+  starts_at: string | null;
+  expires_at: string | null;
+  usage_limit: number | null;
+  usage_count: number;
+  created_at: string;
+}
+
+let discounts: Discount[] = [];
+let error: string | null = null;
+
+try {
+  const client = getAdminMerchantClient();
+  if (client) {
+    const response = await client.getDiscounts();
+    discounts = response as Discount[];
+  }
+} catch (e) {
+  console.error('Failed to fetch discounts:', e);
+  error = 'Failed to load discounts. Please try again.';
+}
+
+// Get query params for filtering
+const url = new URL(Astro.request.url);
+const searchQuery = url.searchParams.get('search')?.toLowerCase() || '';
+const statusFilter = url.searchParams.get('status') || '';
+
+// Filter discounts
+let filteredDiscounts = discounts;
+
+if (searchQuery) {
+  filteredDiscounts = filteredDiscounts.filter((d) =>
+    d.code.toLowerCase().includes(searchQuery)
+  );
+}
+
+if (statusFilter) {
+  filteredDiscounts = filteredDiscounts.filter(
+    (d) => d.status === statusFilter
+  );
+}
+
+// Format helpers
+function formatDiscountValue(discount: Discount): string {
+  if (discount.type === 'percentage') {
+    return `${discount.value}%`;
+  }
+  return formatPrice(discount.value);
+}
+
+function formatDate(dateString: string | null): string {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function getStatusBadgeClass(status: string): string {
+  switch (status) {
+    case 'active':
+      return 'bg-status-success/10 text-status-success';
+    case 'inactive':
+      return 'bg-text-muted/10 text-text-muted';
+    default:
+      return 'bg-text-muted/10 text-text-muted';
+  }
+}
+
+function isExpired(discount: Discount): boolean {
+  if (!discount.expires_at) return false;
+  return new Date(discount.expires_at) < new Date();
+}
+
+function isExhausted(discount: Discount): boolean {
+  if (discount.usage_limit === null) return false;
+  return discount.usage_count >= discount.usage_limit;
+}
+---
+
+<AdminLayout title="Discounts">
+  <!-- Page Header -->
+  <div
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8"
+  >
+    <div>
+      <h1 class="text-2xl font-semibold text-text-primary">Discounts</h1>
+      <p class="mt-1 text-sm text-text-muted">
+        Manage promotional discount codes for your store.
+      </p>
+    </div>
+    <a
+      href="/discounts/new"
+      class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-600 rounded-lg transition-colors"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="w-4 h-4"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M12 4.5v15m7.5-7.5h-15"></path>
+      </svg>
+      New Discount
+    </a>
+  </div>
+
+  {
+    error ? (
+      <div class="p-8 text-center">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-status-error/10 mb-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-6 h-6 text-status-error"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+            />
+          </svg>
+        </div>
+        <p class="text-text-secondary">{error}</p>
+      </div>
+    ) : (
+      <>
+        {/* Filters */}
+        <div class="bg-background-secondary rounded-xl border border-border shadow-sm mb-6">
+          <form method="GET" class="flex flex-col sm:flex-row gap-4 p-4">
+            <div class="flex-1">
+              <input
+                type="text"
+                name="search"
+                value={searchQuery}
+                placeholder="Search by code..."
+                class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background-primary text-text-primary"
+              />
+            </div>
+            <div class="flex items-center gap-2">
+              <select
+                name="status"
+                class="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background-primary text-text-primary"
+              >
+                <option value="">All Status</option>
+                <option value="active" selected={statusFilter === 'active'}>
+                  Active
+                </option>
+                <option value="inactive" selected={statusFilter === 'inactive'}>
+                  Inactive
+                </option>
+              </select>
+              <button
+                type="submit"
+                class="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-600 rounded-lg transition-colors"
+              >
+                Filter
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Discounts Table */}
+        <div class="bg-background-secondary rounded-xl border border-border shadow-sm overflow-hidden">
+          {filteredDiscounts.length === 0 ? (
+            <div class="p-8 text-center">
+              <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-background-tertiary mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-6 h-6 text-text-muted"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 6h.008v.008H6V6Z"
+                  />
+                </svg>
+              </div>
+              <p class="text-text-secondary mb-4">
+                {searchQuery || statusFilter
+                  ? 'No discounts match your filters.'
+                  : 'No discounts yet. Create your first discount code!'}
+              </p>
+              {!searchQuery && !statusFilter && (
+                <a
+                  href="/discounts/new"
+                  class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-600"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="w-4 h-4"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M12 4.5v15m7.5-7.5h-15"
+                    />
+                  </svg>
+                  Create Discount
+                </a>
+              )}
+            </div>
+          ) : (
+            <>
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead>
+                    <tr class="border-b border-border bg-background-tertiary">
+                      <th class="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
+                        Code
+                      </th>
+                      <th class="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
+                        Discount
+                      </th>
+                      <th class="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
+                        Status
+                      </th>
+                      <th class="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
+                        Usage
+                      </th>
+                      <th class="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
+                        Valid Period
+                      </th>
+                      <th class="text-right text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-border">
+                    {filteredDiscounts.map((discount) => (
+                      <tr class="hover:bg-background-tertiary/50 transition-colors">
+                        <td class="px-6 py-4">
+                          <div class="flex items-center gap-2">
+                            <span class="font-mono text-sm font-medium text-text-primary">
+                              {discount.code}
+                            </span>
+                            {isExpired(discount) && (
+                              <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-status-warning/10 text-status-warning">
+                                Expired
+                              </span>
+                            )}
+                            {isExhausted(discount) && (
+                              <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-status-error/10 text-status-error">
+                                Exhausted
+                              </span>
+                            )}
+                          </div>
+                          {discount.min_purchase_cents > 0 && (
+                            <p class="mt-1 text-xs text-text-muted">
+                              Min: {formatPrice(discount.min_purchase_cents)}
+                            </p>
+                          )}
+                        </td>
+                        <td class="px-6 py-4">
+                          <span class="text-sm font-medium text-text-primary">
+                            {formatDiscountValue(discount)}
+                          </span>
+                          {discount.max_discount_cents && (
+                            <p class="mt-1 text-xs text-text-muted">
+                              Max: {formatPrice(discount.max_discount_cents)}
+                            </p>
+                          )}
+                        </td>
+                        <td class="px-6 py-4">
+                          <span
+                            class:list={[
+                              'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
+                              getStatusBadgeClass(discount.status),
+                            ]}
+                          >
+                            {discount.status.charAt(0).toUpperCase() +
+                              discount.status.slice(1)}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4">
+                          <span class="text-sm text-text-primary">
+                            {discount.usage_count}
+                            {discount.usage_limit !== null && (
+                              <span class="text-text-muted">
+                                {' '}
+                                / {discount.usage_limit}
+                              </span>
+                            )}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4">
+                          <div class="text-sm text-text-secondary">
+                            {discount.starts_at || discount.expires_at ? (
+                              <>
+                                <span>
+                                  {formatDate(discount.starts_at) || 'Start'}
+                                </span>
+                                <span class="mx-1">→</span>
+                                <span>
+                                  {formatDate(discount.expires_at) || 'No end'}
+                                </span>
+                              </>
+                            ) : (
+                              <span class="text-text-muted">Always valid</span>
+                            )}
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                          <a
+                            href={`/discounts/${discount.id}`}
+                            class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-600"
+                          >
+                            Edit
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke-width="1.5"
+                              stroke="currentColor"
+                              class="w-4 h-4"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="m8.25 4.5 7.5 7.5-7.5 7.5"
+                              />
+                            </svg>
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div class="px-6 py-3 bg-background-tertiary border-t border-border">
+                <p class="text-sm text-text-muted">
+                  {filteredDiscounts.length}{' '}
+                  {filteredDiscounts.length === 1 ? 'discount' : 'discounts'}
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+      </>
+    )
+  }
+</AdminLayout>

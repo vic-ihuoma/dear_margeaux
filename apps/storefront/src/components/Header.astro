@@ -1,0 +1,124 @@
+---
+import CartIcon from './CartIcon';
+import AccountIcon from './AccountIcon';
+import ThemeToggle from './ThemeToggle';
+import NavigationTabs from './NavigationTabs';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+
+// Logo image URL from R2 (configured via PUBLIC_IMAGES_URL environment variable)
+const imagesUrl = import.meta.env.PUBLIC_IMAGES_URL;
+const logoUrl = imagesUrl ? `${imagesUrl}/branding/logo-main.webp` : null;
+---
+
+<header
+  class:list={[
+    'sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border',
+    className,
+  ]}
+>
+  <nav
+    class="container mx-auto px-4 h-16 flex items-center justify-between max-w-6xl"
+  >
+    <!-- Logo -->
+    <a href="/" class="flex items-center">
+      {
+        logoUrl ? (
+          <img
+            src={logoUrl}
+            alt="Dear Margeaux"
+            class="h-8 w-auto"
+            loading="eager"
+          />
+        ) : (
+          <span class="text-xl font-bold text-text tracking-tight">
+            Dear Margeaux
+          </span>
+        )
+      }
+    </a>
+
+    <!-- Navigation Tabs with animated indicator -->
+    <div class="hidden md:flex items-center">
+      <NavigationTabs client:load />
+    </div>
+
+    <!-- User actions -->
+    <div class="flex items-center gap-2">
+      <ThemeToggle client:load size="sm" />
+      <AccountIcon client:load />
+      <CartIcon client:load />
+
+      <!-- Mobile menu button -->
+      <button
+        type="button"
+        aria-label="Open menu"
+        class="md:hidden p-2 text-text-secondary hover:text-text transition-colors duration-normal"
+        id="mobile-menu-button"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-6 h-6"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile menu (hidden by default) -->
+  <div class="hidden md:hidden border-t border-border" id="mobile-menu">
+    <div class="container mx-auto px-4 py-4 space-y-4">
+      <a
+        href="/shop"
+        class="block text-sm font-medium text-text-secondary hover:text-text transition-colors duration-normal"
+      >
+        Shop
+      </a>
+      <a
+        href="/drops"
+        class="block text-sm font-medium text-text-secondary hover:text-text transition-colors duration-normal"
+      >
+        Drops
+      </a>
+      <a
+        href="/blog"
+        class="block text-sm font-medium text-text-secondary hover:text-text transition-colors duration-normal"
+      >
+        Journal
+      </a>
+      <a
+        href="/lookbook"
+        class="block text-sm font-medium text-text-secondary hover:text-text transition-colors duration-normal"
+      >
+        Lookbook
+      </a>
+      <a
+        href="/account/orders"
+        class="block text-sm font-medium text-text-secondary hover:text-text transition-colors duration-normal"
+      >
+        My Account
+      </a>
+    </div>
+  </div>
+</header>
+
+<script>
+  const mobileMenuButton = document.getElementById('mobile-menu-button');
+  const mobileMenu = document.getElementById('mobile-menu');
+
+  mobileMenuButton?.addEventListener('click', () => {
+    mobileMenu?.classList.toggle('hidden');
+  });
+</script>

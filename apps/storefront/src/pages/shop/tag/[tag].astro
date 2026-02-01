@@ -1,0 +1,375 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProductCard from '../../../components/ProductCard.astro';
+import ProductGrid from '../../../components/ProductGrid.astro';
+import CollapsibleFilter from '../../../components/CollapsibleFilter.astro';
+import type { TagInfo } from '@dear-margeaux/api';
+import type { GetStaticPaths } from 'astro';
+
+interface DisplayProduct {
+  id: string;
+  title: string;
+  price: number;
+  image?: string;
+  imageAlt?: string;
+  collection?: string;
+  soldOut: boolean;
+  tags: string[];
+}
+
+// Generate static paths for all tags
+export const getStaticPaths: GetStaticPaths = async () => {
+  // Sample tags for static generation (defined inside function for SSG compatibility)
+  const sampleTags = ['leather', 'tote', 'crossbody', 'everyday', 'formal'];
+
+  const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
+  const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY;
+
+  if (apiUrl && apiKey) {
+    try {
+      const { MerchantClient } = await import('@dear-margeaux/api');
+      const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
+      const response = await client.getTags();
+
+      const apiPaths = response.tags.map((t: TagInfo) => ({
+        params: { tag: t.tag },
+      }));
+
+      // Combine sample and API paths, deduplicate
+      const allTags = new Set<string>();
+      const combinedPaths: Array<{ params: { tag: string } }> = [];
+
+      for (const path of [
+        ...apiPaths,
+        ...sampleTags.map((t) => ({ params: { tag: t } })),
+      ]) {
+        if (!allTags.has(path.params.tag)) {
+          allTags.add(path.params.tag);
+          combinedPaths.push(path);
+        }
+      }
+
+      return combinedPaths;
+    } catch (error) {
+      console.error('Failed to fetch tags for static paths:', error);
+    }
+  }
+
+  return sampleTags.map((tag) => ({
+    params: { tag },
+  }));
+};
+
+// Sample products for development/fallback
+const getSampleProducts = (): DisplayProduct[] => [
+  {
+    id: '1',
+    title: 'Classic Leather Tote',
+    price: 45000,
+    collection: 'Spring 2026',
+    soldOut: false,
+    tags: ['leather', 'tote', 'everyday'],
+  },
+  {
+    id: '2',
+    title: 'Mini Crossbody',
+    price: 28500,
+    collection: 'Spring 2026',
+    soldOut: false,
+    tags: ['leather', 'crossbody', 'everyday'],
+  },
+  {
+    id: '3',
+    title: 'Structured Satchel',
+    price: 52000,
+    collection: 'Spring 2026',
+    soldOut: true,
+    tags: ['leather', 'formal'],
+  },
+  {
+    id: '4',
+    title: 'Weekend Duffle',
+    price: 68000,
+    collection: 'Spring 2026',
+    soldOut: false,
+    tags: ['leather', 'travel'],
+  },
+  {
+    id: '5',
+    title: 'Evening Clutch',
+    price: 32000,
+    collection: 'Winter 2025',
+    soldOut: true,
+    tags: ['leather', 'formal', 'evening'],
+  },
+  {
+    id: '6',
+    title: 'Everyday Hobo',
+    price: 48000,
+    collection: 'Winter 2025',
+    soldOut: false,
+    tags: ['leather', 'everyday', 'hobo'],
+  },
+];
+
+// Get the tag from the URL parameter
+const { tag: currentTag } = Astro.params;
+const normalizedTag = currentTag ? String(currentTag).toLowerCase() : '';
+
+// API configuration
+const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
+const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY;
+
+// State variables
+let products: DisplayProduct[] = [];
+let allTags: TagInfo[] = [];
+
+// Try to fetch from API if environment variables are set
+if (apiUrl && apiKey && normalizedTag) {
+  try {
+    const { MerchantClient } = await import('@dear-margeaux/api');
+    const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
+
+    // Fetch products filtered by tag
+    const productsResponse = await client.getProducts({
+      tag: normalizedTag,
+      status: 'active',
+      limit: 100,
+    });
+
+    // Fetch all tags for filter navigation
+    try {
+      const tagsResponse = await client.getTags();
+      allTags = tagsResponse.tags;
+    } catch {
+      // Tags fetch might fail, continue without it
+    }
+
+    // Get full product details for each product
+    const productResults = await Promise.all(
+      productsResponse.items.map(
+        async (item): Promise<DisplayProduct | null> => {
+          try {
+            const product = await client.getProduct(item.id);
+            const firstVariant = product.variants[0];
+
+            // Check if all variants are sold out using variant.available
+            const allVariantsSoldOut = product.variants.every((variant) => {
+              return variant.available !== null && variant.available <= 0;
+            });
+
+            // Prefer featured_image_url/alt, fallback to first variant image
+            const imageUrl =
+              product.featured_image_url ??
+              firstVariant?.image_url ??
+              undefined;
+            const imageAlt =
+              product.featured_image_alt ??
+              firstVariant?.image_alt ??
+              undefined;
+
+            return {
+              id: product.id,
+              title: product.title,
+              price: firstVariant?.price_cents ?? 0,
+              image: imageUrl,
+              imageAlt: imageAlt,
+              soldOut: allVariantsSoldOut,
+              tags: product.tags,
+            };
+          } catch {
+            return null;
+          }
+        }
+      )
+    );
+    products = productResults.filter((p): p is DisplayProduct => p !== null);
+  } catch (error) {
+    console.error('Failed to fetch products from API:', error);
+    // Fall back to sample data
+    const sampleProducts = getSampleProducts();
+    products = sampleProducts.filter((p) => p.tags.includes(normalizedTag));
+
+    // Create sample tags for filter
+    const tagCounts = new Map<string, number>();
+    for (const p of getSampleProducts()) {
+      for (const t of p.tags) {
+        tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
+      }
+    }
+    allTags = Array.from(tagCounts.entries()).map(([tag, count]) => ({
+      tag,
+      count,
+    }));
+  }
+} else {
+  // Fall back to sample data if no API configuration
+  const sampleProducts = getSampleProducts();
+  products = sampleProducts.filter((p) => p.tags.includes(normalizedTag));
+
+  // Create sample tags for filter
+  const tagCounts = new Map<string, number>();
+  for (const p of getSampleProducts()) {
+    for (const t of p.tags) {
+      tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
+    }
+  }
+  allTags = Array.from(tagCounts.entries()).map(([tag, count]) => ({
+    tag,
+    count,
+  }));
+}
+
+// Format tag for display (capitalize first letter)
+const displayTag =
+  normalizedTag.charAt(0).toUpperCase() + normalizedTag.slice(1);
+---
+
+<BaseLayout
+  title={`${displayTag} Bags`}
+  description={`Shop ${displayTag} bags from our handcrafted leather collection`}
+>
+  <!-- Page Header -->
+  <section class="bg-secondary py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-6xl">
+      <nav
+        class="flex items-center justify-center gap-2 text-sm text-text-secondary mb-4"
+      >
+        <a href="/shop" class="hover:text-primary transition-colors">Shop</a>
+        <span>/</span>
+        <span class="text-text">{displayTag}</span>
+      </nav>
+      <h1 class="text-3xl md:text-4xl font-bold text-text text-center">
+        {displayTag} Bags
+      </h1>
+      <p class="text-text-secondary text-center mt-3 max-w-xl mx-auto">
+        Browse our collection of handcrafted {normalizedTag} leather bags
+      </p>
+    </div>
+  </section>
+
+  <!-- Tag Filters Section -->
+  {
+    allTags.length > 0 && (
+      <section class="border-b border-border bg-background">
+        <div class="container mx-auto px-4 max-w-6xl py-4">
+          <CollapsibleFilter
+            label="Filter by tag"
+            id="shop-tag-filter"
+            defaultOpen={true}
+          >
+            <a
+              href="/shop"
+              class="px-4 py-2 text-sm font-medium rounded-full border border-border text-text hover:bg-background-secondary transition-colors duration-normal"
+            >
+              All
+            </a>
+            {allTags.map((t) => {
+              const isActive = t.tag === normalizedTag;
+              return (
+                <a
+                  href={`/shop/tag/${encodeURIComponent(t.tag)}`}
+                  class:list={[
+                    'px-4 py-2 text-sm font-medium rounded-full transition-colors duration-normal',
+                    isActive
+                      ? 'bg-primary text-text-inverse'
+                      : 'border border-border text-text hover:bg-background-secondary',
+                  ]}
+                >
+                  {t.tag}
+                  <span class="ml-1 text-xs opacity-70">({t.count})</span>
+                </a>
+              );
+            })}
+          </CollapsibleFilter>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Products Grid -->
+  <section class="py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-6xl">
+      {
+        products.length > 0 ? (
+          <>
+            <div class="flex items-center justify-between mb-8">
+              <p class="text-sm text-text-secondary">
+                Showing {products.length}{' '}
+                {products.length === 1 ? 'product' : 'products'} tagged "
+                {normalizedTag}"
+              </p>
+            </div>
+
+            <ProductGrid columns={4} gap="md">
+              {products.map((product) => (
+                <ProductCard
+                  id={product.id}
+                  title={product.title}
+                  price={product.price}
+                  image={product.image}
+                  imageAlt={product.imageAlt}
+                  collection={product.collection}
+                  soldOut={product.soldOut}
+                  tags={product.tags}
+                />
+              ))}
+            </ProductGrid>
+          </>
+        ) : (
+          <div class="text-center py-16">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
+              <svg
+                class="w-8 h-8 text-text-muted"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M6 6h.008v.008H6V6z"
+                />
+              </svg>
+            </div>
+            <h2 class="text-xl font-semibold text-text mb-2">
+              No products found
+            </h2>
+            <p class="text-text-secondary mb-6">
+              No products are tagged with "{normalizedTag}". Try browsing our
+              other tags or view all products.
+            </p>
+            <a
+              href="/shop"
+              class="inline-flex px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+            >
+              View All Products
+            </a>
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  <!-- Newsletter CTA -->
+  <section class="py-12 md:py-16 bg-secondary">
+    <div class="container mx-auto px-4 max-w-6xl text-center">
+      <h2 class="text-2xl font-bold text-text mb-3">Don't Miss a Drop</h2>
+      <p class="text-text-secondary max-w-md mx-auto mb-6">
+        Be the first to know when new collections are released
+      </p>
+      <a
+        href="/#newsletter"
+        class="inline-flex px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+      >
+        Join the Waitlist
+      </a>
+    </div>
+  </section>
+</BaseLayout>

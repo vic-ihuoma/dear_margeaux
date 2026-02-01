@@ -1,0 +1,44 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { CreateBlog } from '../../components/CreateBlog';
+---
+
+<AdminLayout title="New Blog Post">
+  <!-- Breadcrumb -->
+  <nav class="flex mb-6" aria-label="Breadcrumb">
+    <ol class="flex items-center space-x-2">
+      <li>
+        <a href="/blog" class="text-text-muted hover:text-text-primary text-sm">
+          Blog
+        </a>
+      </li>
+      <li>
+        <svg
+          class="h-5 w-5 text-text-muted"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+            clip-rule="evenodd"></path>
+        </svg>
+      </li>
+      <li>
+        <span class="text-text-primary text-sm font-medium">New Post</span>
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="text-2xl font-semibold text-text-primary">New Blog Post</h1>
+    <p class="mt-1 text-sm text-text-secondary">
+      Create a new blog post to share stories, news, and updates.
+    </p>
+  </div>
+
+  <!-- Create Blog Component -->
+  <CreateBlog client:load />
+</AdminLayout>

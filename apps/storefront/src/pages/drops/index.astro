@@ -1,0 +1,449 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CountdownTimer from '../../components/CountdownTimer';
+import WaitlistForm from '../../components/WaitlistForm';
+import type { Drop } from '@dear-margeaux/api';
+
+// API configuration
+const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
+const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY;
+
+// State for drops
+let drops: Drop[] = [];
+let fetchError = false;
+
+// Fetch all drops from API
+if (apiUrl && apiKey) {
+  try {
+    const { MerchantClient } = await import('@dear-margeaux/api');
+    const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
+    const response = await client.getDrops({ limit: 100 });
+    drops = response.items;
+  } catch (error) {
+    console.error('Failed to fetch drops:', error);
+    fetchError = true;
+  }
+}
+
+// If no API configured, use sample drops for development
+if (!apiUrl || !apiKey) {
+  drops = [
+    {
+      id: 'sample-active',
+      name: 'Spring 2026 Collection',
+      slug: 'spring-2026',
+      description:
+        'Our debut collection featuring handcrafted leather bags with artisanal details.',
+      status: 'active',
+      start_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      end_date: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 'sample-scheduled',
+      name: 'Summer 2026 Collection',
+      slug: 'summer-2026',
+      description:
+        'Coming soon: A new collection of everyday essentials crafted from premium Italian leather.',
+      status: 'scheduled',
+      start_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      end_date: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 'sample-ended',
+      name: 'Winter 2025 Collection',
+      slug: 'winter-2025',
+      description:
+        'A collection of warm-toned bags perfect for the cooler months.',
+      status: 'ended',
+      start_date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+      end_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  ] as Drop[];
+}
+
+// Group drops by status
+const activeDrops = drops.filter((d) => d.status === 'active');
+const scheduledDrops = drops.filter(
+  (d) => d.status === 'scheduled' || d.status === 'draft'
+);
+const endedDrops = drops.filter((d) => d.status === 'ended');
+
+// Format date helper
+function formatDate(dateStr: string | null): string | null {
+  if (!dateStr) return null;
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } catch {
+    return null;
+  }
+}
+
+// Get status badge styles
+function getStatusBadge(status: Drop['status']): {
+  text: string;
+  className: string;
+} {
+  switch (status) {
+    case 'active':
+      return {
+        text: 'Live Now',
+        className: 'bg-status-success/10 text-status-success',
+      };
+    case 'scheduled':
+    case 'draft':
+      return {
+        text: 'Coming Soon',
+        className: 'bg-status-info/10 text-status-info',
+      };
+    case 'ended':
+      return { text: 'Ended', className: 'bg-text-muted/10 text-text-muted' };
+    default:
+      return { text: status, className: 'bg-secondary text-text-secondary' };
+  }
+}
+---
+
+<BaseLayout
+  title="Drops"
+  description="Discover our limited edition collections. Each drop features a small batch of handcrafted bags."
+>
+  <!-- Page Header -->
+  <section class="bg-secondary py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <h1 class="text-3xl md:text-4xl font-bold text-text text-center">
+        Drops
+      </h1>
+      <p class="text-text-secondary text-center mt-3 max-w-2xl mx-auto">
+        Each drop is a limited release of handcrafted pieces. Once they're gone,
+        they're gone.
+      </p>
+    </div>
+  </section>
+
+  <!-- Error State -->
+  {
+    fetchError && (
+      <section class="py-8">
+        <div class="container mx-auto px-4 max-w-5xl">
+          <div class="bg-status-error/10 border border-status-error/20 rounded-lg p-4 text-center">
+            <p class="text-status-error">
+              Unable to load drops. Please try again later.
+            </p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Active Drops Section -->
+  {
+    activeDrops.length > 0 && (
+      <section class="py-12 md:py-16">
+        <div class="container mx-auto px-4 max-w-5xl">
+          <h2 class="text-lg font-semibold text-text-secondary uppercase tracking-wide mb-6">
+            Available Now
+          </h2>
+          <div class="grid gap-6 md:gap-8">
+            {activeDrops.map((drop) => {
+              const badge = getStatusBadge(drop.status);
+              return (
+                <article class="group bg-background-secondary rounded-2xl overflow-hidden border border-border hover:border-primary/30 transition-colors duration-normal">
+                  <div class="p-6 md:p-8">
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                      <div class="flex-1">
+                        {/* Status Badge */}
+                        <span
+                          class={`inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full mb-4 ${badge.className}`}
+                        >
+                          <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75" />
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-status-success" />
+                          </span>
+                          {badge.text}
+                        </span>
+
+                        {/* Title */}
+                        <h3 class="text-2xl md:text-3xl font-bold text-text mb-3">
+                          {drop.name}
+                        </h3>
+
+                        {/* Description */}
+                        {drop.description && (
+                          <p class="text-text-secondary mb-4 max-w-xl">
+                            {drop.description}
+                          </p>
+                        )}
+
+                        {/* Launch Date */}
+                        {drop.start_date && (
+                          <p class="text-sm text-text-muted">
+                            Launched {formatDate(drop.start_date)}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* CTA Button */}
+                      <div class="md:self-center">
+                        <a
+                          href={`/shop/${drop.slug}`}
+                          class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+                        >
+                          Shop Now
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3"
+                            />
+                          </svg>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Scheduled Drops Section -->
+  {
+    scheduledDrops.length > 0 && (
+      <section
+        class={`py-12 md:py-16 ${activeDrops.length > 0 ? 'border-t border-border' : ''}`}
+      >
+        <div class="container mx-auto px-4 max-w-5xl">
+          <h2 class="text-lg font-semibold text-text-secondary uppercase tracking-wide mb-6">
+            Coming Soon
+          </h2>
+          <div class="grid gap-8">
+            {scheduledDrops.map((drop) => {
+              const badge = getStatusBadge(drop.status);
+              return (
+                <article class="bg-background-secondary rounded-2xl overflow-hidden border border-border">
+                  <div class="p-6 md:p-8">
+                    {/* Status Badge */}
+                    <span
+                      class={`inline-flex px-3 py-1 text-sm font-medium rounded-full mb-4 ${badge.className}`}
+                    >
+                      {badge.text}
+                    </span>
+
+                    {/* Title */}
+                    <h3 class="text-2xl md:text-3xl font-bold text-text mb-3">
+                      {drop.name}
+                    </h3>
+
+                    {/* Description */}
+                    {drop.description && (
+                      <p class="text-text-secondary mb-6 max-w-xl">
+                        {drop.description}
+                      </p>
+                    )}
+
+                    {/* Countdown Timer */}
+                    {drop.start_date && (
+                      <div class="mb-8">
+                        <p class="text-sm text-text-muted text-center mb-4">
+                          Launches {formatDate(drop.start_date)}
+                        </p>
+                        <CountdownTimer
+                          client:load
+                          targetDate={drop.start_date}
+                        />
+                      </div>
+                    )}
+
+                    {/* Waitlist Form */}
+                    <div class="max-w-md mx-auto">
+                      <h4 class="text-lg font-semibold text-text text-center mb-4">
+                        Get Notified
+                      </h4>
+                      <WaitlistForm
+                        client:load
+                        dropId={drop.id}
+                        dropName={drop.name}
+                        apiUrl={apiUrl || ''}
+                        apiKey={apiKey || ''}
+                      />
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Ended Drops Section -->
+  {
+    endedDrops.length > 0 && (
+      <section class="py-12 md:py-16 border-t border-border bg-secondary">
+        <div class="container mx-auto px-4 max-w-5xl">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-lg font-semibold text-text-secondary uppercase tracking-wide">
+              Past Drops
+            </h2>
+            <a
+              href="/drops/archive"
+              class="text-sm font-medium text-primary hover:text-primary-600 transition-colors"
+            >
+              View Archive
+            </a>
+          </div>
+          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {endedDrops.slice(0, 3).map((drop) => {
+              const badge = getStatusBadge(drop.status);
+              return (
+                <article class="group bg-background rounded-xl border border-border p-5 hover:border-primary/30 transition-colors duration-normal">
+                  {/* Status Badge */}
+                  <span
+                    class={`inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full mb-3 ${badge.className}`}
+                  >
+                    {badge.text}
+                  </span>
+
+                  {/* Title */}
+                  <h3 class="text-lg font-semibold text-text mb-2 group-hover:text-primary transition-colors duration-normal">
+                    {drop.name}
+                  </h3>
+
+                  {/* Dates */}
+                  <p class="text-sm text-text-muted mb-4">
+                    {drop.start_date && drop.end_date
+                      ? `${formatDate(drop.start_date)} — ${formatDate(drop.end_date)}`
+                      : drop.end_date
+                        ? `Ended ${formatDate(drop.end_date)}`
+                        : 'Ended'}
+                  </p>
+
+                  {/* Link */}
+                  <a
+                    href={`/shop/${drop.slug}`}
+                    class="text-sm font-medium text-primary hover:text-primary-600 transition-colors inline-flex items-center gap-1"
+                  >
+                    View Collection
+                    <svg
+                      class="w-3.5 h-3.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                      />
+                    </svg>
+                  </a>
+                </article>
+              );
+            })}
+          </div>
+
+          {endedDrops.length > 3 && (
+            <div class="text-center mt-8">
+              <a
+                href="/drops/archive"
+                class="inline-flex items-center gap-2 px-6 py-3 border border-border text-text font-medium rounded-lg hover:border-primary hover:text-primary transition-colors duration-normal"
+              >
+                View All Past Drops
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3"
+                  />
+                </svg>
+              </a>
+            </div>
+          )}
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Empty State -->
+  {
+    drops.length === 0 && !fetchError && (
+      <section class="py-16 md:py-24">
+        <div class="container mx-auto px-4 max-w-xl text-center">
+          <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-secondary flex items-center justify-center">
+            <svg
+              class="w-10 h-10 text-text-muted"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="1.5"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
+              />
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-text mb-4">No Drops Yet</h2>
+          <p class="text-text-secondary mb-8">
+            Our first collection is coming soon. Sign up below to be notified
+            when we launch.
+          </p>
+          <a
+            href="/"
+            class="inline-flex px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+          >
+            Back to Home
+          </a>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Newsletter CTA -->
+  <section
+    class={`py-12 md:py-16 ${endedDrops.length > 0 ? '' : 'bg-secondary'}`}
+  >
+    <div class="container mx-auto px-4 max-w-5xl text-center">
+      <h2 class="text-2xl font-bold text-text mb-3">Never Miss a Drop</h2>
+      <p class="text-text-secondary max-w-md mx-auto mb-6">
+        Subscribe to our newsletter to get early access and updates on upcoming
+        releases
+      </p>
+      <a
+        href="/#newsletter"
+        class="inline-flex px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+      >
+        Subscribe to Newsletter
+      </a>
+    </div>
+  </section>
+</BaseLayout>

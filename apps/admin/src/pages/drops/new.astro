@@ -1,0 +1,45 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { CreateDrop } from '../../components/CreateDrop';
+---
+
+<AdminLayout title="New Drop">
+  <!-- Breadcrumb -->
+  <nav class="flex items-center gap-2 text-sm mb-6">
+    <a
+      href="/drops"
+      class="text-text-muted hover:text-text-primary transition-colors"
+    >
+      Drops
+    </a>
+    <span class="text-text-muted">/</span>
+    <span class="text-text-primary">New Drop</span>
+  </nav>
+
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="text-2xl font-semibold text-text-primary">Schedule New Drop</h1>
+    <p class="mt-1 text-sm text-text-secondary">
+      Create a new limited release collection. You can assign products after
+      creating the drop.
+    </p>
+  </div>
+
+  <!-- Drop Form -->
+  <div class="max-w-2xl">
+    <div
+      class="bg-background-secondary rounded-xl border border-border shadow-sm"
+    >
+      <div class="px-6 py-4 border-b border-border">
+        <h2 class="text-lg font-semibold text-text-primary">Drop Details</h2>
+      </div>
+      <div class="p-6">
+        <CreateDrop
+          client:load
+          successRedirect="/drops"
+          cancelRedirect="/drops"
+        />
+      </div>
+    </div>
+  </div>
+</AdminLayout>

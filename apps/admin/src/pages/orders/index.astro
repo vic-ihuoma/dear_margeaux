@@ -1,0 +1,318 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { getAdminMerchantClient, formatPrice } from '../../lib/merchant';
+import type { OrderListItem, OrderStatus } from '@dear-margeaux/api';
+
+// Fetch orders from the API
+const client = getAdminMerchantClient();
+
+let orders: OrderListItem[] = [];
+let error: string | null = null;
+
+// Get query params for filtering
+const url = Astro.url;
+const searchQuery = url.searchParams.get('search') || '';
+const statusFilter = (url.searchParams.get('status') || '') as OrderStatus | '';
+
+if (client) {
+  try {
+    const params: { limit: number; status?: OrderStatus; email?: string } = {
+      limit: 100,
+    };
+    if (statusFilter) {
+      params.status = statusFilter;
+    }
+    const ordersResponse = await client.getOrders(params);
+    orders = ordersResponse.items;
+
+    // Apply client-side search filter (email)
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      orders = orders.filter(
+        (order) =>
+          order.customer_email.toLowerCase().includes(query) ||
+          order.number.toLowerCase().includes(query)
+      );
+    }
+  } catch (e) {
+    console.error('Failed to fetch orders:', e);
+    error = 'Failed to load orders. Please try again.';
+  }
+}
+
+// All possible order statuses for filter dropdown
+const orderStatuses: { value: OrderStatus | ''; label: string }[] = [
+  { value: '', label: 'All Statuses' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'paid', label: 'Paid' },
+  { value: 'processing', label: 'Processing' },
+  { value: 'shipped', label: 'Shipped' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'refunded', label: 'Refunded' },
+  { value: 'canceled', label: 'Canceled' },
+];
+
+// Helper to get status badge styles
+function getStatusStyles(status: OrderStatus): string {
+  switch (status) {
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'paid':
+      return 'bg-blue-100 text-blue-800';
+    case 'processing':
+      return 'bg-purple-100 text-purple-800';
+    case 'shipped':
+      return 'bg-indigo-100 text-indigo-800';
+    case 'delivered':
+      return 'bg-status-success/10 text-status-success';
+    case 'refunded':
+      return 'bg-orange-100 text-orange-800';
+    case 'canceled':
+      return 'bg-status-error/10 text-status-error';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+}
+
+// Helper to format date
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+---
+
+<AdminLayout title="Orders">
+  <!-- Page Header -->
+  <div
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8"
+  >
+    <div>
+      <h1 class="text-2xl font-semibold text-text-primary">Orders</h1>
+      <p class="mt-1 text-sm text-text-secondary">
+        View and manage customer orders
+      </p>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div
+    class="bg-background-secondary rounded-xl border border-border shadow-sm mb-6"
+  >
+    <div class="p-4">
+      <form method="GET" class="flex flex-col sm:flex-row gap-4">
+        <!-- Search -->
+        <div class="flex-1">
+          <label for="search" class="sr-only">Search orders</label>
+          <div class="relative">
+            <div
+              class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
+            >
+              <svg
+                class="h-5 w-5 text-text-muted"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
+                  clip-rule="evenodd"></path>
+              </svg>
+            </div>
+            <input
+              type="text"
+              name="search"
+              id="search"
+              value={searchQuery}
+              class="block w-full rounded-lg border border-border bg-background-primary py-2 pl-10 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              placeholder="Search by order # or email..."
+            />
+          </div>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="sm:w-48">
+          <label for="status" class="sr-only">Filter by status</label>
+          <select
+            name="status"
+            id="status"
+            class="block w-full rounded-lg border border-border bg-background-primary py-2 px-3 text-sm text-text-primary focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          >
+            {
+              orderStatuses.map((s) => (
+                <option value={s.value} selected={s.value === statusFilter}>
+                  {s.label}
+                </option>
+              ))
+            }
+          </select>
+        </div>
+
+        <!-- Submit button -->
+        <button
+          type="submit"
+          class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-text-primary bg-background-tertiary border border-border rounded-lg hover:bg-background-primary transition-colors duration-normal"
+        >
+          Filter
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Orders Table -->
+  <div
+    class="bg-background-secondary rounded-xl border border-border shadow-sm overflow-hidden"
+  >
+    {
+      error ? (
+        <div class="p-8 text-center">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-status-error/10 mb-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-6 h-6 text-status-error"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+              />
+            </svg>
+          </div>
+          <p class="text-text-secondary">{error}</p>
+        </div>
+      ) : orders.length === 0 ? (
+        <div class="p-8 text-center">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-background-tertiary mb-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-6 h-6 text-text-muted"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
+              />
+            </svg>
+          </div>
+          <h3 class="text-sm font-medium text-text-primary mb-1">
+            No orders found
+          </h3>
+          <p class="text-sm text-text-muted">
+            {searchQuery || statusFilter
+              ? 'Try adjusting your filters'
+              : 'Orders will appear here when customers make purchases'}
+          </p>
+        </div>
+      ) : (
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-border">
+            <thead class="bg-background-tertiary">
+              <tr>
+                <th
+                  scope="col"
+                  class="py-3.5 pl-4 pr-3 text-left text-xs font-medium uppercase tracking-wide text-text-muted sm:pl-6"
+                >
+                  Order
+                </th>
+                <th
+                  scope="col"
+                  class="px-3 py-3.5 text-left text-xs font-medium uppercase tracking-wide text-text-muted"
+                >
+                  Customer
+                </th>
+                <th
+                  scope="col"
+                  class="px-3 py-3.5 text-left text-xs font-medium uppercase tracking-wide text-text-muted"
+                >
+                  Status
+                </th>
+                <th
+                  scope="col"
+                  class="px-3 py-3.5 text-left text-xs font-medium uppercase tracking-wide text-text-muted"
+                >
+                  Date
+                </th>
+                <th
+                  scope="col"
+                  class="px-3 py-3.5 text-right text-xs font-medium uppercase tracking-wide text-text-muted"
+                >
+                  Total
+                </th>
+                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                  <span class="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border bg-background-secondary">
+              {orders.map((order) => (
+                <tr class="hover:bg-background-tertiary/50 transition-colors duration-normal">
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 sm:pl-6">
+                    <a
+                      href={`/orders/${order.id}`}
+                      class="font-medium text-text-primary hover:text-primary transition-colors"
+                    >
+                      #{order.number}
+                    </a>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4">
+                    <p class="text-sm text-text-primary truncate max-w-[200px]">
+                      {order.customer_email}
+                    </p>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4">
+                    <span
+                      class:list={[
+                        'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium capitalize',
+                        getStatusStyles(order.status),
+                      ]}
+                    >
+                      {order.status}
+                    </span>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-text-secondary">
+                    {formatDate(order.created_at)}
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-text-primary text-right font-medium">
+                    {formatPrice(order.total_cents)}
+                  </td>
+                  <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                    <a
+                      href={`/orders/${order.id}`}
+                      class="text-primary hover:text-primary-700 transition-colors"
+                    >
+                      View
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+    }
+  </div>
+
+  <!-- Order count -->
+  {
+    orders.length > 0 && (
+      <div class="mt-4 flex items-center justify-between">
+        <p class="text-sm text-text-muted">
+          Showing {orders.length} {orders.length === 1 ? 'order' : 'orders'}
+        </p>
+      </div>
+    )
+  }
+</AdminLayout>

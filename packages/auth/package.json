@@ -1,0 +1,39 @@
+{
+  "name": "@dear-margeaux/auth",
+  "version": "0.1.0",
+  "description": "Authentication utilities for Dear Margeaux admin",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "lucia": "^3.2.2",
+    "@lucia-auth/adapter-sqlite": "^3.0.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240512.0",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [
+    "auth",
+    "lucia",
+    "d1",
+    "cloudflare"
+  ],
+  "license": "MIT"
+}

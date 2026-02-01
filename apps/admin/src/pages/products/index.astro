@@ -1,0 +1,176 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { getAdminMerchantClient } from '../../lib/merchant';
+import ProductListBulk from '../../components/ProductListBulk';
+import type { Product } from '@dear-margeaux/api';
+
+// Fetch products from the API
+const client = getAdminMerchantClient();
+
+let products: Product[] = [];
+let error: string | null = null;
+
+// Get query params for filtering
+const url = Astro.url;
+const statusFilter = url.searchParams.get('status') || '';
+const searchQuery = url.searchParams.get('search') || '';
+
+if (client) {
+  try {
+    const params: { limit: number; status?: 'active' | 'draft' } = {
+      limit: 100,
+    };
+    if (statusFilter === 'active' || statusFilter === 'draft') {
+      params.status = statusFilter;
+    }
+    const response = await client.getProducts(params);
+
+    // Fetch full product details to get variants
+    products = await Promise.all(
+      response.items.map(async (item) => {
+        const product = await client.getProduct(item.id);
+        return product;
+      })
+    );
+
+    // Apply client-side search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      products = products.filter(
+        (p) =>
+          p.title.toLowerCase().includes(query) ||
+          p.description?.toLowerCase().includes(query) ||
+          p.variants.some((v) => v.sku.toLowerCase().includes(query))
+      );
+    }
+  } catch (e) {
+    console.error('Failed to fetch products:', e);
+    error = 'Failed to load products. Please try again.';
+  }
+}
+---
+
+<AdminLayout title="Products">
+  <!-- Page Header -->
+  <div
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8"
+  >
+    <div>
+      <h1 class="text-2xl font-semibold text-text-primary">Products</h1>
+      <p class="mt-1 text-sm text-text-secondary">
+        Manage your product catalog
+      </p>
+    </div>
+    <a
+      href="/products/new"
+      class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="w-5 h-5"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M12 4.5v15m7.5-7.5h-15"></path>
+      </svg>
+      Add Product
+    </a>
+  </div>
+
+  <!-- Filters -->
+  <div
+    class="bg-background-secondary rounded-xl border border-border shadow-sm mb-6"
+  >
+    <div class="p-4">
+      <form method="GET" class="flex flex-col sm:flex-row gap-4">
+        <!-- Search -->
+        <div class="flex-1">
+          <label for="search" class="sr-only">Search products</label>
+          <div class="relative">
+            <div
+              class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
+            >
+              <svg
+                class="h-5 w-5 text-text-muted"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
+                  clip-rule="evenodd"></path>
+              </svg>
+            </div>
+            <input
+              type="text"
+              name="search"
+              id="search"
+              value={searchQuery}
+              class="block w-full rounded-lg border border-border bg-background-primary py-2 pl-10 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              placeholder="Search by name or SKU..."
+            />
+          </div>
+        </div>
+
+        <!-- Status filter -->
+        <div class="sm:w-40">
+          <label for="status" class="sr-only">Filter by status</label>
+          <select
+            name="status"
+            id="status"
+            class="block w-full rounded-lg border border-border bg-background-primary py-2 pl-3 pr-10 text-sm text-text-primary focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          >
+            <option value="" selected={!statusFilter}>All Status</option>
+            <option value="active" selected={statusFilter === 'active'}
+              >Active</option
+            >
+            <option value="draft" selected={statusFilter === 'draft'}
+              >Draft</option
+            >
+          </select>
+        </div>
+
+        <!-- Submit button -->
+        <button
+          type="submit"
+          class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-text-primary bg-background-tertiary border border-border rounded-lg hover:bg-background-primary transition-colors duration-normal"
+        >
+          Filter
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  {
+    error && (
+      <div class="bg-background-secondary rounded-xl border border-border shadow-sm overflow-hidden p-8 text-center">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-status-error/10 mb-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-6 h-6 text-status-error"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+            />
+          </svg>
+        </div>
+        <p class="text-text-secondary">{error}</p>
+      </div>
+    )
+  }
+
+  <!-- Products List with Bulk Operations -->
+  {!error && <ProductListBulk client:load products={products} />}
+</AdminLayout>

@@ -1,0 +1,406 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import ProductGrid from '../../components/ProductGrid.astro';
+import CollapsibleFilter from '../../components/CollapsibleFilter.astro';
+import type {
+  ProductListItem,
+  Drop,
+  Product,
+  TagInfo,
+} from '@dear-margeaux/api';
+
+// R2 Public URL for product images
+const R2_PUBLIC_URL = 'https://pub-bf88a85e013c44b6a3a965d48812aa90.r2.dev';
+
+// Sample products for development/fallback when API is unavailable
+// Products from "The Debut" collection - Dear Margeaux's inaugural drop
+const sampleProducts = [
+  {
+    id: '1',
+    title: 'The Colette',
+    price: 39500,
+    image: `${R2_PUBLIC_URL}/products/prod-1.webp`,
+    collection: 'The Debut',
+    soldOut: false,
+    tags: ['leather', 'everyday'],
+  },
+  {
+    id: '2',
+    title: 'The Amélie',
+    price: 45000,
+    image: `${R2_PUBLIC_URL}/products/prod-2.webp`,
+    collection: 'The Debut',
+    soldOut: false,
+    tags: ['leather', 'everyday'],
+  },
+  {
+    id: '3',
+    title: 'The Giselle',
+    price: 52500,
+    image: `${R2_PUBLIC_URL}/products/prod-3.webp`,
+    collection: 'The Debut',
+    soldOut: false,
+    tags: ['leather', 'formal'],
+  },
+  {
+    id: '4',
+    title: 'The Margot',
+    price: 47500,
+    image: `${R2_PUBLIC_URL}/products/prod-4.webp`,
+    collection: 'The Debut',
+    soldOut: false,
+    tags: ['leather', 'everyday'],
+  },
+  {
+    id: '5',
+    title: 'The Vivienne',
+    price: 59500,
+    image: `${R2_PUBLIC_URL}/products/prod-5.webp`,
+    collection: 'The Debut',
+    soldOut: false,
+    tags: ['leather', 'formal'],
+  },
+  {
+    id: '6',
+    title: 'The Eloise',
+    price: 34500,
+    image: `${R2_PUBLIC_URL}/products/prod-6.webp`,
+    collection: 'The Debut',
+    soldOut: false,
+    tags: ['leather', 'evening'],
+  },
+  {
+    id: '7',
+    title: 'The Céline',
+    price: 42500,
+    image: `${R2_PUBLIC_URL}/products/prod-7.webp`,
+    collection: 'The Debut',
+    soldOut: false,
+    tags: ['leather', 'everyday'],
+  },
+];
+
+interface DisplayProduct {
+  id: string;
+  title: string;
+  price: number;
+  image?: string;
+  imageAlt?: string;
+  collection?: string;
+  soldOut: boolean;
+  tags?: string[];
+}
+
+// Fetch products from the Merchant API
+let products: DisplayProduct[] = sampleProducts;
+let allDrops: Drop[] = [];
+let allTags: TagInfo[] = [];
+
+// Only try to fetch from API if environment variables are set
+const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
+const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY;
+
+if (apiUrl && apiKey) {
+  try {
+    const { MerchantClient } = await import('@dear-margeaux/api');
+    const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
+
+    // Fetch all drops for filtering
+    const dropsResponse = await client.getDrops({ limit: 100 });
+    allDrops = dropsResponse.items.filter(
+      (d) =>
+        d.status === 'active' ||
+        d.status === 'ended' ||
+        d.status === 'scheduled'
+    );
+
+    // Fetch all products from all drops
+    let allProducts: DisplayProduct[] = [];
+
+    for (const drop of allDrops) {
+      try {
+        const dropProductsResponse = await client.getDropProducts(drop.slug, {
+          limit: 50,
+        });
+
+        const isPastDrop = drop.status === 'ended';
+
+        const dropProducts = dropProductsResponse.items.map(
+          (product: Product) => {
+            const firstVariant = product.variants[0];
+
+            // Check if all variants are sold out using variant.available
+            const allVariantsSoldOut = product.variants.every((variant) => {
+              return variant.available !== null && variant.available <= 0;
+            });
+
+            // Prefer featured_image_url/alt, fallback to first variant image
+            const imageUrl =
+              product.featured_image_url ??
+              firstVariant?.image_url ??
+              undefined;
+            const imageAlt =
+              product.featured_image_alt ??
+              firstVariant?.image_alt ??
+              undefined;
+
+            return {
+              id: product.id,
+              title: product.title,
+              price: firstVariant?.price_cents ?? 0,
+              image: imageUrl,
+              imageAlt: imageAlt,
+              collection: drop.name,
+              soldOut: allVariantsSoldOut || isPastDrop,
+              tags: product.tags,
+            };
+          }
+        );
+
+        allProducts = [...allProducts, ...dropProducts];
+      } catch {
+        // Skip drops that fail to load
+      }
+    }
+
+    // Also fetch products without a drop (evergreen products)
+    const response = await client.getProducts({ status: 'active', limit: 50 });
+    if (response.items.length > 0) {
+      const productDetails = await Promise.all(
+        response.items.map(async (item: ProductListItem) => {
+          try {
+            const product = await client.getProduct(item.id);
+            // Skip products that are already in a drop
+            if (allProducts.some((p) => p.id === product.id)) {
+              return null;
+            }
+
+            const firstVariant = product.variants[0];
+
+            // Check if all variants are sold out using variant.available
+            const allVariantsSoldOut = product.variants.every((variant) => {
+              return variant.available !== null && variant.available <= 0;
+            });
+
+            // Prefer featured_image_url/alt, fallback to first variant image
+            const imageUrl =
+              product.featured_image_url ??
+              firstVariant?.image_url ??
+              undefined;
+            const imageAlt =
+              product.featured_image_alt ??
+              firstVariant?.image_alt ??
+              undefined;
+
+            return {
+              id: product.id,
+              title: product.title,
+              price: firstVariant?.price_cents ?? 0,
+              image: imageUrl,
+              imageAlt: imageAlt,
+              collection: undefined,
+              soldOut: allVariantsSoldOut,
+              tags: product.tags,
+            };
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      const validProducts = productDetails.filter(
+        (p): p is NonNullable<typeof p> => p !== null
+      );
+      allProducts = [...allProducts, ...validProducts];
+    }
+
+    if (allProducts.length > 0) {
+      products = allProducts;
+    }
+
+    // Fetch all tags for filter navigation
+    try {
+      const tagsResponse = await client.getTags();
+      allTags = tagsResponse.tags;
+    } catch {
+      // Tags fetch might fail, continue without it
+    }
+  } catch (error) {
+    // Log error but continue with sample data
+    console.error('Failed to fetch products from API:', error);
+  }
+} else {
+  // Create sample drops for filter navigation - "The Debut" inaugural collection
+  allDrops = [
+    { id: '1', name: 'The Debut', slug: 'the-debut', status: 'active' },
+  ] as Drop[];
+
+  // Create sample tags from sample products for filter navigation
+  const tagCounts = new Map<string, number>();
+  for (const p of sampleProducts) {
+    for (const t of p.tags) {
+      tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
+    }
+  }
+  allTags = Array.from(tagCounts.entries()).map(([tag, count]) => ({
+    tag,
+    count,
+  }));
+}
+---
+
+<BaseLayout
+  title="Shop"
+  description="Browse our collection of handcrafted leather bags"
+>
+  <!-- Page Header -->
+  <section class="bg-secondary py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-6xl">
+      <h1 class="text-3xl md:text-4xl font-bold text-text text-center">
+        Shop All Bags
+      </h1>
+      <p class="text-text-secondary text-center mt-3 max-w-xl mx-auto">
+        Discover our collection of handcrafted leather bags, designed for the
+        modern woman
+      </p>
+    </div>
+  </section>
+
+  <!-- Filters Section -->
+  {
+    (allDrops.length > 0 || allTags.length > 0) && (
+      <section class="border-b border-border bg-background">
+        <div class="container mx-auto px-4 max-w-6xl py-4">
+          <div class="flex flex-col gap-4">
+            {/* Collection filters - always visible */}
+            {allDrops.length > 0 && (
+              <div class="flex items-center gap-4 overflow-x-auto">
+                <span class="text-sm font-medium text-text-secondary shrink-0">
+                  Collection:
+                </span>
+                <div class="flex gap-2">
+                  <a
+                    href="/shop"
+                    class="px-4 py-2 text-sm font-medium rounded-full bg-primary text-text-inverse transition-colors duration-normal"
+                  >
+                    All
+                  </a>
+                  {allDrops.map((drop) => {
+                    const isEnded = drop.status === 'ended';
+                    return (
+                      <a
+                        href={`/shop/${drop.slug}`}
+                        class:list={[
+                          'px-4 py-2 text-sm font-medium rounded-full border border-border text-text hover:bg-background-secondary transition-colors duration-normal',
+                          isEnded && 'opacity-70',
+                        ]}
+                      >
+                        {drop.name}
+                        {isEnded && <span class="ml-1 text-xs">(Past)</span>}
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Tag filters - collapsible */}
+            {allTags.length > 0 && (
+              <CollapsibleFilter label="Filter by tag" id="shop-tags">
+                {allTags.map((t) => (
+                  <a
+                    href={`/shop/tag/${encodeURIComponent(t.tag)}`}
+                    class="px-3 py-1.5 text-sm font-medium rounded-full border border-border text-text hover:bg-background-secondary transition-colors duration-normal"
+                  >
+                    {t.tag}
+                    <span class="ml-1 text-xs opacity-70">({t.count})</span>
+                  </a>
+                ))}
+              </CollapsibleFilter>
+            )}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Products Grid -->
+  <section class="py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-6xl">
+      {
+        products.length > 0 ? (
+          <>
+            <div class="flex items-center justify-between mb-8">
+              <p class="text-sm text-text-secondary">
+                Showing {products.length}{' '}
+                {products.length === 1 ? 'product' : 'products'}
+              </p>
+            </div>
+
+            <ProductGrid columns={4} gap="md">
+              {products.map((product) => (
+                <ProductCard
+                  id={product.id}
+                  title={product.title}
+                  price={product.price}
+                  image={product.image}
+                  imageAlt={product.imageAlt}
+                  collection={product.collection}
+                  soldOut={product.soldOut}
+                  tags={product.tags}
+                />
+              ))}
+            </ProductGrid>
+          </>
+        ) : (
+          <div class="text-center py-16">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
+              <svg
+                class="w-8 h-8 text-text-muted"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
+                />
+              </svg>
+            </div>
+            <h2 class="text-xl font-semibold text-text mb-2">
+              No products found
+            </h2>
+            <p class="text-text-secondary mb-6">
+              Check back soon for our next drop
+            </p>
+            <a
+              href="/"
+              class="inline-flex px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+            >
+              Back to Home
+            </a>
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  <!-- Newsletter CTA -->
+  <section class="py-12 md:py-16 bg-secondary">
+    <div class="container mx-auto px-4 max-w-6xl text-center">
+      <h2 class="text-2xl font-bold text-text mb-3">Don't Miss a Drop</h2>
+      <p class="text-text-secondary max-w-md mx-auto mb-6">
+        Be the first to know when new collections are released
+      </p>
+      <a
+        href="/#newsletter"
+        class="inline-flex px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+      >
+        Join the Waitlist
+      </a>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,471 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { getAdminMerchantClient } from '../../../lib/merchant';
+import type { InventoryLog, InventoryItem } from '@dear-margeaux/api';
+
+// Get SKU from URL params
+const { sku } = Astro.params;
+
+if (!sku) {
+  return Astro.redirect('/inventory');
+}
+
+const client = getAdminMerchantClient();
+
+let historyItems: InventoryLog[] = [];
+let inventoryInfo: InventoryItem | null = null;
+let productTitle = '';
+let variantTitle = '';
+let error: string | null = null;
+let hasMore = false;
+let nextCursor: string | null = null;
+
+// Get query params for filtering
+const url = Astro.url;
+const startDate = url.searchParams.get('start_date') || '';
+const endDate = url.searchParams.get('end_date') || '';
+const cursor = url.searchParams.get('cursor') || '';
+
+if (client) {
+  try {
+    // Fetch inventory info
+    const inventoryResponse = await client.getInventory({ sku });
+    if (inventoryResponse.items.length > 0) {
+      inventoryInfo = inventoryResponse.items[0];
+    }
+
+    // Fetch product info for display
+    const productsResponse = await client.getProducts({ limit: 100 });
+    for (const productItem of productsResponse.items) {
+      const product = await client.getProduct(productItem.id);
+      for (const variant of product.variants) {
+        if (variant.sku === sku) {
+          productTitle = product.title;
+          variantTitle = variant.title;
+          break;
+        }
+      }
+      if (productTitle) break;
+    }
+
+    // Fetch history with optional date filters
+    const historyParams: Record<string, string | number | undefined> = {
+      limit: 50,
+    };
+    if (startDate) historyParams.start_date = startDate;
+    if (endDate) historyParams.end_date = endDate;
+    if (cursor) historyParams.cursor = cursor;
+
+    const historyResponse = await client.getInventoryHistory(
+      sku,
+      historyParams
+    );
+    historyItems = historyResponse.items;
+    hasMore = historyResponse.pagination.has_more;
+    nextCursor = historyResponse.pagination.next_cursor;
+  } catch (e) {
+    console.error('Failed to fetch inventory history:', e);
+    if (e instanceof Error && e.message.toLowerCase().includes('not found')) {
+      error = `SKU "${sku}" not found`;
+    } else {
+      error = 'Failed to load inventory history. Please try again.';
+    }
+  }
+}
+
+// Helper to format date
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+// Helper to get reason badge styles
+function getReasonStyles(reason: string): string {
+  switch (reason) {
+    case 'restock':
+      return 'bg-status-success/10 text-status-success';
+    case 'sale':
+      return 'bg-primary/10 text-primary';
+    case 'return':
+      return 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
+    case 'correction':
+      return 'bg-status-warning/10 text-status-warning';
+    case 'damaged':
+      return 'bg-status-error/10 text-status-error';
+    case 'release':
+      return 'bg-gray-500/10 text-gray-600 dark:text-gray-400';
+    default:
+      return 'bg-background-tertiary text-text-muted';
+  }
+}
+
+// Helper to format reason label
+function getReasonLabel(reason: string): string {
+  return reason.charAt(0).toUpperCase() + reason.slice(1);
+}
+---
+
+<AdminLayout title={`Inventory History - ${sku}`}>
+  <!-- Page Header -->
+  <div class="mb-8">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-4" aria-label="Breadcrumb">
+      <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+          <a
+            href="/inventory"
+            class="inline-flex items-center text-sm font-medium text-text-muted hover:text-primary transition-colors"
+          >
+            <svg
+              class="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+              ></path>
+            </svg>
+            Inventory
+          </a>
+        </li>
+        <li>
+          <div class="flex items-center">
+            <svg
+              class="w-4 h-4 text-text-muted"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                clip-rule="evenodd"></path>
+            </svg>
+            <span class="ml-1 text-sm font-medium text-text-primary md:ml-2">
+              {sku}
+            </span>
+          </div>
+        </li>
+      </ol>
+    </nav>
+
+    <div
+      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+    >
+      <div>
+        <h1 class="text-2xl font-semibold text-text-primary">
+          Inventory History
+        </h1>
+        <div
+          class="mt-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4"
+        >
+          <p class="text-sm text-text-secondary">
+            Adjustment history for <code
+              class="font-mono bg-background-tertiary px-1.5 py-0.5 rounded text-primary"
+              >{sku}</code
+            >
+          </p>
+          {
+            (productTitle || variantTitle) && (
+              <span class="text-sm text-text-muted">
+                {productTitle}
+                {variantTitle ? ` - ${variantTitle}` : ''}
+              </span>
+            )
+          }
+        </div>
+      </div>
+
+      {
+        inventoryInfo && (
+          <div class="flex items-center gap-4 text-sm">
+            <div class="text-center">
+              <div class="font-semibold text-text-primary">
+                {inventoryInfo.on_hand}
+              </div>
+              <div class="text-text-muted">On Hand</div>
+            </div>
+            <div class="text-center">
+              <div class="font-semibold text-text-secondary">
+                {inventoryInfo.reserved}
+              </div>
+              <div class="text-text-muted">Reserved</div>
+            </div>
+            <div class="text-center">
+              <div
+                class:list={[
+                  'font-semibold',
+                  inventoryInfo.available <= 0
+                    ? 'text-status-error'
+                    : inventoryInfo.available <= 5
+                      ? 'text-status-warning'
+                      : 'text-status-success',
+                ]}
+              >
+                {inventoryInfo.available}
+              </div>
+              <div class="text-text-muted">Available</div>
+            </div>
+          </div>
+        )
+      }
+    </div>
+  </div>
+
+  <!-- Date Range Filter -->
+  <div
+    class="bg-background-secondary rounded-xl border border-border shadow-sm mb-6"
+  >
+    <div class="p-4">
+      <form method="GET" class="flex flex-col sm:flex-row gap-4 items-end">
+        <div>
+          <label
+            for="start_date"
+            class="block text-sm font-medium text-text-secondary mb-1"
+          >
+            Start Date
+          </label>
+          <input
+            type="date"
+            name="start_date"
+            id="start_date"
+            value={startDate}
+            class="block w-full rounded-lg border border-border bg-background-primary py-2 px-3 text-sm text-text-primary focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          />
+        </div>
+        <div>
+          <label
+            for="end_date"
+            class="block text-sm font-medium text-text-secondary mb-1"
+          >
+            End Date
+          </label>
+          <input
+            type="date"
+            name="end_date"
+            id="end_date"
+            value={endDate}
+            class="block w-full rounded-lg border border-border bg-background-primary py-2 px-3 text-sm text-text-primary focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          />
+        </div>
+        <div class="flex gap-2">
+          <button
+            type="submit"
+            class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-primary border border-transparent rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+          >
+            Filter
+          </button>
+          {
+            (startDate || endDate) && (
+              <a
+                href={`/inventory/${sku}/history`}
+                class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-text-primary bg-background-tertiary border border-border rounded-lg hover:bg-background-primary transition-colors duration-normal"
+              >
+                Clear
+              </a>
+            )
+          }
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- History Table -->
+  <div
+    class="bg-background-secondary rounded-xl border border-border shadow-sm overflow-hidden"
+  >
+    {
+      error ? (
+        <div class="p-8 text-center">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-status-error/10 mb-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-6 h-6 text-status-error"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+              />
+            </svg>
+          </div>
+          <p class="text-text-secondary">{error}</p>
+          <a
+            href="/inventory"
+            class="mt-4 inline-flex items-center text-sm text-primary hover:text-primary-600 transition-colors"
+          >
+            <svg
+              class="w-4 h-4 mr-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+            Back to Inventory
+          </a>
+        </div>
+      ) : historyItems.length === 0 ? (
+        <div class="p-8 text-center">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-background-tertiary mb-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-6 h-6 text-text-muted"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+              />
+            </svg>
+          </div>
+          <h3 class="text-sm font-medium text-text-primary mb-1">
+            No history found
+          </h3>
+          <p class="text-sm text-text-muted">
+            {startDate || endDate
+              ? 'No adjustments in the selected date range'
+              : 'No inventory adjustments have been made for this SKU'}
+          </p>
+        </div>
+      ) : (
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-border">
+            <thead class="bg-background-tertiary">
+              <tr>
+                <th
+                  scope="col"
+                  class="py-3.5 pl-4 pr-3 text-left text-xs font-medium uppercase tracking-wide text-text-muted sm:pl-6"
+                >
+                  Date
+                </th>
+                <th
+                  scope="col"
+                  class="px-3 py-3.5 text-left text-xs font-medium uppercase tracking-wide text-text-muted"
+                >
+                  Reason
+                </th>
+                <th
+                  scope="col"
+                  class="px-3 py-3.5 text-center text-xs font-medium uppercase tracking-wide text-text-muted"
+                >
+                  Change
+                </th>
+                <th
+                  scope="col"
+                  class="px-3 py-3.5 text-left text-xs font-medium uppercase tracking-wide text-text-muted"
+                >
+                  Adjusted By
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border bg-background-secondary">
+              {historyItems.map((log) => (
+                <tr class="hover:bg-background-tertiary/50 transition-colors duration-normal">
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-text-primary sm:pl-6">
+                    {formatDate(log.created_at)}
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4">
+                    <span
+                      class:list={[
+                        'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
+                        getReasonStyles(log.reason),
+                      ]}
+                    >
+                      {getReasonLabel(log.reason)}
+                    </span>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-center">
+                    <span
+                      class:list={[
+                        'font-semibold',
+                        log.delta > 0
+                          ? 'text-status-success'
+                          : 'text-status-error',
+                      ]}
+                    >
+                      {log.delta > 0 ? '+' : ''}
+                      {log.delta}
+                    </span>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-text-secondary">
+                    {log.admin_name ? (
+                      <span title={log.admin_id || undefined}>
+                        {log.admin_name}
+                      </span>
+                    ) : log.admin_id ? (
+                      <span class="text-text-muted font-mono text-xs">
+                        {log.admin_id.slice(0, 8)}...
+                      </span>
+                    ) : (
+                      <span class="text-text-muted italic">System</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+    }
+  </div>
+
+  <!-- Pagination -->
+  {
+    historyItems.length > 0 && (
+      <div class="mt-4 flex items-center justify-between">
+        <p class="text-sm text-text-muted">
+          Showing {historyItems.length}{' '}
+          {historyItems.length === 1 ? 'entry' : 'entries'}
+        </p>
+        {hasMore && nextCursor && (
+          <a
+            href={`/inventory/${sku}/history?${new URLSearchParams({
+              ...(startDate ? { start_date: startDate } : {}),
+              ...(endDate ? { end_date: endDate } : {}),
+              cursor: nextCursor,
+            }).toString()}`}
+            class="inline-flex items-center text-sm text-primary hover:text-primary-600 transition-colors"
+          >
+            Load more
+            <svg
+              class="w-4 h-4 ml-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M14 5l7 7m0 0l-7 7m7-7H3"
+              />
+            </svg>
+          </a>
+        )}
+      </div>
+    )
+  }
+</AdminLayout>

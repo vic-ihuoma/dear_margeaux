@@ -1,0 +1,478 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import ProductGrid from '../../components/ProductGrid.astro';
+import WaitlistForm from '../../components/WaitlistForm';
+import type { Drop, Product } from '@dear-margeaux/api';
+import type { GetStaticPaths } from 'astro';
+
+interface DisplayProduct {
+  id: string;
+  title: string;
+  price: number;
+  image?: string;
+  imageAlt?: string;
+  collection?: string;
+  soldOut: boolean;
+}
+
+// Generate static paths for all drops
+export const getStaticPaths: GetStaticPaths = async () => {
+  // Define sample slugs for static generation
+  const sampleSlugs = ['spring-2026', 'winter-2025', 'fall-2025'];
+
+  // Try to fetch drop slugs from API
+  const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
+  const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY;
+
+  if (apiUrl && apiKey) {
+    try {
+      const { MerchantClient } = await import('@dear-margeaux/api');
+      const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
+      const response = await client.getDrops({ limit: 100 });
+
+      const apiPaths = response.items.map((drop) => ({
+        params: { drop: drop.slug },
+      }));
+
+      // Combine sample and API paths, deduplicate by slug
+      const allSlugs = new Set<string>();
+      const combinedPaths: Array<{ params: { drop: string } }> = [];
+
+      for (const path of [
+        ...apiPaths,
+        ...sampleSlugs.map((s) => ({ params: { drop: s } })),
+      ]) {
+        if (!allSlugs.has(path.params.drop)) {
+          allSlugs.add(path.params.drop);
+          combinedPaths.push(path);
+        }
+      }
+
+      return combinedPaths;
+    } catch (error) {
+      console.error('Failed to fetch drops for static paths:', error);
+    }
+  }
+
+  return sampleSlugs.map((slug) => ({
+    params: { drop: slug },
+  }));
+};
+
+// Sample products for development/fallback when API is unavailable
+const getSampleProducts = (): DisplayProduct[] => [
+  {
+    id: '1',
+    title: 'Classic Leather Tote',
+    price: 45000,
+    collection: 'Spring 2026',
+    soldOut: false,
+  },
+  {
+    id: '2',
+    title: 'Mini Crossbody',
+    price: 28500,
+    collection: 'Spring 2026',
+    soldOut: false,
+  },
+  {
+    id: '3',
+    title: 'Structured Satchel',
+    price: 52000,
+    collection: 'Spring 2026',
+    soldOut: true,
+  },
+  {
+    id: '4',
+    title: 'Weekend Duffle',
+    price: 68000,
+    collection: 'Spring 2026',
+    soldOut: false,
+  },
+  {
+    id: '5',
+    title: 'Evening Clutch',
+    price: 32000,
+    collection: 'Winter 2025',
+    soldOut: true,
+  },
+  {
+    id: '6',
+    title: 'Everyday Hobo',
+    price: 48000,
+    collection: 'Winter 2025',
+    soldOut: false,
+  },
+  {
+    id: '7',
+    title: 'Bucket Bag',
+    price: 38000,
+    collection: 'Winter 2025',
+    soldOut: false,
+  },
+  {
+    id: '8',
+    title: 'Messenger Bag',
+    price: 55000,
+    collection: 'Fall 2025',
+    soldOut: false,
+  },
+];
+
+// Get the drop slug from the URL parameter
+const { drop: dropSlug } = Astro.params;
+
+// API configuration
+const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
+const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY;
+
+// State variables
+let drop: Drop | null = null;
+let products: DisplayProduct[] = [];
+let allDrops: Drop[] = [];
+let dropExists = false;
+let isPastDrop = false;
+let isScheduledDrop = false;
+
+// Try to fetch from API if environment variables are set
+if (apiUrl && apiKey && dropSlug) {
+  try {
+    const { MerchantClient } = await import('@dear-margeaux/api');
+    const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
+
+    // Fetch the drop and its products
+    const dropProductsResponse = await client.getDropProducts(
+      String(dropSlug),
+      {
+        limit: 100,
+      }
+    );
+
+    drop = dropProductsResponse.drop;
+    dropExists = true;
+
+    // Determine drop status for UI
+    isPastDrop = drop.status === 'ended';
+    isScheduledDrop = drop.status === 'scheduled';
+
+    // Fetch all drops for the filter navigation
+    const dropsResponse = await client.getDrops({ limit: 100 });
+    allDrops = dropsResponse.items.filter(
+      (d) =>
+        d.status === 'active' ||
+        d.status === 'ended' ||
+        d.status === 'scheduled'
+    );
+
+    // Map products to display format
+    products = dropProductsResponse.items.map((product: Product) => {
+      const firstVariant = product.variants[0];
+
+      // Check if all variants are sold out using variant.available
+      const allVariantsSoldOut = product.variants.every((variant) => {
+        return variant.available !== null && variant.available <= 0;
+      });
+
+      // Prefer featured_image_url/alt, fallback to first variant image
+      const imageUrl =
+        product.featured_image_url ?? firstVariant?.image_url ?? undefined;
+      const imageAlt =
+        product.featured_image_alt ?? firstVariant?.image_alt ?? undefined;
+
+      return {
+        id: product.id,
+        title: product.title,
+        price: firstVariant?.price_cents ?? 0,
+        image: imageUrl,
+        imageAlt: imageAlt,
+        collection: drop?.name,
+        soldOut: allVariantsSoldOut || isPastDrop,
+      };
+    });
+  } catch (e) {
+    console.error('Failed to fetch drop products from API:', e);
+    // Fall back to sample data
+    const sampleProducts = getSampleProducts();
+    const collectionName = dropSlug
+      ? String(dropSlug)
+          .split('-')
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ')
+      : null;
+
+    products = sampleProducts.filter(
+      (p) => p.collection?.toLowerCase() === collectionName?.toLowerCase()
+    );
+    dropExists = products.length > 0;
+    isPastDrop = dropExists && products.every((p) => p.soldOut);
+
+    // Create a mock drop for display
+    if (dropExists) {
+      drop = {
+        id: 'sample',
+        name: collectionName ?? 'Collection',
+        slug: String(dropSlug),
+        status: isPastDrop ? 'ended' : 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as Drop;
+    }
+  }
+} else {
+  // Fall back to sample data if no API configuration
+  const sampleProducts = getSampleProducts();
+  const collectionName = dropSlug
+    ? String(dropSlug)
+        .split('-')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
+    : null;
+
+  products = sampleProducts.filter(
+    (p) => p.collection?.toLowerCase() === collectionName?.toLowerCase()
+  );
+  dropExists = products.length > 0;
+  isPastDrop = dropExists && products.every((p) => p.soldOut);
+
+  // Create a mock drop for display
+  if (dropExists) {
+    drop = {
+      id: 'sample',
+      name: collectionName ?? 'Collection',
+      slug: String(dropSlug),
+      status: isPastDrop ? 'ended' : 'active',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as Drop;
+  }
+
+  // Create sample drops for filter navigation
+  allDrops = [
+    { id: '1', name: 'Spring 2026', slug: 'spring-2026', status: 'active' },
+    { id: '2', name: 'Winter 2025', slug: 'winter-2025', status: 'ended' },
+    { id: '3', name: 'Fall 2025', slug: 'fall-2025', status: 'ended' },
+  ] as Drop[];
+}
+
+const collectionName = drop?.name ?? null;
+---
+
+<BaseLayout
+  title={collectionName ? `${collectionName} Collection` : 'Shop'}
+  description={collectionName
+    ? `Shop the ${collectionName} collection of handcrafted leather bags`
+    : 'Browse our collection of handcrafted leather bags'}
+>
+  <!-- Page Header -->
+  <section class="bg-secondary py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-6xl">
+      {
+        dropExists ? (
+          <>
+            <nav class="flex items-center justify-center gap-2 text-sm text-text-secondary mb-4">
+              <a href="/shop" class="hover:text-primary transition-colors">
+                Shop
+              </a>
+              <span>/</span>
+              <span class="text-text">{collectionName}</span>
+            </nav>
+            <h1 class="text-3xl md:text-4xl font-bold text-text text-center">
+              {collectionName}
+            </h1>
+            {isPastDrop && (
+              <div class="mt-4 flex justify-center">
+                <span class="px-4 py-1 text-sm font-medium text-text-muted bg-background rounded-full">
+                  Past Collection
+                </span>
+              </div>
+            )}
+            {drop?.status === 'scheduled' && (
+              <div class="mt-4 flex justify-center">
+                <span class="px-4 py-1 text-sm font-medium text-status-info bg-status-info/10 rounded-full">
+                  Coming Soon
+                </span>
+              </div>
+            )}
+            <p class="text-text-secondary text-center mt-3 max-w-xl mx-auto">
+              {isPastDrop
+                ? 'This collection has ended. Browse our current collections for available items.'
+                : drop?.description ||
+                  `Explore the ${collectionName} collection of handcrafted leather bags`}
+            </p>
+          </>
+        ) : (
+          <>
+            <h1 class="text-3xl md:text-4xl font-bold text-text text-center">
+              Collection Not Found
+            </h1>
+            <p class="text-text-secondary text-center mt-3 max-w-xl mx-auto">
+              The collection you're looking for doesn't exist or has been
+              removed
+            </p>
+          </>
+        )
+      }
+    </div>
+  </section>
+
+  <!-- Waitlist Section for Scheduled Drops -->
+  {
+    isScheduledDrop && drop && apiUrl && apiKey && (
+      <section class="py-8 bg-status-info/5 border-b border-status-info/20">
+        <div class="container mx-auto px-4 max-w-xl">
+          <div class="text-center mb-6">
+            <h2 class="text-xl font-semibold text-text mb-2">
+              Get Notified When It Drops
+            </h2>
+            <p class="text-sm text-text-secondary">
+              Be the first to shop when {drop.name} launches
+            </p>
+          </div>
+          <WaitlistForm
+            client:load
+            dropId={drop.id}
+            dropName={drop.name}
+            apiUrl={apiUrl}
+            apiKey={apiKey}
+          />
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Filters Section -->
+  {
+    allDrops.length > 0 && dropExists && (
+      <section class="border-b border-border bg-background">
+        <div class="container mx-auto px-4 max-w-6xl">
+          <div class="flex items-center gap-4 py-4 overflow-x-auto">
+            <span class="text-sm font-medium text-text-secondary shrink-0">
+              Filter by:
+            </span>
+            <div class="flex gap-2">
+              <a
+                href="/shop"
+                class="px-4 py-2 text-sm font-medium rounded-full border border-border text-text hover:bg-background-secondary transition-colors duration-normal"
+              >
+                All
+              </a>
+              {allDrops.map((d) => {
+                const isActive = d.slug === dropSlug;
+                const isEnded = d.status === 'ended';
+                return (
+                  <a
+                    href={`/shop/${d.slug}`}
+                    class:list={[
+                      'px-4 py-2 text-sm font-medium rounded-full transition-colors duration-normal',
+                      isActive
+                        ? 'bg-primary text-text-inverse'
+                        : 'border border-border text-text hover:bg-background-secondary',
+                      isEnded && !isActive && 'opacity-70',
+                    ]}
+                  >
+                    {d.name}
+                    {isEnded && <span class="ml-1 text-xs">(Past)</span>}
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Products Grid -->
+  <section class="py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-6xl">
+      {
+        dropExists && products.length > 0 ? (
+          <>
+            <div class="flex items-center justify-between mb-8">
+              <p class="text-sm text-text-secondary">
+                Showing {products.length}{' '}
+                {products.length === 1 ? 'product' : 'products'}
+              </p>
+              {isPastDrop && (
+                <span class="text-sm text-status-warning">
+                  Products from past collections are no longer available for
+                  purchase
+                </span>
+              )}
+            </div>
+
+            <ProductGrid columns={4} gap="md">
+              {products.map((product) => (
+                <ProductCard
+                  id={product.id}
+                  title={product.title}
+                  price={product.price}
+                  image={product.image}
+                  imageAlt={product.imageAlt}
+                  collection={product.collection}
+                  soldOut={product.soldOut}
+                  disablePurchase={isPastDrop}
+                />
+              ))}
+            </ProductGrid>
+          </>
+        ) : (
+          <div class="text-center py-16">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
+              <svg
+                class="w-8 h-8 text-text-muted"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
+                />
+              </svg>
+            </div>
+            <h2 class="text-xl font-semibold text-text mb-2">
+              {dropExists
+                ? 'No products in this collection'
+                : 'Collection not found'}
+            </h2>
+            <p class="text-text-secondary mb-6">
+              {dropExists
+                ? 'Check back soon or browse our other collections'
+                : "The collection you're looking for doesn't exist"}
+            </p>
+            <a
+              href="/shop"
+              class="inline-flex px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+            >
+              View All Products
+            </a>
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  <!-- Newsletter CTA -->
+  {
+    !isScheduledDrop && (
+      <section class="py-12 md:py-16 bg-secondary">
+        <div class="container mx-auto px-4 max-w-6xl text-center">
+          <h2 class="text-2xl font-bold text-text mb-3">Don't Miss a Drop</h2>
+          <p class="text-text-secondary max-w-md mx-auto mb-6">
+            Be the first to know when new collections are released
+          </p>
+          <a
+            href="/#newsletter"
+            class="inline-flex px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+          >
+            Join the Waitlist
+          </a>
+        </div>
+      </section>
+    )
+  }
+</BaseLayout>

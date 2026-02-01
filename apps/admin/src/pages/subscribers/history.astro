@@ -1,0 +1,267 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+// Newsletter send type matching the API response
+interface NewsletterSend {
+  id: string;
+  blog_slug: string;
+  subject: string;
+  sent_at: string;
+  recipient_count: number;
+  created_at: string;
+}
+
+interface SendsResponse {
+  sends: NewsletterSend[];
+  count: number;
+  limit: number;
+  offset: number;
+}
+
+// Get query params for pagination
+const url = new URL(Astro.request.url);
+const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+const limit = 20;
+
+// Build API request URL
+const apiUrl = new URL('/api/newsletter/sends', url.origin);
+apiUrl.searchParams.set('limit', limit.toString());
+apiUrl.searchParams.set('offset', offset.toString());
+
+let sends: NewsletterSend[] = [];
+let totalCount = 0;
+let error: string | null = null;
+
+try {
+  // Fetch from internal admin API route
+  const response = await fetch(apiUrl.toString(), {
+    headers: {
+      Cookie: Astro.request.headers.get('Cookie') || '',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch newsletter sends: ${response.status}`);
+  }
+
+  const data: SendsResponse = await response.json();
+  sends = data.sends;
+  totalCount = data.count;
+} catch (e) {
+  console.error('Failed to fetch newsletter sends:', e);
+  error = 'Failed to load send history. Please try again.';
+}
+
+// Pagination helpers
+const currentPage = Math.floor(offset / limit) + 1;
+const totalPages = Math.ceil(totalCount / limit);
+const hasNext = offset + limit < totalCount;
+const hasPrev = offset > 0;
+
+// Format helpers
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function formatRecipients(count: number): string {
+  return count === 1 ? '1 recipient' : `${count} recipients`;
+}
+---
+
+<AdminLayout title="Send History">
+  <!-- Page Header -->
+  <div
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8"
+  >
+    <div>
+      <h1 class="text-2xl font-semibold text-text-primary">Send History</h1>
+      <p class="mt-1 text-sm text-text-muted">
+        Track newsletters sent to your subscribers.
+      </p>
+    </div>
+    <div class="flex items-center gap-4">
+      <a
+        href="/subscribers"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-text-primary bg-background-secondary hover:bg-background-tertiary border border-border rounded-lg transition-colors"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-4 h-4"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M15.75 19.5 8.25 12l7.5-7.5"></path>
+        </svg>
+        Back to Subscribers
+      </a>
+    </div>
+  </div>
+
+  {
+    error ? (
+      <div class="p-8 text-center">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-status-error/10 mb-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-6 h-6 text-status-error"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+            />
+          </svg>
+        </div>
+        <p class="text-text-secondary">{error}</p>
+      </div>
+    ) : (
+      <>
+        {/* Send History Table */}
+        <div class="bg-background-secondary rounded-xl border border-border shadow-sm overflow-hidden">
+          {sends.length === 0 ? (
+            <div class="p-8 text-center">
+              <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-background-tertiary mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-6 h-6 text-text-muted"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
+                  />
+                </svg>
+              </div>
+              <p class="text-text-secondary mb-4">
+                No newsletters sent yet. Newsletters appear here when you
+                publish a blog post with "Send as newsletter" enabled.
+              </p>
+              <a
+                href="/blog"
+                class="text-sm font-medium text-primary hover:text-primary-600"
+              >
+                Go to Blog &rarr;
+              </a>
+            </div>
+          ) : (
+            <>
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead>
+                    <tr class="border-b border-border bg-background-tertiary">
+                      <th class="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
+                        Subject
+                      </th>
+                      <th class="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
+                        Blog Post
+                      </th>
+                      <th class="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
+                        Recipients
+                      </th>
+                      <th class="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
+                        Sent
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-border">
+                    {sends.map((send) => (
+                      <tr class="hover:bg-background-tertiary/50 transition-colors">
+                        <td class="px-6 py-4">
+                          <span class="text-sm font-medium text-text-primary">
+                            {send.subject}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4">
+                          <a
+                            href={`/blog/${send.blog_slug}/edit`}
+                            class="text-sm text-primary hover:text-primary-600 hover:underline"
+                          >
+                            {send.blog_slug}
+                          </a>
+                        </td>
+                        <td class="px-6 py-4">
+                          <span class="inline-flex items-center gap-1.5 text-sm text-text-secondary">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke-width="1.5"
+                              stroke="currentColor"
+                              class="w-4 h-4"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+                              />
+                            </svg>
+                            {formatRecipients(send.recipient_count)}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4">
+                          <span class="text-sm text-text-secondary">
+                            {formatDate(send.sent_at)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <div class="px-6 py-3 bg-background-tertiary border-t border-border flex items-center justify-between">
+                <p class="text-sm text-text-muted">
+                  Showing {offset + 1} -{' '}
+                  {Math.min(offset + sends.length, totalCount)} of {totalCount}{' '}
+                  {totalCount === 1 ? 'send' : 'sends'}
+                </p>
+                <div class="flex items-center gap-2">
+                  {hasPrev && (
+                    <a
+                      href={`/subscribers/history?offset=${offset - limit}`}
+                      class="px-3 py-1 text-sm font-medium text-text-secondary hover:text-text-primary border border-border rounded-md hover:bg-background-tertiary transition-colors"
+                    >
+                      Previous
+                    </a>
+                  )}
+                  <span class="text-sm text-text-muted">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  {hasNext && (
+                    <a
+                      href={`/subscribers/history?offset=${offset + limit}`}
+                      class="px-3 py-1 text-sm font-medium text-text-secondary hover:text-text-primary border border-border rounded-md hover:bg-background-tertiary transition-colors"
+                    >
+                      Next
+                    </a>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </>
+    )
+  }
+</AdminLayout>

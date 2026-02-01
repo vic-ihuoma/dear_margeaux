@@ -1,0 +1,291 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import type { Drop } from '@dear-margeaux/api';
+
+// API configuration
+const apiUrl = import.meta.env.PUBLIC_MERCHANT_API_URL;
+const apiKey = import.meta.env.PUBLIC_MERCHANT_API_KEY;
+
+// State for drops
+let drops: Drop[] = [];
+let fetchError = false;
+
+// Fetch ended drops from API
+if (apiUrl && apiKey) {
+  try {
+    const { MerchantClient } = await import('@dear-margeaux/api');
+    const client = new MerchantClient({ baseUrl: apiUrl, apiKey });
+    const response = await client.getDrops({ limit: 100, status: 'ended' });
+    drops = response.items;
+  } catch (error) {
+    console.error('Failed to fetch archived drops:', error);
+    fetchError = true;
+  }
+}
+
+// If no API configured, use sample drops for development
+if (!apiUrl || !apiKey) {
+  drops = [
+    {
+      id: 'sample-ended-1',
+      name: 'Winter 2025 Collection',
+      slug: 'winter-2025',
+      description:
+        'A collection of warm-toned bags perfect for the cooler months.',
+      status: 'ended',
+      start_date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+      end_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 'sample-ended-2',
+      name: 'Fall 2025 Collection',
+      slug: 'fall-2025',
+      description: 'Rich autumn colors and textures inspired by nature.',
+      status: 'ended',
+      start_date: new Date(
+        Date.now() - 180 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      end_date: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: 'sample-ended-3',
+      name: 'Summer 2025 Collection',
+      slug: 'summer-2025',
+      description: 'Light and airy designs for the warmer season.',
+      status: 'ended',
+      start_date: new Date(
+        Date.now() - 270 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      end_date: new Date(Date.now() - 210 * 24 * 60 * 60 * 1000).toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  ] as Drop[];
+}
+
+// Sort drops by end date (most recent first)
+const sortedDrops = [...drops].sort((a, b) => {
+  const dateA = a.end_date ? new Date(a.end_date).getTime() : 0;
+  const dateB = b.end_date ? new Date(b.end_date).getTime() : 0;
+  return dateB - dateA;
+});
+
+// Format date helper
+function formatDate(dateStr: string | null): string | null {
+  if (!dateStr) return null;
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } catch {
+    return null;
+  }
+}
+---
+
+<BaseLayout
+  title="Drops Archive"
+  description="Browse our past limited edition collections. Some items may still be available."
+>
+  <!-- Page Header -->
+  <section class="bg-secondary py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <nav class="mb-4">
+        <a
+          href="/drops"
+          class="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-primary transition-colors"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15.75 19.5L8.25 12l7.5-7.5"></path>
+          </svg>
+          Back to Drops
+        </a>
+      </nav>
+      <h1 class="text-3xl md:text-4xl font-bold text-text">Drops Archive</h1>
+      <p class="text-text-secondary mt-3 max-w-2xl">
+        Explore our past collections. Some items may still be available while
+        supplies last.
+      </p>
+    </div>
+  </section>
+
+  <!-- Error State -->
+  {
+    fetchError && (
+      <section class="py-8">
+        <div class="container mx-auto px-4 max-w-5xl">
+          <div class="bg-status-error/10 border border-status-error/20 rounded-lg p-4 text-center">
+            <p class="text-status-error">
+              Unable to load archived drops. Please try again later.
+            </p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Archived Drops Grid -->
+  {
+    sortedDrops.length > 0 && (
+      <section class="py-12 md:py-16">
+        <div class="container mx-auto px-4 max-w-5xl">
+          <div class="grid gap-6 md:grid-cols-2">
+            {sortedDrops.map((drop) => (
+              <article class="group bg-background-secondary rounded-2xl overflow-hidden border border-border hover:border-primary/30 transition-colors duration-normal">
+                <div class="p-6">
+                  {/* Status Badge */}
+                  <span class="inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full bg-text-muted/10 text-text-muted mb-3">
+                    Ended
+                  </span>
+
+                  {/* Title */}
+                  <h2 class="text-xl font-bold text-text mb-2 group-hover:text-primary transition-colors duration-normal">
+                    {drop.name}
+                  </h2>
+
+                  {/* Description */}
+                  {drop.description && (
+                    <p class="text-text-secondary text-sm mb-4 line-clamp-2">
+                      {drop.description}
+                    </p>
+                  )}
+
+                  {/* Dates */}
+                  <div class="flex items-center gap-2 text-sm text-text-muted mb-4">
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+                      />
+                    </svg>
+                    {drop.start_date && drop.end_date
+                      ? `${formatDate(drop.start_date)} — ${formatDate(drop.end_date)}`
+                      : drop.end_date
+                        ? `Ended ${formatDate(drop.end_date)}`
+                        : drop.start_date
+                          ? `Started ${formatDate(drop.start_date)}`
+                          : 'Ended'}
+                  </div>
+
+                  {/* CTA */}
+                  <a
+                    href={`/shop/${drop.slug}`}
+                    class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-600 transition-colors"
+                  >
+                    View Collection
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3"
+                      />
+                    </svg>
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Empty State -->
+  {
+    sortedDrops.length === 0 && !fetchError && (
+      <section class="py-16 md:py-24">
+        <div class="container mx-auto px-4 max-w-xl text-center">
+          <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-secondary flex items-center justify-center">
+            <svg
+              class="w-10 h-10 text-text-muted"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="1.5"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m6 4.125l2.25 2.25m0 0l2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
+              />
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-text mb-4">No Archived Drops</h2>
+          <p class="text-text-secondary mb-8">
+            Past collections will appear here after they end.
+          </p>
+          <a
+            href="/drops"
+            class="inline-flex px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+          >
+            View Current Drops
+          </a>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Back CTA -->
+  {
+    sortedDrops.length > 0 && (
+      <section class="py-12 md:py-16 bg-secondary">
+        <div class="container mx-auto px-4 max-w-5xl text-center">
+          <h2 class="text-2xl font-bold text-text mb-3">
+            Looking for Something New?
+          </h2>
+          <p class="text-text-secondary max-w-md mx-auto mb-6">
+            Check out our current and upcoming collections
+          </p>
+          <a
+            href="/drops"
+            class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+          >
+            View Current Drops
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3"
+              />
+            </svg>
+          </a>
+        </div>
+      </section>
+    )
+  }
+</BaseLayout>

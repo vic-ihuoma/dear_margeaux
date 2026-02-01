@@ -1,0 +1,44 @@
+{
+  "name": "@dear-margeaux/email",
+  "version": "0.1.0",
+  "description": "Email utilities and templates for Dear Margeaux",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "check": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "email": "email dev --dir ./src/templates --port 3001"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ses": "^3.700.0",
+    "@react-email/components": "^1.0.4",
+    "@react-email/render": "^2.0.2",
+    "react": "^19.2.3",
+    "react-email": "^5.2.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.2",
+    "@types/react": "^19.2.8",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [
+    "email",
+    "ses",
+    "aws",
+    "notifications"
+  ],
+  "license": "MIT"
+}

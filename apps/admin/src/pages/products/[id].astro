@@ -1,0 +1,155 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { ProductEditor } from '../../components/ProductEditor';
+import { getAdminMerchantClient } from '../../lib/merchant';
+import type { Product } from '@dear-margeaux/api';
+
+// Get product ID from route params
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/products');
+}
+
+// Fetch product from API
+const client = getAdminMerchantClient();
+let product: Product | null = null;
+let error: string | null = null;
+
+if (client) {
+  try {
+    product = await client.getProduct(id);
+  } catch (e) {
+    console.error('Failed to fetch product:', e);
+    error = 'Product not found';
+  }
+} else {
+  error = 'API not configured';
+}
+
+// If product not found, redirect to products list
+if (!product && !error) {
+  error = 'Product not found';
+}
+---
+
+<AdminLayout title={product ? `Edit ${product.title}` : 'Edit Product'}>
+  <!-- Breadcrumb -->
+  <nav class="flex items-center gap-2 text-sm mb-6">
+    <a
+      href="/products"
+      class="text-text-muted hover:text-text-primary transition-colors"
+    >
+      Products
+    </a>
+    <span class="text-text-muted">/</span>
+    <span class="text-text-primary truncate max-w-xs">
+      {product?.title || 'Edit Product'}
+    </span>
+  </nav>
+
+  {
+    error ? (
+      <div class="max-w-2xl">
+        <div class="bg-background-secondary rounded-xl border border-border shadow-sm p-8 text-center">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-status-error/10 mb-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-6 h-6 text-status-error"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+              />
+            </svg>
+          </div>
+          <h3 class="text-lg font-medium text-text-primary mb-2">{error}</h3>
+          <p class="text-sm text-text-muted mb-4">
+            The product you're looking for might have been deleted or doesn't
+            exist.
+          </p>
+          <a
+            href="/products"
+            class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-600"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-4 h-4"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+              />
+            </svg>
+            Back to Products
+          </a>
+        </div>
+      </div>
+    ) : (
+      product && (
+        <>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+            <div>
+              <h1 class="text-2xl font-semibold text-text-primary">
+                {product.title}
+              </h1>
+              <p class="mt-1 text-sm text-text-secondary">
+                Edit product details, manage variants, and update inventory
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span
+                class:list={[
+                  'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium',
+                  product.status === 'active'
+                    ? 'bg-status-success/10 text-status-success'
+                    : 'bg-background-tertiary text-text-muted',
+                ]}
+              >
+                {product.status === 'active' ? 'Active' : 'Draft'}
+              </span>
+              <a
+                href="/products"
+                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-text-primary bg-background-tertiary border border-border rounded-lg hover:bg-background-primary transition-colors duration-normal"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="w-4 h-4"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+                  />
+                </svg>
+                Back to Products
+              </a>
+            </div>
+          </div>
+
+          <div class="max-w-3xl">
+            <ProductEditor
+              client:load
+              product={product}
+              deleteRedirect="/products"
+            />
+          </div>
+        </>
+      )
+    )
+  }
+</AdminLayout>

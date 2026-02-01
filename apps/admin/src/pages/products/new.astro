@@ -1,0 +1,40 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { CreateProductComplete } from '../../components/CreateProductComplete';
+---
+
+<AdminLayout title="New Product">
+  <!-- Breadcrumb -->
+  <nav class="flex items-center gap-2 text-sm mb-6">
+    <a
+      href="/products"
+      class="text-text-muted hover:text-text-primary transition-colors"
+    >
+      Products
+    </a>
+    <span class="text-text-muted">/</span>
+    <span class="text-text-primary">New Product</span>
+  </nav>
+
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="text-2xl font-semibold text-text-primary">Create New Product</h1>
+    <p class="mt-1 text-sm text-text-secondary">
+      Add a new product to your catalog with pricing, images, and a default
+      variant.
+    </p>
+  </div>
+
+  <!-- Product Form -->
+  <div class="max-w-3xl">
+    <div
+      class="bg-background-secondary rounded-xl border border-border shadow-sm p-6"
+    >
+      <CreateProductComplete
+        client:load
+        successRedirect="/products"
+        cancelRedirect="/products"
+      />
+    </div>
+  </div>
+</AdminLayout>

@@ -1,0 +1,109 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Unsubscribed Successfully"
+  description="You have been unsubscribed from the Dear Margeaux newsletter."
+>
+  <section class="py-16 md:py-24">
+    <div class="container mx-auto px-4 max-w-2xl text-center">
+      <!-- Unsubscribe Icon -->
+      <div
+        class="w-20 h-20 mx-auto mb-8 rounded-full bg-text-muted/10 flex items-center justify-center"
+      >
+        <svg
+          class="w-10 h-10 text-text-muted"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+          ></path>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4"
+          ></path>
+        </svg>
+      </div>
+
+      <h1 class="text-3xl md:text-4xl font-bold text-text mb-4">
+        You've Been Unsubscribed
+      </h1>
+
+      <p class="text-lg text-text-secondary mb-8">
+        We're sorry to see you go. You won't receive any more emails from our
+        newsletter. We hope to see you again soon.
+      </p>
+
+      <!-- Change of Heart Section -->
+      <div class="bg-secondary rounded-xl p-6 mb-8 text-left">
+        <h2 class="text-lg font-semibold text-text mb-4">Changed your mind?</h2>
+        <p class="text-text-secondary mb-4">
+          If you unsubscribed by accident or would like to rejoin our community,
+          you can always subscribe again using the form in our footer or by
+          clicking the button below.
+        </p>
+        <a
+          href="/#newsletter"
+          class="inline-flex items-center gap-2 text-primary hover:text-primary-600 font-medium transition-colors"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            ></path>
+          </svg>
+          Subscribe again
+        </a>
+      </div>
+
+      <!-- CTA Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+          href="/shop"
+          class="inline-flex items-center justify-center px-8 py-3 bg-primary text-text-inverse font-medium rounded-lg hover:bg-primary-600 transition-colors duration-normal"
+        >
+          Browse the Shop
+        </a>
+        <a
+          href="/blog"
+          class="inline-flex items-center justify-center px-8 py-3 border border-border text-text font-medium rounded-lg hover:border-primary hover:text-primary transition-colors duration-normal"
+        >
+          Read the Journal
+        </a>
+      </div>
+
+      <!-- Home Link -->
+      <div class="mt-8">
+        <a
+          href="/"
+          class="inline-flex items-center gap-2 text-sm text-text-muted hover:text-primary transition-colors"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+          Back to Homepage
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

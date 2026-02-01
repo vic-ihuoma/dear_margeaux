@@ -1,0 +1,88 @@
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(self)
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.workers.dev https://api.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com; object-src 'none'; base-uri 'self'; form-action 'self'
+
+# ============================================
+# PERFORMANCE: Edge Caching Rules
+# ============================================
+
+# Astro build assets (hashed filenames) - cache forever
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Static assets - cache forever
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# JavaScript bundles - cache forever (versioned by hash)
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# CSS bundles - cache forever (versioned by hash)
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# Fonts - cache for 1 year
+/*.woff
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+
+# Images - cache for 1 week, allow stale while revalidating
+/*.webp
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/*.avif
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/*.jpg
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/*.jpeg
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/*.png
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/*.gif
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+# SVG files - cache for 1 week
+/*.svg
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+# Favicon - cache for 1 day
+/favicon.ico
+  Cache-Control: public, max-age=86400
+
+/favicon.svg
+  Cache-Control: public, max-age=86400
+
+# Service worker - no cache (always fresh)
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# HTML pages - short cache with stale-while-revalidate for fast loads
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Index pages - allow short caching for static pages
+/
+  Cache-Control: public, max-age=300, stale-while-revalidate=600
+
+/shop/*
+  Cache-Control: public, max-age=300, stale-while-revalidate=600
+
+/product/*
+  Cache-Control: public, max-age=300, stale-while-revalidate=600
+
+/blog/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
+/lookbook/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400

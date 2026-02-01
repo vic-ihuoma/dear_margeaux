@@ -1,0 +1,55 @@
+{
+  "name": "dear_margeaux",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Boutique e-commerce website for selling bags through limited drops",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:visual": "playwright test visual-regression",
+    "test:e2e:update-snapshots": "playwright test visual-regression --update-snapshots",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "[ \"$CI\" = true ] || [ \"$HUSKY\" = 0 ] || husky"
+  },
+  "keywords": [
+    "e-commerce",
+    "astro",
+    "cloudflare"
+  ],
+  "license": "ISC",
+  "packageManager": "pnpm@10.27.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp"
+    ],
+    "overrides": {
+      "esbuild": "0.25.12"
+    }
+  },
+  "devDependencies": {
+    "@esbuild/linux-arm64": "0.25.12",
+    "@playwright/test": "^1.57.0",
+    "@rollup/rollup-linux-arm64-gnu": "^4.57.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4",
+    "prettier-plugin-astro": "^0.14.1",
+    "sharp": "^0.34.5",
+    "turbo": "^2.7.3"
+  },
+  "optionalDependencies": {
+    "@esbuild/darwin-arm64": "0.25.12",
+    "@rollup/rollup-darwin-arm64": "^4.55.1"
+  }
+}

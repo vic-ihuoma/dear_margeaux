@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Run lint-staged (formats code with Prettier, runs ESLint)
+npx lint-staged
+
+# Run type checking across the monorepo
+pnpm run typecheck
+
+# Run tests
+pnpm run test

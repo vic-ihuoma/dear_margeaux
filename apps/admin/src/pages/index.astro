@@ -1,0 +1,270 @@
+---
+import AdminLayout from '../layouts/AdminLayout.astro';
+import { StatCard } from '../components/StatCard';
+import { ActivityFeed, type ActivityItem } from '../components/ActivityFeed';
+import { getAdminMerchantClient, formatPrice } from '../lib/merchant';
+import type { OrderListItem, ProductListItem } from '@dear-margeaux/api';
+
+// Try to get dashboard data from the API
+const client = getAdminMerchantClient();
+
+// Dashboard stats
+let totalProducts = 0;
+let totalOrders = 0;
+let revenue30d = 0;
+let activeDrop = 'None';
+
+// Recent activity
+let activities: ActivityItem[] = [];
+let recentOrders: OrderListItem[] = [];
+let recentProducts: ProductListItem[] = [];
+
+// Fetch data if client is available
+if (client) {
+  try {
+    // Fetch products count
+    // For total count, we need to paginate - for now use items length
+    // In production, add a count endpoint or track total
+    const allProducts = await client.getProducts({ limit: 100 });
+    totalProducts = allProducts.items.length;
+    recentProducts = allProducts.items.slice(0, 5);
+
+    // Fetch orders
+    const allOrders = await client.getOrders({ limit: 100 });
+    totalOrders = allOrders.items.length;
+    recentOrders = allOrders.items.slice(0, 10);
+
+    // Calculate 30-day revenue
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    revenue30d = recentOrders
+      .filter((order) => {
+        const orderDate = new Date(order.created_at);
+        return (
+          orderDate >= thirtyDaysAgo &&
+          (order.status === 'paid' ||
+            order.status === 'processing' ||
+            order.status === 'shipped' ||
+            order.status === 'delivered')
+        );
+      })
+      .reduce((sum, order) => sum + order.total_cents, 0);
+
+    // Build activity feed from recent orders and products
+    const orderActivities: ActivityItem[] = recentOrders
+      .slice(0, 5)
+      .map((order) => ({
+        id: `order-${order.id}`,
+        type: 'order' as const,
+        title: `Order #${order.number}`,
+        description: order.customer_email,
+        timestamp: order.created_at,
+        href: `/orders/${order.id}`,
+        status: order.status,
+        amount: formatPrice(order.total_cents),
+      }));
+
+    const productActivities: ActivityItem[] = recentProducts
+      .slice(0, 3)
+      .map((product) => ({
+        id: `product-${product.id}`,
+        type: 'product' as const,
+        title: product.title,
+        description:
+          product.status === 'active' ? 'Active product' : 'Draft product',
+        timestamp: product.created_at,
+        href: `/products/${product.id}`,
+      }));
+
+    // Interleave activities and sort by timestamp
+    activities = [...orderActivities, ...productActivities].sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  } catch (error) {
+    console.error('Failed to fetch dashboard data:', error);
+  }
+}
+---
+
+<AdminLayout title="Dashboard">
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="text-2xl font-semibold text-text-primary">Dashboard</h1>
+    <p class="mt-1 text-sm text-text-secondary">
+      Welcome back! Here's an overview of your store.
+    </p>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <StatCard
+      client:load
+      label="Total Products"
+      value={totalProducts}
+      href="/products"
+      iconType="products"
+      iconBgColor="bg-primary-100"
+      iconColor="text-primary-600"
+    />
+
+    <StatCard
+      client:load
+      label="Total Orders"
+      value={totalOrders}
+      href="/orders"
+      iconType="orders"
+      iconBgColor="bg-accent-100"
+      iconColor="text-accent-600"
+    />
+
+    <StatCard
+      client:load
+      label="Revenue (30d)"
+      value={formatPrice(revenue30d)}
+      iconType="revenue"
+      iconBgColor="bg-status-success/20"
+      iconColor="text-status-success"
+    />
+
+    <StatCard
+      client:load
+      label="Active Drop"
+      value={activeDrop}
+      href="/drops"
+      iconType="calendar"
+      iconBgColor="bg-secondary-400"
+      iconColor="text-primary-700"
+    />
+  </div>
+
+  <!-- Two column layout -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Recent Activity -->
+    <div
+      class="bg-background-secondary rounded-xl border border-border shadow-sm"
+    >
+      <div
+        class="px-6 py-4 border-b border-border flex items-center justify-between"
+      >
+        <h2 class="text-lg font-semibold text-text-primary">Recent Activity</h2>
+        {
+          activities.length > 0 && (
+            <a
+              href="/orders"
+              class="text-sm text-primary-600 hover:text-primary-700 font-medium"
+            >
+              View all
+            </a>
+          )
+        }
+      </div>
+      <div class="p-6">
+        <ActivityFeed
+          client:load
+          activities={activities}
+          emptyMessage="No recent activity"
+          emptyDescription="Orders and product updates will appear here"
+        />
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div
+      class="bg-background-secondary rounded-xl border border-border shadow-sm"
+    >
+      <div class="px-6 py-4 border-b border-border">
+        <h2 class="text-lg font-semibold text-text-primary">Quick Actions</h2>
+      </div>
+      <div class="p-6 space-y-3">
+        <a
+          href="/products/new"
+          class="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary-300 hover:bg-primary-50 transition-colors duration-normal group"
+        >
+          <div
+            class="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center group-hover:bg-primary-200 transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-5 h-5 text-primary-600"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 4.5v15m7.5-7.5h-15"></path>
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-text-primary">Add New Product</p>
+            <p class="text-xs text-text-muted">Create a new product listing</p>
+          </div>
+        </a>
+
+        <a
+          href="/drops/new"
+          class="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-accent-300 hover:bg-accent-50 transition-colors duration-normal group"
+        >
+          <div
+            class="w-10 h-10 rounded-lg bg-accent-100 flex items-center justify-center group-hover:bg-accent-200 transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-5 h-5 text-accent-600"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"
+              ></path>
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-text-primary">Schedule a Drop</p>
+            <p class="text-xs text-text-muted">
+              Create and schedule a new collection drop
+            </p>
+          </div>
+        </a>
+
+        <a
+          href="/orders"
+          class="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-status-info/50 hover:bg-status-info/5 transition-colors duration-normal group"
+        >
+          <div
+            class="w-10 h-10 rounded-lg bg-status-info/20 flex items-center justify-center group-hover:bg-status-info/30 transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-5 h-5 text-status-info"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"
+              ></path>
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-text-primary">View Orders</p>
+            <p class="text-xs text-text-muted">
+              Manage and fulfill customer orders
+            </p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
