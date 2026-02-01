@@ -3,6 +3,7 @@ import { ProductForm } from './ProductForm';
 import { VariantForm } from './VariantForm';
 import { UndoToast } from './UndoToast';
 import { ImageUploader } from './ImageUploader';
+import { SuccessIndicator } from './SuccessIndicator';
 import type {
   Product,
   Variant,
@@ -52,6 +53,9 @@ export function ProductEditor({
   );
   const [isSavingImage, setIsSavingImage] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [showProductSuccess, setShowProductSuccess] = useState(false);
+  const [showVariantSuccess, setShowVariantSuccess] = useState(false);
+  const [showImageSuccess, setShowImageSuccess] = useState(false);
 
   const handleProductSubmit = useCallback(
     async (data: UpdateProductParams) => {
@@ -74,7 +78,7 @@ export function ProductEditor({
 
         const updatedProduct = await response.json();
         setProduct((prev) => ({ ...prev, ...updatedProduct }));
-        // Show a brief success indicator (the UI updates automatically)
+        setShowProductSuccess(true);
       } catch (err) {
         console.error('Update product error:', err);
         setError(
@@ -220,6 +224,7 @@ export function ProductEditor({
           variants: [...product.variants, variant],
         });
         setIsAddingVariant(false);
+        setShowVariantSuccess(true);
       } catch (err) {
         console.error('Add variant error:', err);
         setVariantError(
@@ -262,6 +267,7 @@ export function ProductEditor({
           ),
         });
         setEditingVariantId(null);
+        setShowVariantSuccess(true);
       } catch (err) {
         console.error('Update variant error:', err);
         setVariantError(
@@ -317,6 +323,7 @@ export function ProductEditor({
 
         const updatedProduct = await response.json();
         setProduct((prev) => ({ ...prev, ...updatedProduct }));
+        setShowImageSuccess(true);
       } catch (err) {
         console.error('Save featured image error:', err);
         setImageError(
@@ -350,6 +357,7 @@ export function ProductEditor({
 
       const updatedProduct = await response.json();
       setProduct((prev) => ({ ...prev, ...updatedProduct }));
+      setShowImageSuccess(true);
     } catch (err) {
       console.error('Remove featured image error:', err);
       setImageError(
@@ -380,6 +388,7 @@ export function ProductEditor({
 
       const updatedProduct = await response.json();
       setProduct((prev) => ({ ...prev, ...updatedProduct }));
+      setShowImageSuccess(true);
     } catch (err) {
       console.error('Save alt text error:', err);
       setImageError(
@@ -454,6 +463,8 @@ export function ProductEditor({
             onCancel={() => window.history.back()}
             isSubmitting={isSubmitting}
             error={error}
+            showSuccess={showProductSuccess}
+            onSuccessComplete={() => setShowProductSuccess(false)}
           />
         </div>
       </div>
@@ -489,7 +500,7 @@ export function ProductEditor({
               >
                 Alt Text
               </label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <input
                   type="text"
                   id="featured-image-alt"
@@ -509,6 +520,12 @@ export function ProductEditor({
                 >
                   {isSavingImage ? 'Saving...' : 'Save'}
                 </button>
+                <SuccessIndicator
+                  show={showImageSuccess}
+                  message="Saved"
+                  onComplete={() => setShowImageSuccess(false)}
+                  size="sm"
+                />
               </div>
               <p className="mt-1 text-xs text-text-muted">
                 Describe the image for screen readers and accessibility
@@ -521,7 +538,16 @@ export function ProductEditor({
       {/* Variants Section */}
       <div className="bg-background-secondary rounded-xl border border-border shadow-sm">
         <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-text-primary">Variants</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-text-primary">
+              Variants
+            </h2>
+            <SuccessIndicator
+              show={showVariantSuccess}
+              message="Saved"
+              onComplete={() => setShowVariantSuccess(false)}
+            />
+          </div>
           {!isAddingVariant && (
             <button
               type="button"

@@ -2,6 +2,7 @@ import { useState, useCallback, type FormEvent } from 'react';
 import type { Product, ProductStatus } from '@dear-margeaux/api';
 import { TagInput } from './TagInput';
 import { DropSelector } from './DropSelector';
+import { SuccessIndicator } from './SuccessIndicator';
 
 export interface ProductFormData {
   title: string;
@@ -31,6 +32,10 @@ export interface ProductFormProps {
   isSubmitting?: boolean;
   /** Error message to display */
   error?: string | null;
+  /** Whether to show success indicator */
+  showSuccess?: boolean;
+  /** Callback when success indicator animation completes */
+  onSuccessComplete?: () => void;
 }
 
 export function ProductForm({
@@ -39,6 +44,8 @@ export function ProductForm({
   onCancel,
   isSubmitting = false,
   error,
+  showSuccess = false,
+  onSuccessComplete,
 }: ProductFormProps) {
   const [formData, setFormData] = useState<ProductFormData>({
     title: product?.title || '',
@@ -224,6 +231,12 @@ export function ProductForm({
 
       {/* Form Actions */}
       <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
+        <SuccessIndicator
+          show={showSuccess}
+          message="Saved"
+          onComplete={onSuccessComplete}
+          size="sm"
+        />
         <button
           type="button"
           onClick={onCancel}

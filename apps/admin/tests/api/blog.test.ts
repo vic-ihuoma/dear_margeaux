@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { APIContext } from 'astro';
 
 // Mock fs module
 const mockAccess = vi.fn();
@@ -23,7 +24,7 @@ function createMockContext(options: {
   method?: string;
   body?: unknown;
   params?: Record<string, string>;
-}) {
+}): APIContext {
   const url = new URL(options.url || 'http://localhost/api/blog');
   const headers: Record<string, string> = options.body
     ? { 'Content-Type': 'application/json' }
@@ -62,7 +63,8 @@ function createMockContext(options: {
     rewrite: vi.fn(),
     isPrerendered: false,
     ResponseWithEncoding: Response,
-  };
+    csp: { nonce: '' },
+  } as unknown as APIContext;
 }
 
 // Helper to parse response
@@ -122,7 +124,7 @@ describe('Blog API Routes', () => {
         url: 'http://localhost/api/blog',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -138,7 +140,7 @@ describe('Blog API Routes', () => {
         url: 'http://localhost/api/blog',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -157,7 +159,7 @@ describe('Blog API Routes', () => {
         url: 'http://localhost/api/blog?status=draft',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -177,7 +179,7 @@ describe('Blog API Routes', () => {
         url: 'http://localhost/api/blog?status=published',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -197,7 +199,7 @@ describe('Blog API Routes', () => {
         url: 'http://localhost/api/blog?search=draft',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -215,7 +217,7 @@ describe('Blog API Routes', () => {
         url: 'http://localhost/api/blog',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(500);
@@ -243,7 +245,7 @@ describe('Blog API Routes', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);
@@ -263,7 +265,7 @@ describe('Blog API Routes', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -281,7 +283,7 @@ describe('Blog API Routes', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -299,7 +301,7 @@ describe('Blog API Routes', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -320,7 +322,7 @@ describe('Blog API Routes', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(409);
@@ -343,7 +345,7 @@ describe('Blog API Routes', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);
@@ -362,7 +364,7 @@ describe('Blog API Routes', () => {
         params: { slug: 'test-post' },
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -378,7 +380,7 @@ describe('Blog API Routes', () => {
         params: {},
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -394,7 +396,7 @@ describe('Blog API Routes', () => {
         params: { slug: 'nonexistent' },
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(404);
@@ -416,7 +418,7 @@ describe('Blog API Routes', () => {
         body: { title: 'Updated Title' },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -433,7 +435,7 @@ describe('Blog API Routes', () => {
         body: { title: 'Updated Title' },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -451,7 +453,7 @@ describe('Blog API Routes', () => {
         body: { title: 'Updated Title' },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(404);
@@ -471,7 +473,7 @@ describe('Blog API Routes', () => {
         body: { pinned: false },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -493,7 +495,7 @@ describe('Blog API Routes', () => {
         params: { slug: 'test-post' },
       });
 
-      const response = await DELETE(context as any);
+      const response = await DELETE(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -509,7 +511,7 @@ describe('Blog API Routes', () => {
         params: {},
       });
 
-      const response = await DELETE(context as any);
+      const response = await DELETE(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -526,7 +528,7 @@ describe('Blog API Routes', () => {
         params: { slug: 'nonexistent' },
       });
 
-      const response = await DELETE(context as any);
+      const response = await DELETE(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(404);

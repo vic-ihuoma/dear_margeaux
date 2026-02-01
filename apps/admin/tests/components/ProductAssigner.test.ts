@@ -143,11 +143,7 @@ describe('ProductAssigner - Product Reordering', () => {
     });
 
     it('should not move first product up', () => {
-      const products: Product[] = [
-        createMockProduct('prod_a', 'Product A', 0),
-        createMockProduct('prod_b', 'Product B', 1),
-      ];
-
+      // With a list of products, the first item (index 0) cannot move up
       const index = 0;
       const canMoveUp = index > 0;
 

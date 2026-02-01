@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { APIContext } from 'astro';
 
 // Mock fs module
 const mockAccess = vi.fn();
@@ -17,7 +18,7 @@ function createMockContext(options: {
   method?: string;
   body?: unknown;
   params?: Record<string, string>;
-}) {
+}): APIContext {
   const url = new URL(options.url || 'http://localhost/api/lookbook');
   const headers: Record<string, string> = options.body
     ? { 'Content-Type': 'application/json' }
@@ -56,7 +57,8 @@ function createMockContext(options: {
     rewrite: vi.fn(),
     isPrerendered: false,
     ResponseWithEncoding: Response,
-  };
+    csp: { nonce: '' },
+  } as unknown as APIContext;
 }
 
 // Helper to parse response
@@ -115,7 +117,7 @@ describe('Lookbook API Routes', () => {
         url: 'http://localhost/api/lookbook',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -133,7 +135,7 @@ describe('Lookbook API Routes', () => {
         url: 'http://localhost/api/lookbook',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -156,7 +158,7 @@ describe('Lookbook API Routes', () => {
         url: 'http://localhost/api/lookbook',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -175,7 +177,7 @@ describe('Lookbook API Routes', () => {
         url: 'http://localhost/api/lookbook?status=draft',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -195,7 +197,7 @@ describe('Lookbook API Routes', () => {
         url: 'http://localhost/api/lookbook?status=published',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -215,7 +217,7 @@ describe('Lookbook API Routes', () => {
         url: 'http://localhost/api/lookbook?search=summer',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -233,7 +235,7 @@ describe('Lookbook API Routes', () => {
         url: 'http://localhost/api/lookbook',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(500);
@@ -252,7 +254,7 @@ describe('Lookbook API Routes', () => {
         url: 'http://localhost/api/lookbook',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -273,7 +275,7 @@ describe('Lookbook API Routes', () => {
         url: 'http://localhost/api/lookbook',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);

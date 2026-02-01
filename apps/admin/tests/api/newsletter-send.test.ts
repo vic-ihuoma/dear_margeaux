@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { APIContext } from 'astro';
 
 // Mock global fetch
 const mockFetch = vi.fn();
@@ -13,7 +14,7 @@ function createMockContext(options: {
   url?: string;
   method?: string;
   body?: unknown;
-}) {
+}): APIContext {
   const url = new URL(options.url || 'http://localhost/api/newsletter/send');
   const headers: Record<string, string> = options.body
     ? { 'Content-Type': 'application/json' }
@@ -52,7 +53,8 @@ function createMockContext(options: {
     rewrite: vi.fn(),
     isPrerendered: false,
     ResponseWithEncoding: Response,
-  };
+    csp: { nonce: '' },
+  } as unknown as APIContext;
 }
 
 // Helper to parse response
@@ -97,7 +99,7 @@ describe('Newsletter Send API Route', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -129,7 +131,7 @@ describe('Newsletter Send API Route', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -147,7 +149,7 @@ describe('Newsletter Send API Route', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -165,7 +167,7 @@ describe('Newsletter Send API Route', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -192,7 +194,7 @@ describe('Newsletter Send API Route', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(500);
@@ -221,7 +223,7 @@ describe('Newsletter Send API Route', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -251,7 +253,7 @@ describe('Newsletter Send API Route', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);

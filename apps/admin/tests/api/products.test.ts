@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { APIContext } from 'astro';
 import type {
   Product,
   PaginatedResponse,
@@ -28,7 +29,7 @@ function createMockContext(options: {
   method?: string;
   body?: unknown;
   params?: Record<string, string>;
-}) {
+}): APIContext {
   const url = new URL(options.url || 'http://localhost/api/products');
   const request = new Request(url.toString(), {
     method: options.method || 'GET',
@@ -64,7 +65,8 @@ function createMockContext(options: {
     rewrite: vi.fn(),
     isPrerendered: false,
     ResponseWithEncoding: Response,
-  };
+    csp: { nonce: '' },
+  } as unknown as APIContext;
 }
 
 // Helper to parse response
@@ -138,7 +140,7 @@ describe('Products API Routes', () => {
         url: 'http://localhost/api/products',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -159,7 +161,7 @@ describe('Products API Routes', () => {
         url: 'http://localhost/api/products?limit=50',
       });
 
-      await GET(context as any);
+      await GET(context);
 
       expect(mockGetProducts).toHaveBeenCalledWith({
         limit: 50,
@@ -179,7 +181,7 @@ describe('Products API Routes', () => {
         url: 'http://localhost/api/products?status=draft',
       });
 
-      await GET(context as any);
+      await GET(context);
 
       expect(mockGetProducts).toHaveBeenCalledWith({
         limit: 100,
@@ -200,7 +202,7 @@ describe('Products API Routes', () => {
         url: 'http://localhost/api/products',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -216,7 +218,7 @@ describe('Products API Routes', () => {
         url: 'http://localhost/api/products',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -239,7 +241,7 @@ describe('Products API Routes', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);
@@ -261,7 +263,7 @@ describe('Products API Routes', () => {
         body: { title: '' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -282,7 +284,7 @@ describe('Products API Routes', () => {
         body: { title: 'Updated Product' },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -303,7 +305,7 @@ describe('Products API Routes', () => {
         body: { title: 'Updated Product' },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -321,7 +323,7 @@ describe('Products API Routes', () => {
         body: { title: 'Updated Product' },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -345,7 +347,7 @@ describe('Products API Routes', () => {
         params: { id: 'prod_123' },
       });
 
-      const response = await DELETE(context as any);
+      const response = await DELETE(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -362,7 +364,7 @@ describe('Products API Routes', () => {
         params: {},
       });
 
-      const response = await DELETE(context as any);
+      const response = await DELETE(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -381,7 +383,7 @@ describe('Products API Routes', () => {
         params: { id: 'prod_123' },
       });
 
-      const response = await DELETE(context as any);
+      const response = await DELETE(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { APIContext } from 'astro';
 import type { Drop, PaginatedResponse } from '@dear-margeaux/api';
 
 // Mock the MerchantClient methods
@@ -27,7 +28,7 @@ function createMockContext(options: {
   method?: string;
   body?: unknown;
   params?: Record<string, string>;
-}) {
+}): APIContext {
   const url = new URL(options.url || 'http://localhost/api/drops');
   const headers: Record<string, string> = options.body
     ? { 'Content-Type': 'application/json' }
@@ -66,7 +67,8 @@ function createMockContext(options: {
     rewrite: vi.fn(),
     isPrerendered: false,
     ResponseWithEncoding: Response,
-  };
+    csp: { nonce: '' },
+  } as unknown as APIContext;
 }
 
 // Helper to parse response
@@ -112,7 +114,7 @@ describe('Drops API Routes', () => {
         url: 'http://localhost/api/drops',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -133,7 +135,7 @@ describe('Drops API Routes', () => {
         url: 'http://localhost/api/drops?status=scheduled',
       });
 
-      await GET(context as any);
+      await GET(context);
 
       expect(mockGetDrops).toHaveBeenCalledWith({
         limit: 100,
@@ -154,7 +156,7 @@ describe('Drops API Routes', () => {
         url: 'http://localhost/api/drops?limit=10',
       });
 
-      await GET(context as any);
+      await GET(context);
 
       expect(mockGetDrops).toHaveBeenCalledWith({ limit: 10 });
     });
@@ -168,7 +170,7 @@ describe('Drops API Routes', () => {
         url: 'http://localhost/api/drops',
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -194,7 +196,7 @@ describe('Drops API Routes', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);
@@ -229,7 +231,7 @@ describe('Drops API Routes', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);
@@ -251,7 +253,7 @@ describe('Drops API Routes', () => {
         body: { slug: 'test-drop' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -269,7 +271,7 @@ describe('Drops API Routes', () => {
         params: { id: 'drop_123' },
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -284,7 +286,7 @@ describe('Drops API Routes', () => {
         params: {},
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -300,7 +302,7 @@ describe('Drops API Routes', () => {
         params: { id: 'nonexistent' },
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(404);
@@ -321,7 +323,7 @@ describe('Drops API Routes', () => {
         body: { name: 'Summer Collection' },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -343,7 +345,7 @@ describe('Drops API Routes', () => {
         body: { cover_image: 'https://example.com/updated-cover.jpg' },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -368,7 +370,7 @@ describe('Drops API Routes', () => {
         body: { cover_image: null },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -384,7 +386,7 @@ describe('Drops API Routes', () => {
         body: { name: 'Updated Drop' },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -402,7 +404,7 @@ describe('Drops API Routes', () => {
         body: { name: 'Updated Drop' },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -421,7 +423,7 @@ describe('Drops API Routes', () => {
         params: { id: 'drop_123' },
       });
 
-      const response = await DELETE(context as any);
+      const response = await DELETE(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -437,7 +439,7 @@ describe('Drops API Routes', () => {
         params: {},
       });
 
-      const response = await DELETE(context as any);
+      const response = await DELETE(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -456,7 +458,7 @@ describe('Drops API Routes', () => {
         params: { id: 'drop_123' },
       });
 
-      const response = await DELETE(context as any);
+      const response = await DELETE(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -478,7 +480,7 @@ describe('Drops API Routes', () => {
         body: { productIds: ['prod_1', 'prod_2'] },
       });
 
-      const response = await PUT(context as any);
+      const response = await PUT(context);
 
       expect(response.status).toBe(200);
       expect(mockAssignDropProducts).toHaveBeenCalledWith('drop_123', [
@@ -500,7 +502,7 @@ describe('Drops API Routes', () => {
         body: { productIds: [] },
       });
 
-      const response = await PUT(context as any);
+      const response = await PUT(context);
 
       expect(response.status).toBe(200);
       expect(mockAssignDropProducts).toHaveBeenCalledWith('drop_123', []);
@@ -516,7 +518,7 @@ describe('Drops API Routes', () => {
         body: { productIds: ['prod_1'] },
       });
 
-      const response = await PUT(context as any);
+      const response = await PUT(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -533,7 +535,7 @@ describe('Drops API Routes', () => {
         body: { productIds: 'not-an-array' },
       });
 
-      const response = await PUT(context as any);
+      const response = await PUT(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -554,7 +556,7 @@ describe('Drops API Routes', () => {
         body: { productIds: ['nonexistent'] },
       });
 
-      const response = await PUT(context as any);
+      const response = await PUT(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);

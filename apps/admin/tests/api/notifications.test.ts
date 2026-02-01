@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { APIContext } from 'astro';
 import type { EmailSend, PaginatedResponse } from '@dear-margeaux/api';
 
 // Mock the MerchantClient
@@ -13,7 +14,10 @@ vi.mock('@dear-margeaux/api', () => ({
 }));
 
 // Helper function to create mock APIContext
-function createMockContext(options: { url?: string; method?: string }) {
+function createMockContext(options: {
+  url?: string;
+  method?: string;
+}): APIContext {
   const url = new URL(options.url || 'http://localhost/api/notifications');
   const request = new Request(url.toString(), {
     method: options.method || 'GET',
@@ -47,7 +51,8 @@ function createMockContext(options: { url?: string; method?: string }) {
     rewrite: vi.fn(),
     isPrerendered: false,
     ResponseWithEncoding: Response,
-  };
+    csp: { nonce: '' },
+  } as unknown as APIContext;
 }
 
 // Helper to parse response
@@ -102,7 +107,7 @@ describe('Notifications API Routes', () => {
       const { GET } =
         await import('../../src/pages/api/notifications/index.ts');
       const context = createMockContext({});
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -122,7 +127,7 @@ describe('Notifications API Routes', () => {
       const context = createMockContext({
         url: 'http://localhost/api/notifications?email_type=order_confirmation',
       });
-      await GET(context as any);
+      await GET(context);
 
       expect(mockGetEmailSends).toHaveBeenCalledWith(
         expect.objectContaining({ email_type: 'order_confirmation' })
@@ -140,7 +145,7 @@ describe('Notifications API Routes', () => {
       const context = createMockContext({
         url: 'http://localhost/api/notifications?status=failed',
       });
-      await GET(context as any);
+      await GET(context);
 
       expect(mockGetEmailSends).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'failed' })
@@ -158,7 +163,7 @@ describe('Notifications API Routes', () => {
       const context = createMockContext({
         url: 'http://localhost/api/notifications?start_date=2026-01-01&end_date=2026-01-31',
       });
-      await GET(context as any);
+      await GET(context);
 
       expect(mockGetEmailSends).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -174,7 +179,7 @@ describe('Notifications API Routes', () => {
       const { GET } =
         await import('../../src/pages/api/notifications/index.ts');
       const context = createMockContext({});
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(500);
@@ -200,7 +205,7 @@ describe('Notifications API Routes', () => {
       const context = createMockContext({
         url: 'http://localhost/api/notifications/stats',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -217,7 +222,7 @@ describe('Notifications API Routes', () => {
       const context = createMockContext({
         url: 'http://localhost/api/notifications/stats',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(500);

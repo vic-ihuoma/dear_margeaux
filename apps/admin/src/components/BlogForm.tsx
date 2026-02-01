@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { SuccessIndicator } from './SuccessIndicator';
 
 export interface BlogPostData {
   slug?: string;
@@ -25,6 +26,10 @@ export interface BlogFormProps {
   isSubmitting?: boolean;
   /** Error message to display */
   error?: string | null;
+  /** Whether to show success indicator */
+  showSuccess?: boolean;
+  /** Callback when success indicator animation completes */
+  onSuccessComplete?: () => void;
 }
 
 export function BlogForm({
@@ -33,6 +38,8 @@ export function BlogForm({
   onCancel,
   isSubmitting = false,
   error,
+  showSuccess = false,
+  onSuccessComplete,
 }: BlogFormProps) {
   const [title, setTitle] = useState(post?.title || '');
   const [slug, setSlug] = useState(post?.slug || '');
@@ -551,7 +558,13 @@ export function BlogForm({
       )}
 
       {/* Form Actions */}
-      <div className="flex justify-end gap-3 pt-4 border-t border-border">
+      <div className="flex justify-end items-center gap-3 pt-4 border-t border-border">
+        <SuccessIndicator
+          show={showSuccess}
+          message="Saved"
+          onComplete={onSuccessComplete}
+          size="sm"
+        />
         <button
           type="button"
           onClick={onCancel}

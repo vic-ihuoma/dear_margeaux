@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { APIContext } from 'astro';
 import type { InventoryItem, InventoryLog } from '@dear-margeaux/api';
 
 // Mock the MerchantClient
@@ -18,7 +19,7 @@ function createMockContext(options: {
   method?: string;
   body?: unknown;
   params?: Record<string, string>;
-}) {
+}): APIContext {
   const url = new URL(
     options.url || 'http://localhost/api/inventory/TEST-001/adjust'
   );
@@ -59,7 +60,8 @@ function createMockContext(options: {
     rewrite: vi.fn(),
     isPrerendered: false,
     ResponseWithEncoding: Response,
-  };
+    csp: { nonce: '' },
+  } as unknown as APIContext;
 }
 
 // Helper to parse response
@@ -105,7 +107,7 @@ describe('Inventory API Routes', () => {
         body: { delta: 10, reason: 'restock' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -140,7 +142,7 @@ describe('Inventory API Routes', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
 
       expect(response.status).toBe(200);
       expect(mockAdjustInventory).toHaveBeenCalledWith('TEST-001', {
@@ -168,7 +170,7 @@ describe('Inventory API Routes', () => {
         body: { delta: -5, reason: 'correction' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -198,7 +200,7 @@ describe('Inventory API Routes', () => {
         body: { delta: -2, reason: 'damaged' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
 
       expect(response.status).toBe(200);
       expect(mockAdjustInventory).toHaveBeenCalledWith('TEST-001', {
@@ -226,7 +228,7 @@ describe('Inventory API Routes', () => {
         body: { delta: 1, reason: 'return' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
 
       expect(response.status).toBe(200);
       expect(mockAdjustInventory).toHaveBeenCalledWith('TEST-001', {
@@ -247,7 +249,7 @@ describe('Inventory API Routes', () => {
         body: { delta: 10, reason: 'restock' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -264,7 +266,7 @@ describe('Inventory API Routes', () => {
         body: { delta: 0, reason: 'restock' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -281,7 +283,7 @@ describe('Inventory API Routes', () => {
         body: { delta: 'not-a-number', reason: 'restock' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -298,7 +300,7 @@ describe('Inventory API Routes', () => {
         body: { delta: 10, reason: 'invalid_reason' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -318,7 +320,7 @@ describe('Inventory API Routes', () => {
         body: { delta: 10, reason: 'restock' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -339,7 +341,7 @@ describe('Inventory API Routes', () => {
         body: { delta: -1000, reason: 'correction' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -374,7 +376,7 @@ describe('Inventory API Routes', () => {
         params: { sku: 'TEST-001' },
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -400,7 +402,7 @@ describe('Inventory API Routes', () => {
         params: { sku: 'TEST-001' },
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
 
       expect(response.status).toBe(200);
       expect(mockGetInventoryHistory).toHaveBeenCalledWith('TEST-001', {
@@ -424,7 +426,7 @@ describe('Inventory API Routes', () => {
         params: { sku: 'TEST-001' },
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -445,7 +447,7 @@ describe('Inventory API Routes', () => {
         params: {},
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -464,7 +466,7 @@ describe('Inventory API Routes', () => {
         params: { sku: 'NONEXISTENT' },
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(404);
@@ -485,7 +487,7 @@ describe('Inventory API Routes', () => {
         params: { sku: 'TEST-001' },
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(500);

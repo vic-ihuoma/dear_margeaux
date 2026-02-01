@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 export interface PaginationInfo {
   has_more: boolean;
   next_cursor: string | null;

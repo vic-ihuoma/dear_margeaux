@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { APIContext } from 'astro';
 import type { OrderNote } from '@dear-margeaux/api';
 
 // Mock the MerchantClient
@@ -24,7 +25,7 @@ function createMockContext(options: {
   params?: Record<string, string>;
   headers?: Record<string, string>;
   searchParams?: Record<string, string>;
-}) {
+}): APIContext {
   const baseUrl = options.url || 'http://localhost/api/orders/ord_123/notes';
   const url = new URL(baseUrl);
 
@@ -71,7 +72,8 @@ function createMockContext(options: {
     rewrite: vi.fn(),
     isPrerendered: false,
     ResponseWithEncoding: Response,
-  };
+    csp: { nonce: '' },
+  } as unknown as APIContext;
 }
 
 // Helper to parse response
@@ -114,7 +116,7 @@ describe('Order Notes API Routes', () => {
         params: { id: 'ord_123' },
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -132,7 +134,7 @@ describe('Order Notes API Routes', () => {
         params: {},
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -152,7 +154,7 @@ describe('Order Notes API Routes', () => {
         params: { id: 'ord_123' },
       });
 
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -177,7 +179,7 @@ describe('Order Notes API Routes', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);
@@ -203,7 +205,7 @@ describe('Order Notes API Routes', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -223,7 +225,7 @@ describe('Order Notes API Routes', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -243,7 +245,7 @@ describe('Order Notes API Routes', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -264,7 +266,7 @@ describe('Order Notes API Routes', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -289,7 +291,7 @@ describe('Order Notes API Routes', () => {
         },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -312,7 +314,7 @@ describe('Order Notes API Routes', () => {
         },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -331,7 +333,7 @@ describe('Order Notes API Routes', () => {
         },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -355,7 +357,7 @@ describe('Order Notes API Routes', () => {
         },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(403);
@@ -375,7 +377,7 @@ describe('Order Notes API Routes', () => {
         },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -396,7 +398,7 @@ describe('Order Notes API Routes', () => {
         searchParams: { admin_id: 'admin_1' },
       });
 
-      const response = await DELETE(context as any);
+      const response = await DELETE(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -417,7 +419,7 @@ describe('Order Notes API Routes', () => {
         params: { id: 'ord_123', noteId: 'note_123' },
       });
 
-      const response = await DELETE(context as any);
+      const response = await DELETE(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -438,7 +440,7 @@ describe('Order Notes API Routes', () => {
         searchParams: { admin_id: 'different_admin' },
       });
 
-      const response = await DELETE(context as any);
+      const response = await DELETE(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(403);
@@ -455,7 +457,7 @@ describe('Order Notes API Routes', () => {
         searchParams: { admin_id: 'admin_1' },
       });
 
-      const response = await DELETE(context as any);
+      const response = await DELETE(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { DropForm } from './DropForm';
 import { ProductAssigner } from './ProductAssigner';
+import { SuccessIndicator } from './SuccessIndicator';
 import type { Drop, Product, UpdateDropParams } from '@dear-margeaux/api';
 
 export interface DropEditorProps {
@@ -39,6 +40,8 @@ export function DropEditor({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDeletingDrop, setIsDeletingDrop] = useState(false);
+  const [showDropSuccess, setShowDropSuccess] = useState(false);
+  const [showProductsSuccess, setShowProductsSuccess] = useState(false);
 
   const handleDropSubmit = useCallback(
     async (data: UpdateDropParams) => {
@@ -61,6 +64,7 @@ export function DropEditor({
 
         const updatedDrop = await response.json();
         setDrop((prev) => ({ ...prev, ...updatedDrop }));
+        setShowDropSuccess(true);
       } catch (err) {
         console.error('Update drop error:', err);
         setError(err instanceof Error ? err.message : 'Failed to update drop');
@@ -117,6 +121,8 @@ export function DropEditor({
         const result = await response.json();
         throw new Error(result.error || 'Failed to update products');
       }
+
+      setShowProductsSuccess(true);
     },
     [drop.id]
   );
@@ -138,6 +144,8 @@ export function DropEditor({
             isSubmitting={isSubmitting}
             error={error}
             uploadHandler={uploadHandler}
+            showSuccess={showDropSuccess}
+            onSuccessComplete={() => setShowDropSuccess(false)}
           />
         </div>
       </div>
@@ -145,9 +153,17 @@ export function DropEditor({
       {/* Products Section */}
       <div className="bg-background-secondary rounded-xl border border-border shadow-sm">
         <div className="px-6 py-4 border-b border-border">
-          <h2 className="text-lg font-semibold text-text-primary">
-            Products in This Drop
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-text-primary">
+              Products in This Drop
+            </h2>
+            <SuccessIndicator
+              show={showProductsSuccess}
+              message="Updated"
+              onComplete={() => setShowProductsSuccess(false)}
+              size="sm"
+            />
+          </div>
           <p className="mt-1 text-sm text-text-muted">
             Assign products to this drop. Products can only belong to one drop
             at a time.

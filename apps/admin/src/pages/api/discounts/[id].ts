@@ -26,9 +26,10 @@ export const GET: APIRoute = async ({ params }) => {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to fetch discount:', error);
-    if (error?.statusCode === 404) {
+    const err = error as { statusCode?: number };
+    if (err?.statusCode === 404) {
       return new Response(JSON.stringify({ error: 'Discount not found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
@@ -79,9 +80,10 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to update discount:', error);
-    const message = error?.message || 'Failed to update discount';
+    const message =
+      error instanceof Error ? error.message : 'Failed to update discount';
     return new Response(JSON.stringify({ error: message }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
@@ -114,9 +116,10 @@ export const DELETE: APIRoute = async ({ params }) => {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to delete discount:', error);
-    const message = error?.message || 'Failed to delete discount';
+    const message =
+      error instanceof Error ? error.message : 'Failed to delete discount';
     return new Response(JSON.stringify({ error: message }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },

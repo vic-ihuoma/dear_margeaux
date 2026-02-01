@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { APIContext } from 'astro';
 
 // Mock global fetch
 const mockFetch = vi.fn();
@@ -9,7 +10,7 @@ const MOCK_API_URL = 'https://api.example.com';
 const MOCK_API_KEY = 'test-api-key';
 
 // Helper function to create mock APIContext for GET requests
-function createMockContext(options: { url?: string } = {}) {
+function createMockContext(options: { url?: string } = {}): APIContext {
   const url = new URL(
     options.url || 'http://localhost/api/newsletter/subscribers'
   );
@@ -46,7 +47,8 @@ function createMockContext(options: { url?: string } = {}) {
     rewrite: vi.fn(),
     isPrerendered: false,
     ResponseWithEncoding: Response,
-  };
+    csp: { nonce: '' },
+  } as unknown as APIContext;
 }
 
 // Helper to parse response
@@ -105,7 +107,7 @@ describe('Newsletter Subscribers API Route', () => {
         await import('../../src/pages/api/newsletter/subscribers.ts');
 
       const context = createMockContext();
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -156,7 +158,7 @@ describe('Newsletter Subscribers API Route', () => {
       const context = createMockContext({
         url: 'http://localhost/api/newsletter/subscribers?search=test',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -186,7 +188,7 @@ describe('Newsletter Subscribers API Route', () => {
       const context = createMockContext({
         url: 'http://localhost/api/newsletter/subscribers?status=verified',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
 
       expect(response.status).toBe(200);
 
@@ -214,7 +216,7 @@ describe('Newsletter Subscribers API Route', () => {
       const context = createMockContext({
         url: 'http://localhost/api/newsletter/subscribers?cursor=cursor-123',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
 
       expect(response.status).toBe(200);
 
@@ -242,7 +244,7 @@ describe('Newsletter Subscribers API Route', () => {
       const context = createMockContext({
         url: 'http://localhost/api/newsletter/subscribers?limit=25',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
 
       expect(response.status).toBe(200);
 
@@ -266,7 +268,7 @@ describe('Newsletter Subscribers API Route', () => {
         await import('../../src/pages/api/newsletter/subscribers.ts');
 
       const context = createMockContext();
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(500);
@@ -280,7 +282,7 @@ describe('Newsletter Subscribers API Route', () => {
         await import('../../src/pages/api/newsletter/subscribers.ts');
 
       const context = createMockContext();
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(500);
@@ -302,7 +304,7 @@ describe('Newsletter Subscribers API Route', () => {
         await import('../../src/pages/api/newsletter/subscribers.ts');
 
       const context = createMockContext();
-      const response = await GET(context as any);
+      const response = await GET(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);

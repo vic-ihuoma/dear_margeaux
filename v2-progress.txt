@@ -1724,3 +1724,62 @@ Implemented partial refund functionality with RefundDialog component, amount inp
 ### Next Steps
 All tasks in implementations.json now have passes:true.
 
+
+## 2026-02-01: Flaky Test Cleanup & Real E2E Testing
+
+### Task Completed
+Removed flaky tests with placeholder assertions and executed real E2E testing for admin product creation flow using agent-browser.
+
+### Key Decisions
+- Identified and removed 14 test files with `expect(true).toBe(true)` placeholder assertions
+- These tests would always pass regardless of actual code behavior
+- Removed 3 "E2E integration" test files that only read file contents instead of actually testing behavior
+- Executed real E2E test of product creation flow using agent-browser
+- Successfully created product with 2 variants, verified save, verified in products list
+
+### Files Removed (Flaky Tests)
+- apps/admin/tests/components/VariantForm.test.ts (54 flaky assertions)
+- apps/admin/tests/components/ProductFormMultipleVariants.test.tsx (37 flaky assertions)
+- apps/admin/tests/components/BulkPriceUpdate.test.tsx (9 flaky assertions)
+- apps/admin/tests/components/VariantAddRemove.test.tsx (10 flaky assertions)
+- apps/admin/tests/components/DropForm.test.tsx (17 flaky assertions)
+- apps/admin/tests/components/BlogForm.test.ts (10 flaky assertions)
+- apps/admin/tests/components/LowStockAlerts.test.ts (27 flaky assertions)
+- apps/admin/tests/components/TagInput.test.ts (8 flaky assertions)
+- apps/admin/tests/components/DropSelector.test.ts (13 flaky assertions)
+- apps/admin/tests/components/ReorderPointAlerts.test.ts (42 flaky assertions)
+- apps/admin/tests/components/ProductFormComplete.test.ts (50 flaky assertions)
+- apps/admin/tests/integration/product-creation-e2e.test.ts (36 tests - only read files)
+- apps/admin/tests/integration/multi-variant-e2e.test.ts (56 tests - only read files)
+- apps/admin/tests/integration/lookbook-admin-e2e.test.ts (63 tests - only read files)
+
+### E2E Test Executed
+Real admin product creation flow tested with agent-browser:
+1. Opened /products/new page
+2. Filled product title: "Test Product E2E"
+3. Filled description
+4. Filled variant 1: SKU TEST-E2E-001, title "Default Variant", price $29.99
+5. Added second variant: SKU TEST-E2E-002, title "Large Size", price $39.99
+6. Submitted form successfully
+7. Verified redirect to product edit page with ID 41dcb761-0ff9-4727-9459-5493ff4a7748
+8. Verified both variants displayed with correct data
+9. Navigated to products list and verified product appears with "2 variants"
+
+### Screenshots Captured
+- pm35-01-new-product-page.png - Initial new product form
+- pm35-02-form-filled.png - Form filled with product and first variant
+- pm35-03-two-variants.png - Form with two variants
+- pm35-04-edit-page-after-create.png - Product edit page after creation
+- pm35-05-variants-section.png - Variants section on edit page
+- pm35-06-product-details-complete.png - Full product edit page
+- pm35-07-products-list-with-test-product.png - Products list showing test product
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 183 warnings - all pre-existing)
+- Tests: PASSED (839 admin tests - down from ~1356 after removing flaky tests)
+- Visual E2E: PASSED - Complete product creation flow verified
+
+### Next Steps
+None. All tasks complete with real tests.
+

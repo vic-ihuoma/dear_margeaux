@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { APIContext } from 'astro';
 import type { Product, Variant } from '@dear-margeaux/api';
 
 // Mock the MerchantClient
@@ -20,7 +21,7 @@ function createMockContext(options: {
   method?: string;
   body?: unknown;
   params?: Record<string, string>;
-}) {
+}): APIContext {
   const url = new URL(
     options.url || 'http://localhost/api/products/prod_123/duplicate'
   );
@@ -58,7 +59,8 @@ function createMockContext(options: {
     rewrite: vi.fn(),
     isPrerendered: false,
     ResponseWithEncoding: Response,
-  };
+    csp: { nonce: '' },
+  } as unknown as APIContext;
 }
 
 // Helper to parse response
@@ -144,7 +146,7 @@ describe('Products Duplicate API Route', () => {
         params: { id: 'prod_123' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);
@@ -163,7 +165,7 @@ describe('Products Duplicate API Route', () => {
         params: { id: 'prod_123' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);
@@ -210,7 +212,7 @@ describe('Products Duplicate API Route', () => {
         params: { id: 'prod_123' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);
@@ -255,7 +257,7 @@ describe('Products Duplicate API Route', () => {
         params: { id: 'prod_123' },
       });
 
-      await POST(context as any);
+      await POST(context);
 
       // Check that createVariant was called with SKUs ending in -COPY
       expect(mockCreateVariant).toHaveBeenNthCalledWith(
@@ -286,7 +288,7 @@ describe('Products Duplicate API Route', () => {
         params: { id: 'prod_123' },
       });
 
-      await POST(context as any);
+      await POST(context);
 
       expect(mockCreateProduct).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -308,7 +310,7 @@ describe('Products Duplicate API Route', () => {
         params: {},
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -326,7 +328,7 @@ describe('Products Duplicate API Route', () => {
         params: { id: 'nonexistent' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -353,7 +355,7 @@ describe('Products Duplicate API Route', () => {
         params: { id: 'prod_123' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);
@@ -373,7 +375,7 @@ describe('Products Duplicate API Route', () => {
         params: { id: 'prod_123' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);

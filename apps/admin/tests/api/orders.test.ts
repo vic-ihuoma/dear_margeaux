@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { APIContext } from 'astro';
 import type { Order } from '@dear-margeaux/api';
 
 // Mock the MerchantClient
@@ -19,7 +20,7 @@ function createMockContext(options: {
   body?: unknown;
   params?: Record<string, string>;
   headers?: Record<string, string>;
-}) {
+}): APIContext {
   const url = new URL(options.url || 'http://localhost/api/orders/ord_123');
   const headers: Record<string, string> = options.body
     ? { 'Content-Type': 'application/json', ...options.headers }
@@ -58,7 +59,8 @@ function createMockContext(options: {
     rewrite: vi.fn(),
     isPrerendered: false,
     ResponseWithEncoding: Response,
-  };
+    csp: { nonce: '' },
+  } as unknown as APIContext;
 }
 
 // Helper to parse response
@@ -117,7 +119,7 @@ describe('Orders API Routes', () => {
         body: { status: 'shipped' },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -148,7 +150,7 @@ describe('Orders API Routes', () => {
         },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -169,7 +171,7 @@ describe('Orders API Routes', () => {
         body: { status: 'shipped' },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -185,7 +187,7 @@ describe('Orders API Routes', () => {
         body: { status: 'invalid_status' },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -201,7 +203,7 @@ describe('Orders API Routes', () => {
         body: { invalid_field: 'value' },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -232,7 +234,7 @@ describe('Orders API Routes', () => {
           body: { status },
         });
 
-        const response = await PATCH(context as any);
+        const response = await PATCH(context);
 
         expect(response.status).toBe(200);
       }
@@ -249,7 +251,7 @@ describe('Orders API Routes', () => {
         body: { status: 'shipped' },
       });
 
-      const response = await PATCH(context as any);
+      const response = await PATCH(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -270,7 +272,7 @@ describe('Orders API Routes', () => {
         params: { id: 'ord_123' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(200);
@@ -291,7 +293,7 @@ describe('Orders API Routes', () => {
         body: { amount_cents: 1000, reason: 'Partial damage' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
 
       expect(response.status).toBe(200);
       expect(mockRefundOrder).toHaveBeenCalledWith('ord_123', {
@@ -309,7 +311,7 @@ describe('Orders API Routes', () => {
         params: {},
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -326,7 +328,7 @@ describe('Orders API Routes', () => {
         body: { amount_cents: -100 },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -343,7 +345,7 @@ describe('Orders API Routes', () => {
         body: { amount_cents: 0 },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -363,7 +365,7 @@ describe('Orders API Routes', () => {
         body: { reason: 'Customer request' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
 
       expect(response.status).toBe(200);
       expect(mockRefundOrder).toHaveBeenCalledWith('ord_123', {
@@ -384,7 +386,7 @@ describe('Orders API Routes', () => {
         params: { id: 'ord_123' },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);

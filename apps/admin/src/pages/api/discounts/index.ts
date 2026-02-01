@@ -57,9 +57,10 @@ export const POST: APIRoute = async ({ request }) => {
       status: 201,
       headers: { 'Content-Type': 'application/json' },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to create discount:', error);
-    const message = error?.message || 'Failed to create discount';
+    const message =
+      error instanceof Error ? error.message : 'Failed to create discount';
     return new Response(JSON.stringify({ error: message }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },

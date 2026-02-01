@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { APIContext } from 'astro';
 import type { Product, Variant } from '@dear-margeaux/api';
 
 // Mock the MerchantClient
@@ -22,7 +23,7 @@ function createMockContext(options: {
   method?: string;
   body?: unknown;
   params?: Record<string, string>;
-}) {
+}): APIContext {
   const url = new URL(options.url || 'http://localhost/api/products');
   const request = new Request(url.toString(), {
     method: options.method || 'GET',
@@ -58,7 +59,8 @@ function createMockContext(options: {
     rewrite: vi.fn(),
     isPrerendered: false,
     ResponseWithEncoding: Response,
-  };
+    csp: { nonce: '' },
+  } as unknown as APIContext;
 }
 
 // Helper to parse response
@@ -127,7 +129,7 @@ describe('Products API - Multiple Variants Support (pm-40)', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);
@@ -155,7 +157,7 @@ describe('Products API - Multiple Variants Support (pm-40)', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
 
       expect(response.status).toBe(201);
       expect(mockCreateVariant).toHaveBeenCalledTimes(3);
@@ -180,7 +182,7 @@ describe('Products API - Multiple Variants Support (pm-40)', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(data.variants).toHaveLength(2);
@@ -203,7 +205,7 @@ describe('Products API - Multiple Variants Support (pm-40)', () => {
         },
       });
 
-      await POST(context as any);
+      await POST(context);
 
       expect(mockCreateVariant).toHaveBeenCalledWith('prod_123', {
         sku: 'SKU-1',
@@ -227,7 +229,7 @@ describe('Products API - Multiple Variants Support (pm-40)', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -244,7 +246,7 @@ describe('Products API - Multiple Variants Support (pm-40)', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);
@@ -263,7 +265,7 @@ describe('Products API - Multiple Variants Support (pm-40)', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(201);
@@ -294,7 +296,7 @@ describe('Products API - Multiple Variants Support (pm-40)', () => {
         },
       });
 
-      await POST(context as any);
+      await POST(context);
 
       expect(mockCreateVariant).toHaveBeenCalledWith('prod_123', {
         sku: 'SKU-1',
@@ -324,7 +326,7 @@ describe('Products API - Multiple Variants Support (pm-40)', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
 
       expect(response.status).toBe(201);
       expect(mockCreateVariant).toHaveBeenCalled();
@@ -351,8 +353,8 @@ describe('Products API - Multiple Variants Support (pm-40)', () => {
         },
       });
 
-      const response = await POST(context as any);
-      const data = await parseResponse(response);
+      const response = await POST(context);
+      await parseResponse(response);
 
       expect(response.status).toBe(201);
       // Should only create variant from array, not legacy fields
@@ -381,7 +383,7 @@ describe('Products API - Multiple Variants Support (pm-40)', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -401,7 +403,7 @@ describe('Products API - Multiple Variants Support (pm-40)', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);
@@ -421,7 +423,7 @@ describe('Products API - Multiple Variants Support (pm-40)', () => {
         },
       });
 
-      const response = await POST(context as any);
+      const response = await POST(context);
       const data = await parseResponse(response);
 
       expect(response.status).toBe(400);

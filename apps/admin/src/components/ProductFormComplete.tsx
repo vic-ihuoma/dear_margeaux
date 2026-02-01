@@ -73,12 +73,6 @@ function loadCustomTemplates(): VariantTemplate[] {
   }
 }
 
-/** Save custom templates to localStorage */
-function saveCustomTemplates(templates: VariantTemplate[]): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(CUSTOM_TEMPLATES_KEY, JSON.stringify(templates));
-}
-
 /** Single variant form data */
 export interface VariantFormData {
   id?: string; // Only present when editing existing variant

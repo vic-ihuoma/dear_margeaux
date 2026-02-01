@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { APIContext } from 'astro';
 import type { OrderListItem } from '@dear-margeaux/api';
 
 // Mock the MerchantClient
@@ -11,7 +12,10 @@ vi.mock('@dear-margeaux/api', () => ({
 }));
 
 // Helper function to create mock APIContext
-function createMockContext(options: { url?: string; method?: string }) {
+function createMockContext(options: {
+  url?: string;
+  method?: string;
+}): APIContext {
   const url = new URL(
     options.url || 'http://localhost/api/analytics/export',
     'http://localhost'
@@ -48,7 +52,8 @@ function createMockContext(options: { url?: string; method?: string }) {
     rewrite: vi.fn(),
     isPrerendered: false,
     ResponseWithEncoding: Response,
-  };
+    csp: { nonce: '' },
+  } as unknown as APIContext;
 }
 
 // Sample order data (matching actual OrderListItem type)
@@ -95,7 +100,7 @@ describe('Analytics Export API', () => {
       const context = createMockContext({
         url: 'http://localhost/api/analytics/export?range=30',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
 
       expect(response.status).toBe(200);
       expect(response.headers.get('Content-Type')).toBe(
@@ -113,7 +118,7 @@ describe('Analytics Export API', () => {
       const context = createMockContext({
         url: 'http://localhost/api/analytics/export?range=30',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
 
       const disposition = response.headers.get('Content-Disposition');
       expect(disposition).toContain('attachment');
@@ -132,7 +137,7 @@ describe('Analytics Export API', () => {
       const context = createMockContext({
         url: 'http://localhost/api/analytics/export?range=30',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
       const csvContent = await response.text();
 
       const lines = csvContent.split('\n');
@@ -156,7 +161,7 @@ describe('Analytics Export API', () => {
       const context = createMockContext({
         url: 'http://localhost/api/analytics/export?range=30',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
       const csvContent = await response.text();
 
       // Should contain order data
@@ -178,7 +183,7 @@ describe('Analytics Export API', () => {
       const context = createMockContext({
         url: 'http://localhost/api/analytics/export?range=30',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
       const csvContent = await response.text();
 
       // Summary row should contain SUMMARY label
@@ -195,7 +200,7 @@ describe('Analytics Export API', () => {
       const context = createMockContext({
         url: 'http://localhost/api/analytics/export?range=30',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
       const csvContent = await response.text();
 
       // Total should be $150.00 + $250.00 + $85.00 = $485.00
@@ -213,7 +218,7 @@ describe('Analytics Export API', () => {
       const context = createMockContext({
         url: 'http://localhost/api/analytics/export?range=7',
       });
-      await GET(context as any);
+      await GET(context);
 
       expect(mockGetOrders).toHaveBeenCalledWith(
         expect.objectContaining({ limit: expect.any(Number) })
@@ -234,7 +239,7 @@ describe('Analytics Export API', () => {
         const context = createMockContext({
           url: `http://localhost/api/analytics/export?range=${range}`,
         });
-        const response = await GET(context as any);
+        const response = await GET(context);
 
         expect(response.status).toBe(200);
       }
@@ -250,7 +255,7 @@ describe('Analytics Export API', () => {
       const context = createMockContext({
         url: 'http://localhost/api/analytics/export?range=30',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
       const csvContent = await response.text();
 
       // Should still have header and summary row
@@ -264,7 +269,7 @@ describe('Analytics Export API', () => {
 
       const { GET } = await import('../../src/pages/api/analytics/export.ts');
       const context = createMockContext({});
-      const response = await GET(context as any);
+      const response = await GET(context);
 
       expect(response.status).toBe(500);
     });
@@ -290,7 +295,7 @@ describe('Analytics Export API', () => {
       const context = createMockContext({
         url: 'http://localhost/api/analytics/export?range=30',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
       const csvContent = await response.text();
 
       // Should properly handle special characters
@@ -307,7 +312,7 @@ describe('Analytics Export API', () => {
       const context = createMockContext({
         url: 'http://localhost/api/analytics/export?range=30',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
       const csvContent = await response.text();
 
       // Should include the order count (3 orders) in summary row
@@ -324,7 +329,7 @@ describe('Analytics Export API', () => {
       const context = createMockContext({
         url: 'http://localhost/api/analytics/export?range=30',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
       const csvContent = await response.text();
 
       // Price should be formatted as dollars ($150.00 or 150.00)
@@ -341,7 +346,7 @@ describe('Analytics Export API', () => {
       const context = createMockContext({
         url: 'http://localhost/api/analytics/export',
       });
-      const response = await GET(context as any);
+      const response = await GET(context);
 
       expect(response.status).toBe(200);
     });
