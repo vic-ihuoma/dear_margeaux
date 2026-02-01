@@ -3,12 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import SEO from '../components/SEO.astro';
 import ProductCard from '../components/ProductCard.astro';
 import ProductGrid from '../components/ProductGrid.astro';
-import type {
-  ProductListItem,
-  Drop,
-  Product,
-  InventoryItem,
-} from '@dear-margeaux/api';
+import type { ProductListItem, Drop, Product } from '@dear-margeaux/api';
 
 // Images URL from R2 (configured via PUBLIC_IMAGES_URL environment variable)
 const imagesUrl = import.meta.env.PUBLIC_IMAGES_URL;
@@ -84,17 +79,6 @@ if (apiUrl && apiKey) {
     // If there's an active drop, fetch its products
     // Otherwise, fetch all active products
     let productsToShow: Product[] = [];
-    let inventoryMap = new Map<string, InventoryItem>();
-
-    // Fetch inventory for sold-out status
-    try {
-      const inventoryResponse = await client.getInventory({ limit: 500 });
-      for (const item of inventoryResponse.items) {
-        inventoryMap.set(item.sku, item);
-      }
-    } catch {
-      // Inventory fetch might fail, continue without it
-    }
 
     if (activeDrop) {
       // Fetch products from the active drop
@@ -126,10 +110,10 @@ if (apiUrl && apiKey) {
       products = productsToShow.map((product) => {
         const firstVariant = product.variants[0];
 
-        // Check if all variants are sold out
+        // Check if all variants are sold out using variant.available
         const allVariantsSoldOut = product.variants.every((variant) => {
-          const inv = inventoryMap.get(variant.sku);
-          return inv ? inv.available <= 0 : false;
+          // available is null if no inventory record exists (treat as in stock)
+          return variant.available !== null && variant.available <= 0;
         });
 
         return {

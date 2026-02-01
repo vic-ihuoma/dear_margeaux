@@ -3,7 +3,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import ProductCard from '../../../components/ProductCard.astro';
 import ProductGrid from '../../../components/ProductGrid.astro';
 import CollapsibleFilter from '../../../components/CollapsibleFilter.astro';
-import type { InventoryItem, TagInfo } from '@dear-margeaux/api';
+import type { TagInfo } from '@dear-margeaux/api';
 import type { GetStaticPaths } from 'astro';
 
 interface DisplayProduct {
@@ -137,17 +137,6 @@ if (apiUrl && apiKey && normalizedTag) {
       limit: 100,
     });
 
-    // Fetch inventory for sold-out status
-    let inventoryMap = new Map<string, InventoryItem>();
-    try {
-      const inventoryResponse = await client.getInventory({ limit: 500 });
-      for (const item of inventoryResponse.items) {
-        inventoryMap.set(item.sku, item);
-      }
-    } catch {
-      // Inventory fetch might fail, continue without it
-    }
-
     // Fetch all tags for filter navigation
     try {
       const tagsResponse = await client.getTags();
@@ -164,10 +153,9 @@ if (apiUrl && apiKey && normalizedTag) {
             const product = await client.getProduct(item.id);
             const firstVariant = product.variants[0];
 
-            // Check if all variants are sold out
+            // Check if all variants are sold out using variant.available
             const allVariantsSoldOut = product.variants.every((variant) => {
-              const inv = inventoryMap.get(variant.sku);
-              return inv ? inv.available <= 0 : false;
+              return variant.available !== null && variant.available <= 0;
             });
 
             // Prefer featured_image_url/alt, fallback to first variant image

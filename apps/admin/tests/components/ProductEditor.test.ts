@@ -24,6 +24,7 @@ const mockProduct: Product = {
       image_alt: null,
       low_stock_threshold: null,
       reorder_point: null,
+      available: null,
     },
   ],
 };

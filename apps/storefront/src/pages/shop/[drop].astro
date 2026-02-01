@@ -3,7 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import ProductGrid from '../../components/ProductGrid.astro';
 import WaitlistForm from '../../components/WaitlistForm';
-import type { Drop, Product, InventoryItem } from '@dear-margeaux/api';
+import type { Drop, Product } from '@dear-margeaux/api';
 import type { GetStaticPaths } from 'astro';
 
 interface DisplayProduct {
@@ -165,25 +165,13 @@ if (apiUrl && apiKey && dropSlug) {
         d.status === 'scheduled'
     );
 
-    // Fetch inventory for all product SKUs to determine sold-out status
-    let inventoryMap = new Map<string, InventoryItem>();
-    try {
-      const inventoryResponse = await client.getInventory({ limit: 500 });
-      for (const item of inventoryResponse.items) {
-        inventoryMap.set(item.sku, item);
-      }
-    } catch {
-      // Inventory fetch might fail if not available, continue without it
-    }
-
     // Map products to display format
     products = dropProductsResponse.items.map((product: Product) => {
       const firstVariant = product.variants[0];
 
-      // Check if all variants are sold out
+      // Check if all variants are sold out using variant.available
       const allVariantsSoldOut = product.variants.every((variant) => {
-        const inv = inventoryMap.get(variant.sku);
-        return inv ? inv.available <= 0 : false;
+        return variant.available !== null && variant.available <= 0;
       });
 
       // Prefer featured_image_url/alt, fallback to first variant image

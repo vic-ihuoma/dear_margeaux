@@ -41,6 +41,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       title: data.title,
       description: data.description,
       status: data.status,
+      featured_image_url: data.featured_image_url,
+      featured_image_alt: data.featured_image_alt,
     });
 
     return new Response(JSON.stringify(product), {

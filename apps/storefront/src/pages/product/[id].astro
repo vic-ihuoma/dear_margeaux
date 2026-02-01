@@ -5,7 +5,7 @@ import ProductControls from '../../components/ProductControls';
 import ProductImageGallery from '../../components/ProductImageGallery';
 import ShareButtons from '../../components/ShareButtons';
 import { sampleProducts } from '../../data/sample-products';
-import type { Variant, Drop, InventoryItem } from '@dear-margeaux/api';
+import type { Variant, Drop } from '@dear-margeaux/api';
 import type { LightboxImage } from '../../components/ImageLightbox';
 
 interface DisplayVariant {
@@ -98,17 +98,6 @@ if (apiUrl && apiKey && id) {
 
     const apiProduct = await client.getProduct(id);
 
-    // Fetch inventory for availability
-    let inventoryMap = new Map<string, InventoryItem>();
-    try {
-      const inventoryResponse = await client.getInventory({ limit: 500 });
-      for (const item of inventoryResponse.items) {
-        inventoryMap.set(item.sku, item);
-      }
-    } catch {
-      // Inventory fetch might fail, continue without it
-    }
-
     // Try to find which drop this product belongs to
     let productDrop: Drop | null = null;
     try {
@@ -143,8 +132,8 @@ if (apiUrl && apiKey && id) {
       collection: productDrop?.name,
       collectionSlug: productDrop?.slug,
       variants: apiProduct.variants.map((v: Variant) => {
-        const inv = inventoryMap.get(v.sku);
-        const availableQty = inv ? inv.available : 10; // Default to 10 if no inventory data
+        // Use variant.available from the API (null means no inventory record, treat as 10)
+        const availableQty = v.available ?? 10;
         return {
           id: v.id,
           sku: v.sku,

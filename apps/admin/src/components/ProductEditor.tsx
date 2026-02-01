@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { ProductForm } from './ProductForm';
 import { VariantForm } from './VariantForm';
 import { UndoToast } from './UndoToast';
+import { ImageUploader } from './ImageUploader';
 import type {
   Product,
   Variant,
@@ -43,6 +44,14 @@ export function ProductEditor({
     null
   );
   const [showUndoToast, setShowUndoToast] = useState(false);
+  const [featuredImageUrl, setFeaturedImageUrl] = useState<string | null>(
+    initialProduct.featured_image_url
+  );
+  const [featuredImageAlt, setFeaturedImageAlt] = useState<string>(
+    initialProduct.featured_image_alt || ''
+  );
+  const [isSavingImage, setIsSavingImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   const handleProductSubmit = useCallback(
     async (data: UpdateProductParams) => {
@@ -265,6 +274,122 @@ export function ProductEditor({
     [product]
   );
 
+  const uploadImageToR2 = useCallback(
+    async (file: File): Promise<{ url: string; key: string }> => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/images/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to upload image');
+      }
+
+      return response.json();
+    },
+    []
+  );
+
+  const handleFeaturedImageUpload = useCallback(
+    async (url: string) => {
+      setFeaturedImageUrl(url);
+      // Save immediately after upload
+      setIsSavingImage(true);
+      setImageError(null);
+
+      try {
+        const response = await fetch(`/api/products/${product.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ featured_image_url: url }),
+        });
+
+        if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.error || 'Failed to save image');
+        }
+
+        const updatedProduct = await response.json();
+        setProduct((prev) => ({ ...prev, ...updatedProduct }));
+      } catch (err) {
+        console.error('Save featured image error:', err);
+        setImageError(
+          err instanceof Error ? err.message : 'Failed to save image'
+        );
+      } finally {
+        setIsSavingImage(false);
+      }
+    },
+    [product.id]
+  );
+
+  const handleFeaturedImageRemove = useCallback(async () => {
+    setFeaturedImageUrl(null);
+    setIsSavingImage(true);
+    setImageError(null);
+
+    try {
+      const response = await fetch(`/api/products/${product.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ featured_image_url: null }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to remove image');
+      }
+
+      const updatedProduct = await response.json();
+      setProduct((prev) => ({ ...prev, ...updatedProduct }));
+    } catch (err) {
+      console.error('Remove featured image error:', err);
+      setImageError(
+        err instanceof Error ? err.message : 'Failed to remove image'
+      );
+    } finally {
+      setIsSavingImage(false);
+    }
+  }, [product.id]);
+
+  const handleAltTextSave = useCallback(async () => {
+    setIsSavingImage(true);
+    setImageError(null);
+
+    try {
+      const response = await fetch(`/api/products/${product.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ featured_image_alt: featuredImageAlt }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to save alt text');
+      }
+
+      const updatedProduct = await response.json();
+      setProduct((prev) => ({ ...prev, ...updatedProduct }));
+    } catch (err) {
+      console.error('Save alt text error:', err);
+      setImageError(
+        err instanceof Error ? err.message : 'Failed to save alt text'
+      );
+    } finally {
+      setIsSavingImage(false);
+    }
+  }, [product.id, featuredImageAlt]);
+
   const handleDeleteVariant = useCallback(
     async (variantId: string) => {
       if (!confirm('Are you sure you want to delete this variant?')) {
@@ -330,6 +455,66 @@ export function ProductEditor({
             isSubmitting={isSubmitting}
             error={error}
           />
+        </div>
+      </div>
+
+      {/* Featured Image Section */}
+      <div className="bg-background-secondary rounded-xl border border-border shadow-sm">
+        <div className="px-6 py-4 border-b border-border">
+          <h2 className="text-lg font-semibold text-text-primary">
+            Featured Image
+          </h2>
+        </div>
+        <div className="p-6">
+          {imageError && (
+            <div className="mb-4 rounded-lg bg-status-error/10 border border-status-error/20 p-4">
+              <p className="text-sm text-status-error">{imageError}</p>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <ImageUploader
+              value={featuredImageUrl}
+              onUpload={handleFeaturedImageUpload}
+              onRemove={handleFeaturedImageRemove}
+              isUploading={isSavingImage}
+              uploadHandler={uploadImageToR2}
+            />
+
+            {/* Alt Text Input */}
+            <div>
+              <label
+                htmlFor="featured-image-alt"
+                className="block text-sm font-medium text-text-primary mb-1"
+              >
+                Alt Text
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  id="featured-image-alt"
+                  value={featuredImageAlt}
+                  onChange={(e) => setFeaturedImageAlt(e.target.value)}
+                  placeholder="Describe the image for accessibility"
+                  className="flex-1 px-3 py-2 text-sm border border-border rounded-lg bg-background-primary text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+                <button
+                  type="button"
+                  onClick={handleAltTextSave}
+                  disabled={
+                    isSavingImage ||
+                    featuredImageAlt === (product.featured_image_alt || '')
+                  }
+                  className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSavingImage ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-text-muted">
+                Describe the image for screen readers and accessibility
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -56,6 +56,8 @@ export interface Variant {
   low_stock_threshold: number | null;
   /** Reorder point threshold (NULL = no reorder alert) */
   reorder_point: number | null;
+  /** Available quantity from inventory (on_hand - reserved). Null if no inventory record exists. */
+  available: number | null;
 }
 
 /** Product with variants */

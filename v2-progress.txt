@@ -742,3 +742,31 @@ Verified and integrated the ProductFormComplete component with the admin product
 
 ### Next Steps
 Remaining 34 tasks with passes:false starting with pm-26
+
+
+## 2026-02-01: pm-26 - Update ProductEditor to show editable featured image
+
+### Task Completed
+Added featured image display and edit section to ProductEditor component with ImageUploader integration.
+
+### Key Decisions
+- Added Featured Image section between Product Details and Variants sections for logical flow
+- Integrated existing ImageUploader component for consistency with other image upload UIs
+- Images are auto-saved to the API immediately after upload (no separate save button needed)
+- Alt text has its own save button since it's text input that may need explicit saving
+- Used existing /api/images/upload endpoint for R2 uploads
+- Updated PATCH /api/products/:id to include featured_image_url and featured_image_alt
+
+### Files Changed
+- apps/admin/src/components/ProductEditor.tsx - Added Featured Image section with ImageUploader, alt text input, and handlers for upload/remove/save
+- apps/admin/src/pages/api/products/[id].ts - Added featured_image_url and featured_image_alt to PATCH handler
+- apps/admin/tests/components/ProductEditorFeaturedImage.test.ts - 14 new tests for featured image functionality
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors)
+- Tests: PASSED (648 admin tests, including 14 new featured image tests)
+- Visual: Not executed (task has visual tests but deferred)
+
+### Next Steps
+Remaining 33 tasks with passes:false starting with pm-28

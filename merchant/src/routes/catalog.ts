@@ -71,9 +71,14 @@ catalogRoutes.get('/', async (c) => {
 
   if (productIds.length > 0) {
     const placeholders = productIds.map(() => '?').join(',');
+    // Join with inventory to get available quantity
     const allVariants = await db.query<any>(
-      `SELECT * FROM variants WHERE product_id IN (${placeholders}) ORDER BY created_at ASC`,
-      productIds
+      `SELECT v.*, (COALESCE(i.on_hand, 0) - COALESCE(i.reserved, 0)) as available
+       FROM variants v
+       LEFT JOIN inventory i ON v.sku = i.sku AND i.store_id = ?
+       WHERE v.product_id IN (${placeholders})
+       ORDER BY v.created_at ASC`,
+      [store.id, ...productIds]
     );
 
     // Group variants by product_id
@@ -119,6 +124,7 @@ catalogRoutes.get('/', async (c) => {
       image_alt: v.image_alt,
       low_stock_threshold: v.low_stock_threshold,
       reorder_point: v.reorder_point,
+      available: v.available ?? null,
     })),
   }));
 
@@ -167,9 +173,14 @@ catalogRoutes.get('/:id', async (c) => {
 
   if (!product) throw ApiError.notFound('Product not found');
 
+  // Join with inventory to get available quantity
   const variants = await db.query<any>(
-    `SELECT * FROM variants WHERE product_id = ? ORDER BY created_at ASC`,
-    [id]
+    `SELECT v.*, (COALESCE(i.on_hand, 0) - COALESCE(i.reserved, 0)) as available
+     FROM variants v
+     LEFT JOIN inventory i ON v.sku = i.sku AND i.store_id = ?
+     WHERE v.product_id = ?
+     ORDER BY v.created_at ASC`,
+    [store.id, id]
   );
 
   // Fetch tags for this product
@@ -198,6 +209,7 @@ catalogRoutes.get('/:id', async (c) => {
       image_alt: v.image_alt,
       low_stock_threshold: v.low_stock_threshold,
       reorder_point: v.reorder_point,
+      available: v.available ?? null,
     })),
   });
 });
@@ -351,7 +363,15 @@ catalogRoutes.patch('/:id', adminOnly, async (c) => {
     store.id,
   ]);
 
-  const variants = await db.query<any>(`SELECT * FROM variants WHERE product_id = ?`, [id]);
+  // Join with inventory to get available quantity
+  const variants = await db.query<any>(
+    `SELECT v.*, (COALESCE(i.on_hand, 0) - COALESCE(i.reserved, 0)) as available
+     FROM variants v
+     LEFT JOIN inventory i ON v.sku = i.sku AND i.store_id = ?
+     WHERE v.product_id = ?
+     ORDER BY v.created_at ASC`,
+    [store.id, id]
+  );
 
   // Fetch updated tags
   const productTags = await db.query<{ tag: string }>(
@@ -377,6 +397,7 @@ catalogRoutes.patch('/:id', adminOnly, async (c) => {
       image_alt: v.image_alt,
       low_stock_threshold: v.low_stock_threshold,
       reorder_point: v.reorder_point,
+      available: v.available ?? null,
     })),
   });
 });
@@ -596,8 +617,15 @@ catalogRoutes.delete('/:id', adminOnly, async (c) => {
   );
   if (!product) throw ApiError.notFound('Product not found');
 
-  // Check if any variants have been used in orders
-  const variants = await db.query<any>(`SELECT * FROM variants WHERE product_id = ?`, [id]);
+  // Check if any variants have been used in orders (join with inventory for available)
+  const variants = await db.query<any>(
+    `SELECT v.*, (COALESCE(i.on_hand, 0) - COALESCE(i.reserved, 0)) as available
+     FROM variants v
+     LEFT JOIN inventory i ON v.sku = i.sku AND i.store_id = ?
+     WHERE v.product_id = ?
+     ORDER BY v.created_at ASC`,
+    [store.id, id]
+  );
 
   if (variants.length > 0) {
     const skus = variants.map((v) => v.sku);
@@ -644,6 +672,7 @@ catalogRoutes.delete('/:id', adminOnly, async (c) => {
       image_alt: v.image_alt,
       low_stock_threshold: v.low_stock_threshold,
       reorder_point: v.reorder_point,
+      available: v.available ?? null,
     })),
   });
 });
@@ -686,10 +715,14 @@ catalogRoutes.post('/:id/restore', adminOnly, async (c) => {
   // Restore the product by clearing deleted_at
   await db.run(`UPDATE products SET deleted_at = NULL WHERE id = ?`, [id]);
 
-  // Fetch updated product with variants and tags
+  // Fetch updated product with variants and tags (join with inventory for available)
   const variants = await db.query<any>(
-    `SELECT * FROM variants WHERE product_id = ? ORDER BY created_at ASC`,
-    [id]
+    `SELECT v.*, (COALESCE(i.on_hand, 0) - COALESCE(i.reserved, 0)) as available
+     FROM variants v
+     LEFT JOIN inventory i ON v.sku = i.sku AND i.store_id = ?
+     WHERE v.product_id = ?
+     ORDER BY v.created_at ASC`,
+    [store.id, id]
   );
 
   const tags = await db.query<{ tag: string }>(
@@ -716,6 +749,7 @@ catalogRoutes.post('/:id/restore', adminOnly, async (c) => {
       image_alt: v.image_alt,
       low_stock_threshold: v.low_stock_threshold,
       reorder_point: v.reorder_point,
+      available: v.available ?? null,
     })),
   });
 });

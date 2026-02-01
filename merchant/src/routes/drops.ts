@@ -157,9 +157,14 @@ dropsRoutes.get('/:slug/products', async (c) => {
 
   if (productIds.length > 0) {
     const placeholders = productIds.map(() => '?').join(',');
+    // Join with inventory to get available quantity
     const allVariants = await db.query<any>(
-      `SELECT * FROM variants WHERE product_id IN (${placeholders}) ORDER BY created_at ASC`,
-      productIds
+      `SELECT v.*, (COALESCE(i.on_hand, 0) - COALESCE(i.reserved, 0)) as available
+       FROM variants v
+       LEFT JOIN inventory i ON v.sku = i.sku AND i.store_id = ?
+       WHERE v.product_id IN (${placeholders})
+       ORDER BY v.created_at ASC`,
+      [store.id, ...productIds]
     );
 
     for (const v of allVariants) {
@@ -184,6 +189,7 @@ dropsRoutes.get('/:slug/products', async (c) => {
       title: v.title,
       price_cents: v.price_cents,
       image_url: v.image_url,
+      available: v.available ?? null,
     })),
   }));
 

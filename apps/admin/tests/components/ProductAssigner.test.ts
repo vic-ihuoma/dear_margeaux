@@ -28,6 +28,7 @@ const createMockProduct = (
       product_id: id,
       low_stock_threshold: null,
       reorder_point: null,
+      available: null,
     },
   ],
 });
