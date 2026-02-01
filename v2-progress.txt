@@ -1037,3 +1037,30 @@ Implemented Quick Add dropdown with variant templates for common patterns (Sizes
 
 ### Next Steps
 Remaining 24 tasks with passes:false starting with pm-42
+
+
+## 2026-02-01: pm-42 - Add bulk price update for variants
+
+### Task Completed
+Implemented bulk price update feature allowing users to set all variant prices at once using fixed price or percentage adjustment.
+
+### Key Decisions
+- Added "Set All Prices" button next to "Quick Add" dropdown in Variants section header
+- Implemented modal with two modes: Fixed Price ($X.XX) and Percentage Adjustment (+/-X%)
+- Real-time price preview shows before/after for each variant as user types
+- Percentage mode skips variants without prices (shows warning message)
+- Validates against negative prices and percentage reductions of 100% or more
+- Rounds percentage results to 2 decimal places
+
+### Files Changed
+- apps/admin/src/components/ProductFormComplete.tsx - Added bulk price modal state, validation, preview generation, and apply logic; added Set All Prices button to Variants section header; added modal UI with mode toggle, input, preview table, and action buttons
+- apps/admin/tests/components/BulkPriceUpdate.test.tsx - 29 tests covering fixed price application, percentage calculations, validation, preview generation, and edge cases
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 174 warnings - all pre-existing)
+- Tests: PASSED (975 admin tests, including 29 new BulkPriceUpdate tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining 23 tasks with passes:false starting with pm-43
