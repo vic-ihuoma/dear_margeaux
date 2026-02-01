@@ -1600,3 +1600,29 @@ Created 'The Debut' lookbook MDX file with 3 images for the inaugural collection
 ### Next Steps
 Remaining tasks starting with initial-content-12.
 
+## 2026-02-01: initial-content-12 - Verify homepage displays products correctly
+
+### Task Completed
+Updated homepage sample products to match The Debut collection with correct names, prices, and images.
+
+### Key Decisions
+- Updated sample products from placeholder names to official Dear Margeaux names
+- Sample products now use: The Colette, The Amélie, The Giselle, The Margot
+- Prices updated to match seed configuration ($395-$525 range)
+- Collection name updated from 'Debut Collection' to 'The Debut'
+- Image URLs updated to correct R2 paths (prod-1.webp through prod-4.webp)
+- Visual tests not executed (browser dependencies unavailable in sandbox)
+
+### Files Changed
+- apps/storefront/src/pages/index.astro - Updated sample products with official names, prices, images
+- apps/storefront/tests/content/initial-content-12.test.ts - 44 new tests verifying homepage product display
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 183 warnings - all pre-existing)
+- Tests: PASSED (553 storefront tests, including 44 new initial-content-12 tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining tasks starting with initial-content-13.
+
