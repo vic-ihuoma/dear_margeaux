@@ -1101,3 +1101,34 @@ Created comprehensive E2E integration tests for the multi-variant product lifecy
 
 ### Next Steps
 Remaining 22 tasks with passes:false starting with admin-8
+
+
+## 2026-02-01: admin-8 - Add export to CSV for inventory
+
+### Task Completed
+Implemented CSV export functionality for the inventory page, allowing admins to download inventory data in CSV format.
+
+### Key Decisions
+- Created exportToCSV utility module with reusable functions: escapeCsvField, formatColumnHeader, generateCSV, generateInventoryCSV, downloadCSV
+- Created /api/inventory/export endpoint that generates CSV server-side
+- Used same pattern as analytics export (Content-Type: text/csv, Content-Disposition: attachment)
+- Added Export CSV button to inventory page header with download icon
+- CSV includes all inventory columns: SKU, Product, Variant, On Hand, Reserved, Available, Low Stock Threshold, Reorder Point, Status
+- Filename includes current date for easy identification (inventory-YYYY-MM-DD.csv)
+- Added BOM (byte order mark) for Excel compatibility with UTF-8
+
+### Files Changed
+- apps/admin/src/lib/exportToCSV.ts - New utility module with CSV generation functions
+- apps/admin/src/pages/api/inventory/export.ts - New API endpoint for inventory CSV export
+- apps/admin/src/pages/inventory/index.astro - Added Export CSV button to page header
+- apps/admin/tests/lib/exportToCSV.test.ts - 23 tests for exportToCSV utility
+- apps/admin/tests/api/inventory-export.test.ts - 17 tests for export API and page structure
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 174 warnings - all pre-existing)
+- Tests: PASSED (1072 admin tests, including 40 new export tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+None for this task.
