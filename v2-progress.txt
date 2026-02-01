@@ -1688,3 +1688,39 @@ Verified complete site structure, navigation, and content integration with compr
 ### Next Steps
 Remaining tasks starting with admin-10 (partial refund).
 
+
+## 2026-02-01: admin-10 - Add partial refund amount input
+
+### Task Completed
+Implemented partial refund functionality with RefundDialog component, amount input, validation, and refund history display.
+
+### Key Decisions
+- Created RefundDialog component with full/partial refund type selection
+- Amount input with dollar sign prefix, step="0.01", and max validation against order total
+- Used fieldset/legend for accessibility-compliant radio button group
+- Created RefundButton wrapper for client-side interactivity in Astro page
+- Added RefundHistory component to display refund records with status badges
+- Created GET /v1/orders/:orderId/refunds endpoint for fetching refund records
+- Added Refund type and getOrderRefunds() method to MerchantClient
+- Replaced legacy inline script refund handling with React component
+
+### Files Changed
+- apps/admin/src/components/RefundDialog.tsx - New dialog with amount input, validation, full/partial selection
+- apps/admin/src/components/RefundButton.tsx - Wrapper component for Astro page integration
+- apps/admin/src/components/RefundHistory.tsx - Displays refund records with totals and status
+- apps/admin/src/pages/api/orders/[id]/refunds.ts - Admin API endpoint for fetching refunds
+- apps/admin/src/pages/orders/[id].astro - Updated to use RefundButton and RefundHistory components
+- apps/admin/tests/components/RefundDialog.test.ts - 37 tests for RefundDialog component
+- merchant/src/routes/orders.ts - Added GET /v1/orders/:orderId/refunds endpoint
+- packages/api/src/types.ts - Added Refund interface
+- packages/api/src/merchant-client.ts - Added getOrderRefunds() method
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 183 warnings - all pre-existing)
+- Tests: PASSED (1356 admin tests, including 37 new RefundDialog tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+All tasks in implementations.json now have passes:true.
+
