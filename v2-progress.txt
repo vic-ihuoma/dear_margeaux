@@ -851,3 +851,46 @@ Fixed and verified the E2E integration tests for the complete product creation f
 
 ### Next Steps
 Remaining 30 tasks with passes:false starting with pm-36
+
+
+## 2026-02-01: pm-36 - Add multiple variants support to ProductFormComplete
+
+### Task Completed
+Transformed the single "Default Variant" section into a full multi-variant management system with collapsible cards.
+
+### Key Decisions
+- Changed from single variant state (formData.sku, formData.price, etc.) to variants array (formData.variants[])
+- Created VariantFormData interface to represent each variant's form state including isExpanded for UI
+- Added variantHasData() helper to check if variant has any data entered
+- Variant cards are collapsible with aria-expanded for accessibility
+- Summary line shows SKU, title, price when collapsed
+- Backwards compatible: submission still includes flat variant fields for first variant for API compatibility
+- Duplicate SKU validation across all variants
+- Last variant cannot be removed (minimum 1 required)
+- Visual tests not executed (browser dependencies unavailable in sandbox)
+
+### Files Changed
+- apps/admin/src/components/ProductFormComplete.tsx - Complete refactor of variant handling:
+  - Added VariantFormData, VariantSubmitData interfaces
+  - Added createEmptyVariant(), variantHasData() helper functions
+  - Changed state from single variant fields to variants array
+  - Added variant management handlers: updateVariant, addVariant, removeVariant, toggleVariantExpanded
+  - New validate() logic for array of variants with duplicate SKU detection
+  - New handleSubmit() that converts variants array to submission format
+  - Replaced "Default Variant" section with "Variants" section featuring:
+    - Section header with count badge
+    - Collapsible variant cards with expand/collapse toggle
+    - All variant fields (SKU, title, price, image) per card
+    - Remove Variant button (disabled for last variant)
+    - "Add Another Variant" button with plus icon
+- apps/admin/tests/components/ProductFormMultipleVariants.test.tsx - 45 new tests for multi-variant functionality
+- apps/admin/tests/integration/product-creation-e2e.test.ts - Updated to match new variant structure (errors.sku, variantHasData)
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 158 warnings - all pre-existing)
+- Tests: PASSED (771 admin tests, including 45 new multi-variant tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining 29 tasks with passes:false starting with pm-37
