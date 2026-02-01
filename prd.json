@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "repository": "github.com/victorihuoma/dear_margeaux",
     "generated_from": "review.txt",
-    "last_updated": "2026-01-17"
+    "last_updated": "2026-02-01"
   },
   "categories": {
     "email": {
@@ -841,7 +841,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "perf-2",
@@ -1382,7 +1382,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "sf-11",
@@ -1447,7 +1447,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-2",
@@ -1478,7 +1478,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-3",
@@ -1507,7 +1507,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-4",
@@ -1568,7 +1568,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-6",
@@ -1595,7 +1595,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-7",
@@ -1621,7 +1621,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-8",
@@ -1647,7 +1647,7 @@
         ],
         "manual": ["Open downloaded CSV and verify data"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-9",
@@ -1678,7 +1678,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-10",
@@ -1708,7 +1708,7 @@
         ],
         "manual": ["Verify partial refund in Stripe dashboard"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-11",
@@ -1737,7 +1737,7 @@
         ],
         "manual": ["Check customer email for status notification"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-12",
@@ -1767,7 +1767,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-13",
@@ -1796,7 +1796,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-14",
@@ -1826,7 +1826,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-15",
@@ -1854,7 +1854,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-16",
@@ -1882,7 +1882,7 @@
         ],
         "manual": ["Open CSV and verify data matches dashboard"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-17",
@@ -1911,7 +1911,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "admin-18",
@@ -1939,7 +1939,7 @@
         ],
         "manual": ["Test disconnect/reconnect by disabling network briefly"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "devops-1",
@@ -2051,7 +2051,7 @@
         ],
         "manual": ["Test touch swipe on mobile"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "content-2",
@@ -2077,7 +2077,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "content-3",
@@ -2132,7 +2132,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-1",
@@ -3081,7 +3081,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "nav-1",
@@ -3444,7 +3444,7 @@
         "integration": ["Full navigation flow across all main routes"],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-19",
@@ -3508,7 +3508,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-21",
@@ -3538,7 +3538,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-22",
@@ -3569,7 +3569,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-23",
@@ -3600,7 +3600,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-24",
@@ -3630,7 +3630,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-25",
@@ -3657,7 +3657,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-26",
@@ -3688,7 +3688,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-28",
@@ -3719,7 +3719,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-33",
@@ -3778,7 +3778,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-35",
@@ -3812,7 +3812,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-36",
@@ -3845,7 +3845,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-37",
@@ -3876,7 +3876,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-38",
@@ -3907,7 +3907,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-39",
@@ -3940,7 +3940,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-40",
@@ -3969,7 +3969,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-41",
@@ -4001,7 +4001,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-42",
@@ -4031,7 +4031,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "pm-43",
@@ -4064,7 +4064,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "assets-1",
@@ -4089,7 +4089,7 @@
         "visual": [],
         "manual": ["Verify visual quality of processed images is acceptable"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "assets-2",
@@ -4115,7 +4115,7 @@
         "visual": [],
         "manual": ["Verify visual quality of blog/lookbook images"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "assets-3",
@@ -4139,7 +4139,7 @@
         "visual": [],
         "manual": ["Verify logo quality and readability at header size"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "assets-4",
@@ -4169,7 +4169,7 @@
         "visual": [],
         "manual": ["Verify favicon displays correctly in browser tab"]
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "assets-5",
@@ -4199,7 +4199,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "assets-6",
@@ -4228,7 +4228,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "assets-7",
@@ -4256,7 +4256,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "assets-8",
@@ -4283,7 +4283,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "lookbook-admin-1",
@@ -4311,7 +4311,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "lookbook-admin-2",
@@ -4341,7 +4341,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "lookbook-admin-3",
@@ -4374,7 +4374,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "lookbook-admin-4",
@@ -4405,7 +4405,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "lookbook-admin-5",
@@ -4431,7 +4431,7 @@
         "visual": [],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "lookbook-admin-6",
@@ -4463,7 +4463,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "initial-content-1",
@@ -4492,7 +4492,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "initial-content-2",
@@ -4522,7 +4522,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "initial-content-3",
@@ -4550,7 +4550,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "initial-content-4",
@@ -4578,7 +4578,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "initial-content-5",
@@ -4606,7 +4606,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "initial-content-6",
@@ -4634,7 +4634,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "initial-content-7",
@@ -4662,7 +4662,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "initial-content-8",
@@ -4690,7 +4690,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "initial-content-9",
@@ -4724,7 +4724,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "initial-content-10",
@@ -4756,7 +4756,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "initial-content-11",
@@ -4786,7 +4786,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "initial-content-12",
@@ -4814,7 +4814,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "initial-content-13",
@@ -4841,7 +4841,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "initial-content-14",
@@ -4922,7 +4922,7 @@
         ],
         "manual": ["Cross-browser testing on Safari, Firefox, Chrome"]
       },
-      "passes": false
+      "passes": true
     }
   ]
 }
