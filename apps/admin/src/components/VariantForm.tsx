@@ -64,6 +64,11 @@ export function VariantForm({
     Partial<Record<keyof VariantFormData, string>>
   >({});
 
+  // Image input mode toggle - defaults to 'upload' when uploadHandler is provided
+  const [imageInputMode, setImageInputMode] = useState<'upload' | 'url'>(
+    uploadHandler ? 'upload' : 'url'
+  );
+
   const validate = useCallback((): boolean => {
     const errors: Partial<Record<keyof VariantFormData, string>> = {};
 
@@ -367,10 +372,45 @@ export function VariantForm({
       {/* Variant Image Section */}
       <div className="space-y-4">
         <div>
-          <span className="block text-sm font-medium text-text-primary mb-1">
-            Variant Image
-          </span>
-          {uploadHandler ? (
+          <div className="flex items-center justify-between mb-2">
+            <span className="block text-sm font-medium text-text-primary">
+              Variant Image
+            </span>
+            {/* Toggle between upload and URL modes - only show when uploadHandler is available */}
+            {uploadHandler && (
+              <div className="flex items-center gap-1 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setImageInputMode('upload')}
+                  disabled={isSubmitting}
+                  className={`px-2 py-1 rounded transition-colors ${
+                    imageInputMode === 'upload'
+                      ? 'bg-primary text-white'
+                      : 'bg-background-tertiary text-text-secondary hover:bg-background-secondary'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  aria-pressed={imageInputMode === 'upload'}
+                >
+                  Upload
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageInputMode('url')}
+                  disabled={isSubmitting}
+                  className={`px-2 py-1 rounded transition-colors ${
+                    imageInputMode === 'url'
+                      ? 'bg-primary text-white'
+                      : 'bg-background-tertiary text-text-secondary hover:bg-background-secondary'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  aria-pressed={imageInputMode === 'url'}
+                >
+                  URL
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Upload mode - only when uploadHandler provided and in upload mode */}
+          {uploadHandler && imageInputMode === 'upload' && (
             <ImageUploader
               value={formData.image_url || null}
               onUpload={handleImageUpload}
@@ -378,8 +418,10 @@ export function VariantForm({
               isUploading={isSubmitting}
               uploadHandler={uploadHandler}
             />
-          ) : (
-            // Fallback to URL input if no upload handler is provided
+          )}
+
+          {/* URL mode - shown when in URL mode or no uploadHandler */}
+          {(!uploadHandler || imageInputMode === 'url') && (
             <div>
               <label htmlFor="variant-image" className="sr-only">
                 Variant Image URL
