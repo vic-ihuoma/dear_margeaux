@@ -952,3 +952,31 @@ Implemented add/remove variant functionality with auto-focus for SKU field when 
 
 ### Next Steps
 Remaining 27 tasks with passes:false starting with pm-39
+
+
+## 2026-02-01: pm-39 - Validate all variants before product submission
+
+### Task Completed
+Implemented comprehensive variant validation with error summary display and auto-expansion of variants with errors.
+
+### Key Decisions
+- Added hasAttemptedSubmit state to only show error summary after first submit attempt (not on initial load)
+- Error summary shows total count of issues and lists each error with variant identification (e.g., "Variant 2: SKU is required")
+- Added buildErrorSummary helper function to format error messages from both product and variant errors
+- Added data-has-error attribute to VariantCard for CSS-based error styling (already has data-variant-card)
+- Auto-expand collapsed variants that have validation errors so users can see and fix issues
+- Validation already existed for required fields (SKU, title, price) and duplicate SKUs - added UI enhancements
+
+### Files Changed
+- apps/admin/src/components/ProductFormComplete.tsx - Added hasAttemptedSubmit state, buildErrorSummary helper, error summary UI block, auto-expand logic in validate()
+- apps/admin/src/components/VariantCard.tsx - Added data-has-error attribute for error state styling
+- apps/admin/tests/components/VariantValidation.test.tsx - 29 new tests for variant validation behavior
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 157 warnings - all pre-existing)
+- Tests: PASSED (899 admin tests, including 29 new VariantValidation tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining 26 tasks with passes:false starting with pm-40
