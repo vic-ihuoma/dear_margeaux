@@ -1008,3 +1008,32 @@ Updated POST /api/products endpoint to accept a variants array for creating prod
 
 ### Next Steps
 Remaining 25 tasks with passes:false starting with pm-41
+
+
+## 2026-02-01: pm-41 - Add variant templates for common patterns
+
+### Task Completed
+Implemented Quick Add dropdown with variant templates for common patterns (Sizes, Colors, Size+Color matrix).
+
+### Key Decisions
+- Created BUILTIN_TEMPLATES array with 3 built-in templates: Sizes (XS-XL), Colors (common colors), Size+Color Matrix (25 combinations)
+- Added Quick Add dropdown in Variants section header with lightning bolt icon
+- Template application uses product title or first variant SKU as base for auto-generated SKUs
+- Confirmation dialog shown when replacing variants that have data
+- First variant is auto-expanded and focused after template application
+- Custom templates stored in localStorage (dear_margeaux_variant_templates key)
+- Template variant counts displayed in dropdown for user information
+- Added aria-selected attribute for accessibility compliance
+
+### Files Changed
+- apps/admin/src/components/ProductFormComplete.tsx - Added template types, built-in templates, Quick Add dropdown UI, applyTemplate function, localStorage helpers
+- apps/admin/tests/components/VariantTemplates.test.ts - 34 new tests covering template constants, SKU generation, localStorage, dropdown UI, and integration
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 172 warnings - all pre-existing)
+- Tests: PASSED (946 admin tests, including 34 new VariantTemplates tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining 24 tasks with passes:false starting with pm-42

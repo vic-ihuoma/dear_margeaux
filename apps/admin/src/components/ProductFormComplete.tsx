@@ -11,6 +11,74 @@ import { DropSelector } from './DropSelector';
 import { ImageUploader } from './ImageUploader';
 import { VariantCard } from './VariantCard';
 
+// ============================================
+// Variant Templates Feature
+// ============================================
+
+/** Template variant definition */
+interface TemplateVariant {
+  title: string;
+  skuSuffix: string;
+}
+
+/** Variant template definition */
+export interface VariantTemplate {
+  id: string;
+  name: string;
+  variants: TemplateVariant[];
+}
+
+// Built-in template constants
+const SIZES_TEMPLATE = ['XS', 'S', 'M', 'L', 'XL'];
+const COLORS_TEMPLATE = ['Black', 'White', 'Navy', 'Gray', 'Beige'];
+
+// LocalStorage key for custom templates
+const CUSTOM_TEMPLATES_KEY = 'dear_margeaux_variant_templates';
+
+/** Built-in variant templates */
+export const BUILTIN_TEMPLATES: VariantTemplate[] = [
+  {
+    id: 'sizes',
+    name: 'Sizes (XS-XL)',
+    variants: SIZES_TEMPLATE.map((s) => ({ title: s, skuSuffix: `-${s}` })),
+  },
+  {
+    id: 'colors',
+    name: 'Colors (Common)',
+    variants: COLORS_TEMPLATE.map((c) => ({
+      title: c,
+      skuSuffix: `-${c.toUpperCase().substring(0, 3)}`,
+    })),
+  },
+  {
+    id: 'size-color-matrix',
+    name: 'Size + Color Matrix',
+    variants: SIZES_TEMPLATE.flatMap((s) =>
+      COLORS_TEMPLATE.map((c) => ({
+        title: `${s} / ${c}`,
+        skuSuffix: `-${s}-${c.toUpperCase().substring(0, 3)}`,
+      }))
+    ),
+  },
+];
+
+/** Load custom templates from localStorage */
+function loadCustomTemplates(): VariantTemplate[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = localStorage.getItem(CUSTOM_TEMPLATES_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Save custom templates to localStorage */
+function saveCustomTemplates(templates: VariantTemplate[]): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(CUSTOM_TEMPLATES_KEY, JSON.stringify(templates));
+}
+
 /** Single variant form data */
 export interface VariantFormData {
   id?: string; // Only present when editing existing variant
@@ -441,6 +509,65 @@ export function ProductFormComplete({
     updateVariant(index, { isExpanded: !formData.variants[index].isExpanded });
   };
 
+  // Template dropdown state
+  const [templateDropdownOpen, setTemplateDropdownOpen] = useState(false);
+  const [customTemplates, setCustomTemplates] = useState<VariantTemplate[]>([]);
+
+  // Load custom templates on mount
+  useEffect(() => {
+    setCustomTemplates(loadCustomTemplates());
+  }, []);
+
+  // Get all available templates (built-in + custom)
+  const allTemplates = [...BUILTIN_TEMPLATES, ...customTemplates];
+
+  // Generate base SKU for template application
+  const getBaseSku = useCallback((): string => {
+    // First check if first variant has a SKU
+    const firstVariantSku = formData.variants[0]?.sku?.trim();
+    if (firstVariantSku) {
+      // Strip any trailing suffix (like -XS, -001) to get base
+      return firstVariantSku.replace(/-[A-Z0-9]+$/i, '').toUpperCase();
+    }
+    // Fall back to product title
+    return generateSkuFromTitle(formData.title);
+  }, [formData.variants, formData.title]);
+
+  // Apply a template to variants
+  const applyTemplate = useCallback(
+    (template: VariantTemplate) => {
+      const baseSku = getBaseSku();
+
+      const newVariants: VariantFormData[] = template.variants.map(
+        (v, index) => ({
+          sku: (baseSku + v.skuSuffix).toUpperCase(),
+          title: v.title,
+          price: '',
+          image_url: '',
+          image_alt: '',
+          isExpanded: index === 0, // Only first is expanded
+        })
+      );
+
+      setFormData((prev) => ({
+        ...prev,
+        variants: newVariants,
+      }));
+
+      // Clear variant errors
+      setVariantErrors({});
+
+      // Focus on first variant's SKU
+      setFocusVariantIndex(0);
+
+      setTemplateDropdownOpen(false);
+    },
+    [getBaseSku]
+  );
+
+  // Check if existing variants have data (for confirmation)
+  const hasExistingVariantData = formData.variants.some(variantHasData);
+
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {error && (
@@ -734,15 +861,110 @@ export function ProductFormComplete({
 
       {/* Variants Section */}
       <section>
-        <h2 className="text-lg font-semibold text-text-primary mb-4 pb-2 border-b border-border flex items-center gap-2">
-          Variants
-          <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700">
-            {formData.variants.length}
-          </span>
-        </h2>
+        <div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
+          <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+            Variants
+            <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-700">
+              {formData.variants.length}
+            </span>
+          </h2>
+
+          {/* Quick Add Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setTemplateDropdownOpen(!templateDropdownOpen)}
+              disabled={isSubmitting}
+              aria-haspopup="listbox"
+              aria-expanded={templateDropdownOpen}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-text-muted hover:text-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+              Quick Add
+              <svg
+                className={`w-4 h-4 transition-transform ${templateDropdownOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+
+            {templateDropdownOpen && (
+              <div
+                role="listbox"
+                className="absolute right-0 z-10 mt-1 w-64 rounded-lg border border-border bg-background-primary shadow-lg"
+              >
+                <div className="py-1">
+                  <div className="px-3 py-2 text-xs font-medium text-text-muted uppercase tracking-wide">
+                    Templates
+                  </div>
+                  {allTemplates.map((template) => (
+                    <button
+                      key={template.id}
+                      type="button"
+                      role="option"
+                      aria-selected={false}
+                      onClick={() => {
+                        if (hasExistingVariantData) {
+                          // Show confirmation before replacing variants with data
+                          if (
+                            confirm(
+                              `This will replace your existing ${formData.variants.length} variant(s) with ${template.variants.length} variants from the "${template.name}" template. Continue?`
+                            )
+                          ) {
+                            applyTemplate(template);
+                          } else {
+                            setTemplateDropdownOpen(false);
+                          }
+                        } else {
+                          applyTemplate(template);
+                        }
+                      }}
+                      className="w-full px-3 py-2 text-sm text-left text-text-primary hover:bg-background-secondary flex items-center justify-between"
+                    >
+                      <span>{template.name}</span>
+                      <span className="text-xs text-text-muted">
+                        {template.variants.length} variants
+                      </span>
+                    </button>
+                  ))}
+                  {customTemplates.length > 0 && (
+                    <>
+                      <div className="my-1 border-t border-border" />
+                      <div className="px-3 py-2 text-xs font-medium text-text-muted uppercase tracking-wide">
+                        Custom Templates
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
         <p className="text-sm text-text-muted mb-4">
           Add one or more variants for this product. Each variant can have its
-          own SKU, price, and image.
+          own SKU, price, and image. Use{' '}
+          <span className="font-medium text-text-primary">Quick Add</span> to
+          quickly populate variants from templates.
         </p>
 
         <div className="space-y-4">
