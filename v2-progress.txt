@@ -1132,3 +1132,33 @@ Implemented CSV export functionality for the inventory page, allowing admins to 
 
 ### Next Steps
 None for this task.
+
+
+## 2026-02-01: lookbook-admin-1 - Create lookbook admin listing page
+
+### Task Completed
+Created lookbook admin listing page with full CRUD-ready infrastructure for managing lookbook collections.
+
+### Key Decisions
+- Created /api/lookbook endpoint that reads MDX files from storefront/src/content/lookbook/
+- Reused MDX parsing pattern from blog API for consistency
+- Extended YAML parser to handle multi-line arrays (images: list format)
+- Added 'Lookbook' to admin sidebar navigation between Blog and Subscribers
+- Used 'photo' icon (same as image placeholder) for visual consistency
+- Page displays title, date, image count, draft status, and optional drop association
+- Supports filtering by status (draft/published) and search by title/slug/drop
+
+### Files Changed
+- apps/admin/src/pages/api/lookbook/index.ts - New API endpoint for listing lookbooks
+- apps/admin/src/pages/lookbook/index.astro - New listing page with table, filters, and empty state
+- apps/admin/src/layouts/AdminLayout.astro - Added 'Lookbook' navigation item with photo icon
+- apps/admin/tests/api/lookbook.test.ts - 12 tests covering API routes, page structure, and navigation
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 183 warnings - all pre-existing)
+- Tests: PASSED (1084 admin tests, including 12 new lookbook tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining lookbook-admin tasks: lookbook-admin-2 (form component), lookbook-admin-3 (gallery manager), etc.
