@@ -1525,3 +1525,29 @@ Verified and tested The Céline product configuration in seed-config for databas
 ### Next Steps
 Remaining tasks starting with initial-content-9.
 
+## 2026-02-01: initial-content-9 - Set initial inventory for all products
+
+### Task Completed
+Verified and tested the initial inventory configuration for all 7 products in seed-config.ts.
+
+### Key Decisions
+- Added dedicated test file for initial-content-9 to verify all inventory requirements
+- Tests verify all 7 unit test requirements from implementations.json
+- Inventory levels follow limited drop strategy: 10-25 units per product
+- Premium products (The Vivienne) have lowest stock (10 units) - more exclusive
+- Entry price point (The Eloise) has highest stock (25 units) - most accessible
+- Namesake product (The Margot) has slightly higher stock (18 units)
+- Total inventory: 115 units across all products
+
+### Files Changed
+- merchant/tests/scripts/initial-content-9.test.ts - 23 new tests covering inventory configuration for all 7 products
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 289 warnings - all pre-existing)
+- Tests: PASSED (737 merchant tests, including 23 new initial-content-9 tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining tasks starting with initial-content-10.
+
