@@ -65,13 +65,9 @@ for ((i=1; i<=$1; i++)); do
   echo "=== Iteration $i of $1 ==="
   echo ""
   
-  result=$(docker sandbox run --env CI=true claude --permission-mode acceptEdits -p "@AGENTS.md @implementations.json @v2-progress.txt
-
-========================================
-ITERATION $i INSTRUCTIONS
-========================================
-
-1. PLATFORM CHECK - CLEAN REINSTALL NODE_MODULES
+  # Conditionally include reinstall instructions only on first iteration
+  if [ "$i" -eq 1 ]; then
+    PLATFORM_STEP="1. PLATFORM CHECK - REINSTALL NODE_MODULES (First iteration only)
    The host (macOS) and Docker (Linux) have different platforms.
    You MUST reinstall node_modules for Linux before any other work:
    
@@ -81,32 +77,47 @@ ITERATION $i INSTRUCTIONS
    Then run: pnpm typecheck
    If you STILL see platform errors after reinstall, output <promise>PLATFORM_ERROR</promise> and stop.
 
-2. TASK SELECTION  
+2. TASK SELECTION"
+  else
+    PLATFORM_STEP="1. TASK SELECTION"
+  fi
+  
+  result=$(docker sandbox run --env CI=true claude --permission-mode acceptEdits -p "@AGENTS.md @implementations.json @v2-progress.txt
+
+========================================
+ITERATION $i INSTRUCTIONS
+========================================
+
+$PLATFORM_STEP  
    Find the first task in implementations.json with passes:false
    If ALL tasks have passes:true, output <promise>COMPLETE</promise>
 
-3. IMPLEMENTATION (TDD Workflow)
-   a. Read the task description and test requirements
-   b. Write tests FIRST - with REAL assertions (see AGENTS.md for quality standards)
-   c. Run: pnpm test (verify tests fail initially if testing new behavior)
-   d. Implement the feature
-   e. Run: pnpm test (verify tests pass)
+IMPORTANT: The Docker sandbox has a 300-second idle timeout. Run commands 
+frequently to keep the session alive. Avoid long periods of thinking without 
+executing any bash commands.
 
-4. VISUAL TESTS (If task has visual tests)
-   a. Load the agent-browser skill
-   b. Run: pnpm dev (start dev server)
-   c. Execute EACH visual test step from the task
-   d. Take screenshots as evidence
-   e. Kill the dev server
-   f. Include screenshot filenames in progress
+IMPLEMENTATION (TDD Workflow)
+   - Read the task description and test requirements
+   - Write tests FIRST - with REAL assertions (see AGENTS.md for quality standards)
+   - Run: pnpm test (verify tests fail initially if testing new behavior)
+   - Implement the feature
+   - Run: pnpm test (verify tests pass)
 
-5. PRE-COMMIT VERIFICATION
+VISUAL TESTS (If task has visual tests)
+   - Load the agent-browser skill
+   - Run: pnpm dev (start dev server)
+   - Execute EACH visual test step from the task
+   - Take screenshots as evidence
+   - Kill the dev server
+   - Include screenshot filenames in progress
+
+PRE-COMMIT VERIFICATION
    Run these and ensure they pass:
    - pnpm typecheck (0 errors required)
    - pnpm lint (0 errors required)
    - pnpm test (all tests must pass)
 
-6. COMMIT
+COMMIT
    - Stage changes: git add .
    - Commit: git commit -m 'feat(TASK_ID): description'
    
@@ -114,7 +125,7 @@ ITERATION $i INSTRUCTIONS
    If the hook fails, FIX THE ISSUES and commit again.
    DO NOT use --no-verify.
 
-7. UPDATE TRACKING
+UPDATE TRACKING
    - Set passes:true for the task in implementations.json
    - Append progress entry to v2-progress.txt (see format in AGENTS.md)
 
