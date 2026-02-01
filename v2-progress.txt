@@ -1323,3 +1323,31 @@ Created comprehensive E2E integration tests for the complete lookbook admin work
 
 ### Next Steps
 Remaining tasks starting with initial-content-1.
+
+
+## 2026-02-01: initial-content-1 - Create 'The Debut' drop in database
+
+### Task Completed
+Updated seed configuration with The Debut drop and the 7 official Dear Margeaux products.
+
+### Key Decisions
+- Added DROP_CONFIG constant to seed-config.ts for centralized drop configuration
+- Updated all 7 products to use the official names: The Colette, The Amélie, The Giselle, The Margot, The Vivienne, The Eloise, The Céline
+- Updated variant SKUs to match product names (COLETTE-001, AMELIE-001, etc.)
+- Updated prices to match specifications: $345-$595 range
+- Updated inventory levels to match requirements: 10-25 units per product (limited drop feel)
+- Updated seed.ts to use DROP_CONFIG for dynamic drop creation
+
+### Files Changed
+- merchant/scripts/seed-config.ts - Complete rewrite with DROP_CONFIG, updated PRODUCTS, VARIANTS, and TEST_ORDERS
+- merchant/scripts/seed.ts - Updated to use DROP_CONFIG for drop creation
+- merchant/tests/scripts/initial-content.test.ts - 27 tests for drop config, products, variants, and inventory
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 183 warnings - all pre-existing)
+- Tests: PASSED (613 merchant tests, including 27 new initial-content tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining tasks starting with initial-content-2.
