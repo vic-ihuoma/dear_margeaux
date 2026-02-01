@@ -189,3 +189,19 @@ html.dark ::selection {
 html.dark :focus-visible {
   outline-color: var(--color-primary-500);
 }
+
+/* View Transitions - Navigation Tab Indicator */
+::view-transition-old(header-nav-tab-indicator),
+::view-transition-new(header-nav-tab-indicator) {
+  /* Smooth morphing animation for the pill indicator */
+  animation-duration: 150ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Disable view transition animation when user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(header-nav-tab-indicator),
+  ::view-transition-new(header-nav-tab-indicator) {
+    animation: none;
+  }
+}
