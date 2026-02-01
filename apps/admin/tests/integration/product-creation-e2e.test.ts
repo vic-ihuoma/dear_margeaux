@@ -67,10 +67,10 @@ describe('Product Creation E2E Flow Integration', () => {
       expect(content).toContain('name="title"');
       expect(content).toContain('name="description"');
       expect(content).toContain('name="status"');
-      // Variant fields
-      expect(content).toContain('name="sku"');
-      expect(content).toContain('name="price"');
-      expect(content).toContain('name="variant_title"');
+      // Variant fields - now use id attributes with index pattern (e.g., variant-0-sku)
+      expect(content).toContain('SKU');
+      expect(content).toContain('Price');
+      expect(content).toContain('Variant Title');
     });
 
     it('ProductFormComplete includes image uploaders', () => {
@@ -213,7 +213,8 @@ describe('Product Creation E2E Flow Integration', () => {
     it('form handles partial variant data gracefully', () => {
       const content = readFileSync(productFormCompletePath, 'utf-8');
       // Should only add variant data if any variant field is filled
-      expect(content).toContain('hasVariantData');
+      // Now uses variantHasData helper function to check each variant
+      expect(content).toContain('variantHasData');
     });
 
     it('form preserves optional fields', () => {
@@ -254,8 +255,9 @@ describe('Product Creation E2E Flow Integration', () => {
     it('ProductFormComplete displays field validation errors', () => {
       const content = readFileSync(productFormCompletePath, 'utf-8');
       expect(content).toContain('formErrors.title');
-      expect(content).toContain('formErrors.sku');
-      expect(content).toContain('formErrors.price');
+      // Variant errors are now accessed via variantErrors[index] as errors.sku/price
+      expect(content).toContain('errors.sku');
+      expect(content).toContain('errors.price');
     });
   });
 });
