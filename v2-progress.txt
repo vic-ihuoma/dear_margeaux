@@ -1626,3 +1626,28 @@ Updated homepage sample products to match The Debut collection with correct name
 ### Next Steps
 Remaining tasks starting with initial-content-13.
 
+## 2026-02-01: initial-content-13 - Verify shop page displays all products
+
+### Task Completed
+Updated shop page to display all 7 products from "The Debut" collection with correct names, prices, images, and drop filter.
+
+### Key Decisions
+- Updated sampleProducts array to match The Debut collection (7 products: The Colette, The Amélie, The Giselle, The Margot, The Vivienne, The Eloise, The Céline)
+- Added R2 image URLs for all products (prod-1.webp through prod-7.webp)
+- Updated prices to match seed configuration ($345-$595 range in cents)
+- Simplified sample drops to only show "The Debut" as the active collection
+- All products set to `soldOut: false` for the active drop
+
+### Files Changed
+- apps/storefront/src/pages/shop/index.astro - Updated sampleProducts with The Debut products, R2 images, and prices; updated sample drops to show "The Debut"
+- apps/storefront/tests/content/initial-content-13.test.ts - 51 new tests verifying shop page product display, prices, images, and drop filter
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 289 warnings - all pre-existing)
+- Tests: PASSED (604 storefront tests, including 51 new initial-content-13 tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining tasks starting with initial-content-15.
+

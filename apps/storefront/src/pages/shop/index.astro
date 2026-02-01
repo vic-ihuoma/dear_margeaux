@@ -10,71 +10,74 @@ import type {
   TagInfo,
 } from '@dear-margeaux/api';
 
+// R2 Public URL for product images
+const R2_PUBLIC_URL = 'https://pub-bf88a85e013c44b6a3a965d48812aa90.r2.dev';
+
 // Sample products for development/fallback when API is unavailable
+// Products from "The Debut" collection - Dear Margeaux's inaugural drop
 const sampleProducts = [
   {
     id: '1',
-    title: 'Classic Leather Tote',
-    price: 45000,
-    collection: 'Spring 2026',
-    soldOut: false,
-    tags: ['leather', 'tote', 'everyday'],
-  },
-  {
-    id: '2',
-    title: 'Mini Crossbody',
-    price: 28500,
-    collection: 'Spring 2026',
-    soldOut: false,
-    tags: ['leather', 'crossbody', 'everyday'],
-  },
-  {
-    id: '3',
-    title: 'Structured Satchel',
-    price: 52000,
-    collection: 'Spring 2026',
-    soldOut: true,
-    tags: ['leather', 'formal'],
-  },
-  {
-    id: '4',
-    title: 'Weekend Duffle',
-    price: 68000,
-    collection: 'Spring 2026',
-    soldOut: false,
-    tags: ['leather', 'travel'],
-  },
-  {
-    id: '5',
-    title: 'Evening Clutch',
-    price: 32000,
-    collection: 'Winter 2025',
-    soldOut: true,
-    tags: ['leather', 'formal', 'evening'],
-  },
-  {
-    id: '6',
-    title: 'Everyday Hobo',
-    price: 48000,
-    collection: 'Winter 2025',
-    soldOut: false,
-    tags: ['leather', 'everyday', 'hobo'],
-  },
-  {
-    id: '7',
-    title: 'Bucket Bag',
-    price: 38000,
-    collection: 'Winter 2025',
+    title: 'The Colette',
+    price: 39500,
+    image: `${R2_PUBLIC_URL}/products/prod-1.webp`,
+    collection: 'The Debut',
     soldOut: false,
     tags: ['leather', 'everyday'],
   },
   {
-    id: '8',
-    title: 'Messenger Bag',
-    price: 55000,
-    collection: 'Fall 2025',
+    id: '2',
+    title: 'The Amélie',
+    price: 45000,
+    image: `${R2_PUBLIC_URL}/products/prod-2.webp`,
+    collection: 'The Debut',
     soldOut: false,
-    tags: ['leather', 'everyday', 'work'],
+    tags: ['leather', 'everyday'],
+  },
+  {
+    id: '3',
+    title: 'The Giselle',
+    price: 52500,
+    image: `${R2_PUBLIC_URL}/products/prod-3.webp`,
+    collection: 'The Debut',
+    soldOut: false,
+    tags: ['leather', 'formal'],
+  },
+  {
+    id: '4',
+    title: 'The Margot',
+    price: 47500,
+    image: `${R2_PUBLIC_URL}/products/prod-4.webp`,
+    collection: 'The Debut',
+    soldOut: false,
+    tags: ['leather', 'everyday'],
+  },
+  {
+    id: '5',
+    title: 'The Vivienne',
+    price: 59500,
+    image: `${R2_PUBLIC_URL}/products/prod-5.webp`,
+    collection: 'The Debut',
+    soldOut: false,
+    tags: ['leather', 'formal'],
+  },
+  {
+    id: '6',
+    title: 'The Eloise',
+    price: 34500,
+    image: `${R2_PUBLIC_URL}/products/prod-6.webp`,
+    collection: 'The Debut',
+    soldOut: false,
+    tags: ['leather', 'evening'],
+  },
+  {
+    id: '7',
+    title: 'The Céline',
+    price: 42500,
+    image: `${R2_PUBLIC_URL}/products/prod-7.webp`,
+    collection: 'The Debut',
+    soldOut: false,
+    tags: ['leather', 'everyday'],
   },
 ];
 
@@ -228,11 +231,9 @@ if (apiUrl && apiKey) {
     console.error('Failed to fetch products from API:', error);
   }
 } else {
-  // Create sample drops for filter navigation
+  // Create sample drops for filter navigation - "The Debut" inaugural collection
   allDrops = [
-    { id: '1', name: 'Spring 2026', slug: 'spring-2026', status: 'active' },
-    { id: '2', name: 'Winter 2025', slug: 'winter-2025', status: 'ended' },
-    { id: '3', name: 'Fall 2025', slug: 'fall-2025', status: 'ended' },
+    { id: '1', name: 'The Debut', slug: 'the-debut', status: 'active' },
   ] as Drop[];
 
   // Create sample tags from sample products for filter navigation

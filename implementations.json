@@ -2109,7 +2109,7 @@
         ],
         "manual": []
       },
-      "passes": false
+      "passes": true
     },
     {
       "id": "initial-content-15",
