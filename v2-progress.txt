@@ -1400,3 +1400,28 @@ Verified and tested The Amélie product configuration in seed-config for databas
 
 ### Next Steps
 Remaining tasks starting with initial-content-4.
+
+## 2026-02-01: initial-content-4 - Create product: The Giselle
+
+### Task Completed
+Verified and tested The Giselle product configuration in seed-config for database creation.
+
+### Key Decisions
+- Added dedicated test file for initial-content-4 to verify The Giselle product specifically
+- Tests verify all 4 unit test requirements from implementations.json
+- Product is correctly configured with SKU GISELLE-001, price $525 (52500 cents), and R2 image URL
+- Product is in PRODUCTS array which seed script uses to assign to "The Debut" drop
+- Tests verify product is included in TEST_ORDERS for demo order creation
+- Inventory configured at 12 units (limited drop feel)
+
+### Files Changed
+- merchant/tests/scripts/initial-content-4.test.ts - 14 new tests covering product, variant, drop assignment, and inventory configuration
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 289 warnings - all pre-existing)
+- Tests: PASSED (655 merchant tests, including 14 new initial-content-4 tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining tasks starting with initial-content-5.
