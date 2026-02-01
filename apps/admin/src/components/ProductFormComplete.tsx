@@ -3,6 +3,7 @@ import type { Product, ProductStatus } from '@dear-margeaux/api';
 import { TagInput } from './TagInput';
 import { DropSelector } from './DropSelector';
 import { ImageUploader } from './ImageUploader';
+import { VariantCard } from './VariantCard';
 
 /** Single variant form data */
 export interface VariantFormData {
@@ -376,23 +377,6 @@ export function ProductFormComplete({
     updateVariant(index, { isExpanded: !formData.variants[index].isExpanded });
   };
 
-  const handleVariantImageUpload = (index: number) => (url: string) => {
-    updateVariant(index, { image_url: url });
-  };
-
-  const handleVariantImageRemove = (index: number) => () => {
-    updateVariant(index, { image_url: '', image_alt: '' });
-  };
-
-  // Format price preview for a variant
-  const formatPricePreview = (price: string) => {
-    if (!price) return null;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(parseFloat(price) || 0);
-  };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {error && (
@@ -655,284 +639,21 @@ export function ProductFormComplete({
         </p>
 
         <div className="space-y-4">
-          {formData.variants.map((variant, index) => {
-            const errors = variantErrors[index] || {};
-            const hasErrors = Object.keys(errors).length > 0;
-            const pricePreview = formatPricePreview(variant.price);
-            const isOnlyVariant = formData.variants.length === 1;
-
-            return (
-              <div
-                key={variant.id || index}
-                data-variant-card
-                className={`border rounded-lg ${hasErrors ? 'border-status-error' : 'border-border'} bg-background-secondary`}
-              >
-                {/* Variant Header - Collapsible Toggle */}
-                <button
-                  type="button"
-                  onClick={() => toggleVariantExpanded(index)}
-                  aria-expanded={variant.isExpanded}
-                  className="w-full flex items-center justify-between p-4 text-left hover:bg-background-tertiary transition-colors duration-normal rounded-t-lg"
-                  disabled={isSubmitting}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-text-primary">
-                      Variant {index + 1}
-                    </span>
-                    {!variant.isExpanded &&
-                      (variant.sku || variant.title || variant.price) && (
-                        <span className="text-xs text-text-muted">
-                          {[
-                            variant.sku && variant.sku.toUpperCase(),
-                            variant.title,
-                            pricePreview,
-                          ]
-                            .filter(Boolean)
-                            .join(' • ')}
-                        </span>
-                      )}
-                    {hasErrors && (
-                      <span className="text-xs text-status-error">
-                        Has errors
-                      </span>
-                    )}
-                  </div>
-                  <svg
-                    className={`w-5 h-5 text-text-muted transition-transform duration-normal ${
-                      variant.isExpanded ? 'rotate-180' : ''
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-
-                {/* Variant Form Fields - Collapsible Content */}
-                {variant.isExpanded && (
-                  <div className="p-4 pt-0 space-y-4 border-t border-border">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* SKU */}
-                      <div>
-                        <label
-                          htmlFor={`variant-${index}-sku`}
-                          className="block text-sm font-medium text-text-primary mb-1"
-                        >
-                          SKU <span className="text-status-error">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          id={`variant-${index}-sku`}
-                          value={variant.sku}
-                          onChange={(e) =>
-                            updateVariant(index, {
-                              sku: e.target.value.toUpperCase(),
-                            })
-                          }
-                          className={`block w-full rounded-lg border ${
-                            errors.sku
-                              ? 'border-status-error focus:border-status-error focus:ring-status-error'
-                              : 'border-border focus:border-primary-500 focus:ring-primary-500'
-                          } bg-background-primary py-2 px-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 uppercase`}
-                          placeholder="e.g., BAG-001-BLK"
-                          disabled={isSubmitting || (!!product && !!variant.id)}
-                        />
-                        {errors.sku && (
-                          <p className="mt-1 text-xs text-status-error">
-                            {errors.sku}
-                          </p>
-                        )}
-                        {index === 0 && !product && (
-                          <p className="mt-1 text-xs text-text-muted">
-                            Auto-generated from title. Alphanumeric with
-                            hyphens/underscores only.
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Variant Title */}
-                      <div>
-                        <label
-                          htmlFor={`variant-${index}-title`}
-                          className="block text-sm font-medium text-text-primary mb-1"
-                        >
-                          Variant Title{' '}
-                          <span className="text-status-error">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          id={`variant-${index}-title`}
-                          value={variant.title}
-                          onChange={(e) =>
-                            updateVariant(index, { title: e.target.value })
-                          }
-                          className={`block w-full rounded-lg border ${
-                            errors.title
-                              ? 'border-status-error focus:border-status-error focus:ring-status-error'
-                              : 'border-border focus:border-primary-500 focus:ring-primary-500'
-                          } bg-background-primary py-2 px-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1`}
-                          placeholder="e.g., Black Leather, Size M"
-                          disabled={isSubmitting}
-                        />
-                        {errors.title && (
-                          <p className="mt-1 text-xs text-status-error">
-                            {errors.title}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Price */}
-                    <div>
-                      <label
-                        htmlFor={`variant-${index}-price`}
-                        className="block text-sm font-medium text-text-primary mb-1"
-                      >
-                        Price <span className="text-status-error">*</span>
-                      </label>
-                      <div className="relative">
-                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                          <span className="text-text-muted text-sm">$</span>
-                        </div>
-                        <input
-                          type="number"
-                          id={`variant-${index}-price`}
-                          value={variant.price}
-                          onChange={(e) =>
-                            updateVariant(index, { price: e.target.value })
-                          }
-                          step="0.01"
-                          min="0"
-                          className={`block w-full rounded-lg border ${
-                            errors.price
-                              ? 'border-status-error focus:border-status-error focus:ring-status-error'
-                              : 'border-border focus:border-primary-500 focus:ring-primary-500'
-                          } bg-background-primary py-2 pl-7 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1`}
-                          placeholder="0.00"
-                          disabled={isSubmitting}
-                        />
-                      </div>
-                      {errors.price && (
-                        <p className="mt-1 text-xs text-status-error">
-                          {errors.price}
-                        </p>
-                      )}
-                      {pricePreview && (
-                        <p className="mt-1 text-xs text-text-muted">
-                          Preview: {pricePreview}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Variant Image */}
-                    <div>
-                      <span className="block text-sm font-medium text-text-primary mb-1">
-                        Variant Image
-                      </span>
-                      <p className="text-xs text-text-muted mb-3">
-                        Optional. Falls back to featured image if not provided.
-                      </p>
-                      {uploadHandler ? (
-                        <ImageUploader
-                          value={variant.image_url || null}
-                          onUpload={handleVariantImageUpload(index)}
-                          onRemove={handleVariantImageRemove(index)}
-                          isUploading={isSubmitting}
-                          uploadHandler={uploadHandler}
-                        />
-                      ) : (
-                        <div>
-                          <label
-                            htmlFor={`variant-${index}-image-url`}
-                            className="sr-only"
-                          >
-                            Variant Image URL
-                          </label>
-                          <input
-                            type="url"
-                            id={`variant-${index}-image-url`}
-                            value={variant.image_url}
-                            onChange={(e) =>
-                              updateVariant(index, {
-                                image_url: e.target.value,
-                              })
-                            }
-                            className="block w-full rounded-lg border border-border focus:border-primary-500 focus:ring-primary-500 bg-background-primary py-2 px-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1"
-                            placeholder="https://example.com/variant-image.jpg"
-                            disabled={isSubmitting}
-                          />
-                          {variant.image_url && (
-                            <div className="mt-2 relative inline-block">
-                              <img
-                                src={variant.image_url}
-                                alt={variant.image_alt || 'Variant preview'}
-                                className="h-32 w-32 rounded-lg object-cover border border-border"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display =
-                                    'none';
-                                }}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Variant Image Alt Text */}
-                    {variant.image_url && (
-                      <div>
-                        <label
-                          htmlFor={`variant-${index}-image-alt`}
-                          className="block text-sm font-medium text-text-primary mb-1"
-                        >
-                          Variant Image Alt Text{' '}
-                          <span className="text-status-error">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          id={`variant-${index}-image-alt`}
-                          value={variant.image_alt}
-                          onChange={(e) =>
-                            updateVariant(index, { image_alt: e.target.value })
-                          }
-                          className={`block w-full rounded-lg border ${
-                            errors.image_alt
-                              ? 'border-status-error focus:border-status-error focus:ring-status-error'
-                              : 'border-border focus:border-primary-500 focus:ring-primary-500'
-                          } bg-background-primary py-2 px-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1`}
-                          placeholder="Describe the variant image for accessibility"
-                          disabled={isSubmitting}
-                        />
-                        {errors.image_alt && (
-                          <p className="mt-1 text-xs text-status-error">
-                            {errors.image_alt}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Remove Variant Button */}
-                    <div className="pt-2 flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => removeVariant(index)}
-                        disabled={isSubmitting || isOnlyVariant}
-                        className="text-sm text-status-error hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Remove Variant
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {formData.variants.map((variant, index) => (
+            <VariantCard
+              key={variant.id || index}
+              variant={variant}
+              index={index}
+              onUpdate={updateVariant}
+              onRemove={removeVariant}
+              onToggleExpand={toggleVariantExpanded}
+              isOnlyVariant={formData.variants.length === 1}
+              isSubmitting={isSubmitting}
+              isEditing={!!product}
+              errors={variantErrors[index] || {}}
+              uploadHandler={uploadHandler}
+            />
+          ))}
 
           {/* Add Another Variant Button */}
           <button

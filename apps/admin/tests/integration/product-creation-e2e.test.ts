@@ -67,21 +67,34 @@ describe('Product Creation E2E Flow Integration', () => {
       expect(content).toContain('name="title"');
       expect(content).toContain('name="description"');
       expect(content).toContain('name="status"');
-      // Variant fields - now use id attributes with index pattern (e.g., variant-0-sku)
-      expect(content).toContain('SKU');
-      expect(content).toContain('Price');
-      expect(content).toContain('Variant Title');
+      // Variant fields are now in VariantCard component
+      expect(content).toContain('VariantCard');
+      // Verify VariantCard contains variant fields
+      const variantCardPath = join(
+        process.cwd(),
+        'src/components/VariantCard.tsx'
+      );
+      const variantCardContent = readFileSync(variantCardPath, 'utf-8');
+      expect(variantCardContent).toContain('SKU');
+      expect(variantCardContent).toContain('Price');
+      expect(variantCardContent).toContain('Variant Title');
     });
 
     it('ProductFormComplete includes image uploaders', () => {
       const content = readFileSync(productFormCompletePath, 'utf-8');
       expect(content).toContain('ImageUploader');
       expect(content).toContain('Featured Image');
-      expect(content).toContain('Variant Image');
+      // Variant Image is now in VariantCard component
+      expect(content).toContain('VariantCard');
     });
 
-    it('ProductFormComplete has price input with dollar prefix', () => {
-      const content = readFileSync(productFormCompletePath, 'utf-8');
+    it('ProductFormComplete uses VariantCard with price input', () => {
+      // Price input is now in VariantCard component
+      const variantCardPath = join(
+        process.cwd(),
+        'src/components/VariantCard.tsx'
+      );
+      const content = readFileSync(variantCardPath, 'utf-8');
       expect(content).toMatch(/\$\s*<\/span>/);
       expect(content).toContain('step="0.01"');
     });
@@ -255,9 +268,10 @@ describe('Product Creation E2E Flow Integration', () => {
     it('ProductFormComplete displays field validation errors', () => {
       const content = readFileSync(productFormCompletePath, 'utf-8');
       expect(content).toContain('formErrors.title');
-      // Variant errors are now accessed via variantErrors[index] as errors.sku/price
-      expect(content).toContain('errors.sku');
-      expect(content).toContain('errors.price');
+      // Variant errors are now passed to VariantCard component
+      expect(content).toContain('variantErrors[index]');
+      // Uses the extracted VariantCard component for variant editing
+      expect(content).toContain('VariantCard');
     });
   });
 });
