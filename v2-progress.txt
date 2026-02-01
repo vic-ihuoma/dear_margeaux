@@ -925,3 +925,30 @@ Created reusable VariantCard component extracted from ProductFormComplete for in
 
 ### Next Steps
 Remaining 28 tasks with passes:false starting with pm-38
+
+
+## 2026-02-01: pm-38 - Implement add/remove variant in ProductFormComplete
+
+### Task Completed
+Implemented add/remove variant functionality with auto-focus for SKU field when new variants are added.
+
+### Key Decisions
+- Added focusVariantIndex state to track which variant needs focus after being added
+- Used useRef array to store references to each variant's SKU input element
+- Added skuInputRef callback prop to VariantCard component for focus management
+- Confirmation dialog for removing variants with data already implemented in VariantCard
+- Removed unused `variant` variable in removeVariant function (cleanup)
+
+### Files Changed
+- apps/admin/src/components/ProductFormComplete.tsx - Added useRef, focusVariantIndex state, useEffect for auto-focus, passed skuInputRef to VariantCard
+- apps/admin/src/components/VariantCard.tsx - Added skuInputRef optional prop and attached to SKU input element
+- apps/admin/tests/components/VariantAddRemove.test.tsx - 47 new tests covering add/remove variant functionality
+
+### Test Results
+- Typecheck: PASSED (0 errors)
+- Lint: PASSED (0 errors, 157 warnings - all pre-existing)
+- Tests: PASSED (870 admin tests, including 47 new VariantAddRemove tests)
+- Visual: Not executed (browser dependencies unavailable in sandbox)
+
+### Next Steps
+Remaining 27 tasks with passes:false starting with pm-39
