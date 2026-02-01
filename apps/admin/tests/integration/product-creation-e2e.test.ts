@@ -190,7 +190,8 @@ describe('Product Creation E2E Flow Integration', () => {
     it('POST /api/products creates variant when variant fields provided', () => {
       const content = readFileSync(productsApiPath, 'utf-8');
       expect(content).toContain('createVariant');
-      expect(content).toContain('hasVariantData');
+      // Supports both new variants array and legacy single variant fields
+      expect(content).toContain('hasLegacyVariantData');
     });
 
     it('POST /api/products returns product with variants array', () => {

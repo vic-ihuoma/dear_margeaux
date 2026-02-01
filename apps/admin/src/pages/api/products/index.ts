@@ -45,10 +45,23 @@ export const GET: APIRoute = async ({ url }) => {
 };
 
 /**
- * Extended create product payload that includes optional default variant fields.
- * This allows creating a product with its first variant in a single API call.
+ * Variant data for creating a variant alongside a product.
  */
-interface CreateProductWithVariantPayload {
+interface VariantPayload {
+  sku: string;
+  title: string;
+  price_cents: number;
+  image_url?: string;
+  image_alt?: string;
+}
+
+/**
+ * Extended create product payload that includes optional variant fields.
+ * Supports both:
+ * - Legacy single variant fields (sku, variant_title, price_cents)
+ * - New variants array for creating multiple variants at once
+ */
+interface CreateProductWithVariantsPayload {
   // Product fields (from CreateProductParams)
   title: string;
   description?: string;
@@ -57,7 +70,9 @@ interface CreateProductWithVariantPayload {
   status?: 'active' | 'draft';
   tags?: string[];
   drop_id?: string;
-  // Optional default variant fields
+  // New: Array of variants to create
+  variants?: VariantPayload[];
+  // Legacy single variant fields (for backwards compatibility)
   sku?: string;
   variant_title?: string;
   price_cents?: number;
@@ -76,7 +91,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   try {
-    const data: CreateProductWithVariantPayload = await request.json();
+    const data: CreateProductWithVariantsPayload = await request.json();
 
     // Create the product with all supported fields
     const product = await client.createProduct({
@@ -89,10 +104,77 @@ export const POST: APIRoute = async ({ request }) => {
       drop_id: data.drop_id,
     });
 
-    // If variant fields are provided, create the default variant
-    const hasVariantData = data.sku || data.variant_title || data.price_cents;
+    // Check if we have a variants array (new format takes precedence)
+    if (data.variants && data.variants.length > 0) {
+      // Validate each variant in the array
+      for (let i = 0; i < data.variants.length; i++) {
+        const variant = data.variants[i];
+        if (!variant.sku) {
+          return new Response(
+            JSON.stringify({
+              error: `Variant ${i + 1}: SKU is required`,
+            }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
+        }
+        if (!variant.title) {
+          return new Response(
+            JSON.stringify({
+              error: `Variant ${i + 1}: title is required`,
+            }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
+        }
+        if (variant.price_cents === undefined || variant.price_cents === null) {
+          return new Response(
+            JSON.stringify({
+              error: `Variant ${i + 1}: price is required`,
+            }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
+        }
+      }
 
-    if (hasVariantData) {
+      // Create all variants
+      const createdVariants = [];
+      for (const variantData of data.variants) {
+        const variant = await client.createVariant(product.id, {
+          sku: variantData.sku,
+          title: variantData.title,
+          price_cents: variantData.price_cents,
+          image_url: variantData.image_url,
+          image_alt: variantData.image_alt,
+        });
+        createdVariants.push(variant);
+      }
+
+      // Return product with all variants
+      return new Response(
+        JSON.stringify({
+          ...product,
+          variants: createdVariants,
+        }),
+        {
+          status: 201,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Fallback to legacy single variant fields (for backwards compatibility)
+    const hasLegacyVariantData =
+      data.sku || data.variant_title || data.price_cents;
+
+    if (hasLegacyVariantData) {
       // Validate required variant fields
       if (!data.sku) {
         return new Response(
