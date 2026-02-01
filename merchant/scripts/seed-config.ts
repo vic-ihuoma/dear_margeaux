@@ -4,62 +4,71 @@
  * This file contains the configuration data used by the seed script.
  * Images are sourced from the Cloudflare R2 bucket.
  *
- * Product names inspired by the Dear Margeaux brand story:
+ * Product names from the Dear Margeaux brand story:
  * French-inspired elegance, Italian leather, timeless craftsmanship
  */
 
 // R2 Public URL for product images
 export const R2_PUBLIC_URL = 'https://pub-bf88a85e013c44b6a3a965d48812aa90.r2.dev';
 
+// Drop configuration for "The Debut" - initial-content-1
+export const DROP_CONFIG = {
+  name: 'The Debut',
+  slug: 'the-debut',
+  description: 'Our inaugural collection of handcrafted luxury bags',
+  status: 'active' as const,
+};
+
 // Product definitions with R2 image URLs
 // Named in the Dear Margeaux style - French-inspired, elegant bag names
+// Products correspond to initial-content-2 through initial-content-8
 export const PRODUCTS = [
   {
-    title: 'Le Classique Tote',
+    title: 'The Colette',
     description:
-      'Our signature everyday tote in supple Italian leather. Clean lines and balanced proportions make this the perfect companion for your daily journey.',
+      'A refined everyday companion. The Colette features clean lines and supple leather, designed for the woman who values understated elegance.',
     image_url: `${R2_PUBLIC_URL}/products/prod-1.webp`,
   },
   {
-    title: 'The Margot Satchel',
+    title: 'The Amélie',
     description:
-      'A structured satchel with vintage brass hardware. Inspired by the understated elegance of French fashion, designed to age gracefully.',
+      'Effortlessly chic with a touch of Parisian flair. The Amélie combines timeless silhouette with modern functionality.',
     image_url: `${R2_PUBLIC_URL}/products/prod-2.webp`,
   },
   {
-    title: 'Petit Crossbody',
+    title: 'The Giselle',
     description:
-      'A compact crossbody for the essentials. Handcrafted with care, featuring an adjustable strap and secure clasp closure.',
+      'Graceful and sophisticated. The Giselle is crafted for those special moments when presence matters.',
     image_url: `${R2_PUBLIC_URL}/products/prod-3.webp`,
   },
   {
-    title: 'The Parisian Clutch',
+    title: 'The Margot',
     description:
-      'Evening elegance in your palm. This minimalist clutch captures the spirit of sun-drenched leather workshops and timeless craftsmanship.',
+      'Our namesake piece. The Margot embodies everything Dear Margeaux stands for—timeless beauty, exceptional craftsmanship, and quiet luxury.',
     image_url: `${R2_PUBLIC_URL}/products/prod-4.webp`,
   },
   {
-    title: 'Le Weekend Duffle',
+    title: 'The Vivienne',
     description:
-      'Your perfect travel companion. Spacious yet refined, with Italian leather that develops a beautiful patina telling the story of your journeys.',
+      'Bold yet refined. The Vivienne makes a statement without saying a word, perfect for the confident woman.',
     image_url: `${R2_PUBLIC_URL}/products/prod-5.webp`,
   },
   {
-    title: 'The Élise Hobo',
+    title: 'The Eloise',
     description:
-      'A relaxed silhouette with sophisticated details. Soft, slouchy leather meets thoughtful design for effortless everyday style.',
+      'Delicate and dreamy. The Eloise is a petite treasure for evenings out and intimate gatherings.',
     image_url: `${R2_PUBLIC_URL}/products/prod-6.webp`,
   },
   {
-    title: 'Mini Margeaux',
+    title: 'The Céline',
     description:
-      'Petite perfection. All the craftsmanship of our full-size bags in a charming compact form. Limited edition for the debut collection.',
+      'Structured sophistication meets everyday practicality. The Céline transitions seamlessly from day to evening.',
     image_url: `${R2_PUBLIC_URL}/products/prod-7.webp`,
   },
 ];
 
 // Variant definitions for each product
-// Colors named elegantly: Noir (Black), Cognac (Brown), Crème (Cream), Marine (Navy)
+// Prices and inventory from initial-content-2 through initial-content-9
 export const VARIANTS: Record<
   string,
   Array<{
@@ -71,161 +80,73 @@ export const VARIANTS: Record<
     image_url?: string;
   }>
 > = {
-  'Le Classique Tote': [
+  'The Colette': [
     {
-      sku: 'TOTE-NOIR',
-      title: 'Noir',
-      price_cents: 45000,
-      weight_g: 680,
-      stock: 25,
-      image_url: `${R2_PUBLIC_URL}/products/prod-1.webp`,
-    },
-    {
-      sku: 'TOTE-COGNAC',
-      title: 'Cognac',
-      price_cents: 45000,
-      weight_g: 680,
+      sku: 'COLETTE-001',
+      title: 'Default',
+      price_cents: 39500, // $395
+      weight_g: 450,
       stock: 20,
       image_url: `${R2_PUBLIC_URL}/products/prod-1.webp`,
     },
-    {
-      sku: 'TOTE-CREME',
-      title: 'Crème',
-      price_cents: 45000,
-      weight_g: 680,
-      stock: 15,
-      image_url: `${R2_PUBLIC_URL}/products/prod-1.webp`,
-    },
   ],
-  'The Margot Satchel': [
+  'The Amélie': [
     {
-      sku: 'SATCHEL-NOIR',
-      title: 'Noir',
-      price_cents: 52000,
-      weight_g: 750,
-      stock: 18,
-      image_url: `${R2_PUBLIC_URL}/products/prod-2.webp`,
-    },
-    {
-      sku: 'SATCHEL-COGNAC',
-      title: 'Cognac',
-      price_cents: 52000,
-      weight_g: 750,
+      sku: 'AMELIE-001',
+      title: 'Default',
+      price_cents: 45000, // $450
+      weight_g: 520,
       stock: 15,
       image_url: `${R2_PUBLIC_URL}/products/prod-2.webp`,
     },
   ],
-  'Petit Crossbody': [
+  'The Giselle': [
     {
-      sku: 'CROSS-NOIR',
-      title: 'Noir',
-      price_cents: 28500,
-      weight_g: 320,
-      stock: 30,
-      image_url: `${R2_PUBLIC_URL}/products/prod-3.webp`,
-    },
-    {
-      sku: 'CROSS-COGNAC',
-      title: 'Cognac',
-      price_cents: 28500,
-      weight_g: 320,
-      stock: 25,
-      image_url: `${R2_PUBLIC_URL}/products/prod-3.webp`,
-    },
-    {
-      sku: 'CROSS-MARINE',
-      title: 'Marine',
-      price_cents: 28500,
-      weight_g: 320,
-      stock: 20,
-      image_url: `${R2_PUBLIC_URL}/products/prod-3.webp`,
-    },
-  ],
-  'The Parisian Clutch': [
-    {
-      sku: 'CLUTCH-NOIR',
-      title: 'Noir',
-      price_cents: 22000,
-      weight_g: 180,
-      stock: 35,
-      image_url: `${R2_PUBLIC_URL}/products/prod-4.webp`,
-    },
-    {
-      sku: 'CLUTCH-CREME',
-      title: 'Crème',
-      price_cents: 22000,
-      weight_g: 180,
-      stock: 25,
-      image_url: `${R2_PUBLIC_URL}/products/prod-4.webp`,
-    },
-  ],
-  'Le Weekend Duffle': [
-    {
-      sku: 'DUFFLE-NOIR',
-      title: 'Noir',
-      price_cents: 68000,
-      weight_g: 1200,
+      sku: 'GISELLE-001',
+      title: 'Default',
+      price_cents: 52500, // $525
+      weight_g: 580,
       stock: 12,
-      image_url: `${R2_PUBLIC_URL}/products/prod-5.webp`,
+      image_url: `${R2_PUBLIC_URL}/products/prod-3.webp`,
     },
+  ],
+  'The Margot': [
     {
-      sku: 'DUFFLE-COGNAC',
-      title: 'Cognac',
-      price_cents: 68000,
-      weight_g: 1200,
+      sku: 'MARGOT-001',
+      title: 'Default',
+      price_cents: 47500, // $475
+      weight_g: 500,
+      stock: 18,
+      image_url: `${R2_PUBLIC_URL}/products/prod-4.webp`,
+    },
+  ],
+  'The Vivienne': [
+    {
+      sku: 'VIVIENNE-001',
+      title: 'Default',
+      price_cents: 59500, // $595
+      weight_g: 620,
       stock: 10,
       image_url: `${R2_PUBLIC_URL}/products/prod-5.webp`,
     },
   ],
-  'The Élise Hobo': [
+  'The Eloise': [
     {
-      sku: 'HOBO-NOIR',
-      title: 'Noir',
-      price_cents: 38500,
-      weight_g: 520,
-      stock: 22,
-      image_url: `${R2_PUBLIC_URL}/products/prod-6.webp`,
-    },
-    {
-      sku: 'HOBO-COGNAC',
-      title: 'Cognac',
-      price_cents: 38500,
-      weight_g: 520,
-      stock: 18,
-      image_url: `${R2_PUBLIC_URL}/products/prod-6.webp`,
-    },
-    {
-      sku: 'HOBO-CREME',
-      title: 'Crème',
-      price_cents: 38500,
-      weight_g: 520,
-      stock: 15,
+      sku: 'ELOISE-001',
+      title: 'Default',
+      price_cents: 34500, // $345
+      weight_g: 280,
+      stock: 25,
       image_url: `${R2_PUBLIC_URL}/products/prod-6.webp`,
     },
   ],
-  'Mini Margeaux': [
+  'The Céline': [
     {
-      sku: 'MINI-NOIR',
-      title: 'Noir',
-      price_cents: 24500,
-      weight_g: 280,
-      stock: 28,
-      image_url: `${R2_PUBLIC_URL}/products/prod-7.webp`,
-    },
-    {
-      sku: 'MINI-COGNAC',
-      title: 'Cognac',
-      price_cents: 24500,
-      weight_g: 280,
-      stock: 22,
-      image_url: `${R2_PUBLIC_URL}/products/prod-7.webp`,
-    },
-    {
-      sku: 'MINI-CREME',
-      title: 'Crème',
-      price_cents: 24500,
-      weight_g: 280,
-      stock: 18,
+      sku: 'CELINE-001',
+      title: 'Default',
+      price_cents: 42500, // $425
+      weight_g: 480,
+      stock: 15,
       image_url: `${R2_PUBLIC_URL}/products/prod-7.webp`,
     },
   ],
@@ -236,48 +157,48 @@ export const TEST_ORDERS = [
   {
     customer_email: 'sarah@example.com',
     items: [
-      { sku: 'TOTE-NOIR', qty: 1 },
-      { sku: 'CLUTCH-CREME', qty: 1 },
+      { sku: 'COLETTE-001', qty: 1 },
+      { sku: 'ELOISE-001', qty: 1 },
     ],
   },
   {
     customer_email: 'mike@example.com',
-    items: [{ sku: 'DUFFLE-COGNAC', qty: 1 }],
+    items: [{ sku: 'VIVIENNE-001', qty: 1 }],
   },
   {
     customer_email: 'emma@example.com',
     items: [
-      { sku: 'CROSS-MARINE', qty: 1 },
-      { sku: 'MINI-CREME', qty: 1 },
+      { sku: 'GISELLE-001', qty: 1 },
+      { sku: 'CELINE-001', qty: 1 },
     ],
   },
   {
     customer_email: 'james@example.com',
     items: [
-      { sku: 'SATCHEL-NOIR', qty: 1 },
-      { sku: 'TOTE-COGNAC', qty: 1 },
+      { sku: 'MARGOT-001', qty: 1 },
+      { sku: 'AMELIE-001', qty: 1 },
     ],
   },
   {
     customer_email: 'olivia@example.com',
-    items: [{ sku: 'HOBO-COGNAC', qty: 1 }],
+    items: [{ sku: 'COLETTE-001', qty: 1 }],
   },
   {
     customer_email: 'noah@example.com',
     items: [
-      { sku: 'MINI-NOIR', qty: 1 },
-      { sku: 'CLUTCH-NOIR', qty: 1 },
+      { sku: 'ELOISE-001', qty: 1 },
+      { sku: 'CELINE-001', qty: 1 },
     ],
   },
   {
     customer_email: 'ava@example.com',
-    items: [{ sku: 'CROSS-COGNAC', qty: 2 }],
+    items: [{ sku: 'AMELIE-001', qty: 2 }],
   },
   {
     customer_email: 'liam@example.com',
     items: [
-      { sku: 'TOTE-CREME', qty: 1 },
-      { sku: 'HOBO-CREME', qty: 1 },
+      { sku: 'GISELLE-001', qty: 1 },
+      { sku: 'MARGOT-001', qty: 1 },
     ],
   },
 ];

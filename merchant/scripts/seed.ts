@@ -7,7 +7,7 @@
  *   npx tsx scripts/seed.ts http://localhost:8787 sk_...
  */
 
-import { PRODUCTS, VARIANTS, TEST_ORDERS } from './seed-config';
+import { DROP_CONFIG, PRODUCTS, VARIANTS, TEST_ORDERS } from './seed-config';
 
 const API_URL = process.argv[2] || 'http://localhost:8787';
 const API_KEY = process.argv[3];
@@ -73,13 +73,12 @@ async function seed() {
   console.log('🌱 Seeding demo data...\n');
 
   // Create the Debut drop first
-  console.log('🎯 Creating "The Debut" drop...');
+  console.log(`🎯 Creating "${DROP_CONFIG.name}" drop...`);
   const drop = (await api('/v1/drops', {
-    name: 'The Debut',
-    slug: 'the-debut',
-    description:
-      'Our inaugural collection. Seven handcrafted leather bags, each designed with intention and made with care.',
-    status: 'active',
+    name: DROP_CONFIG.name,
+    slug: DROP_CONFIG.slug,
+    description: DROP_CONFIG.description,
+    status: DROP_CONFIG.status,
   })) as { id: string };
   console.log(`   └─ Drop created: ${drop.id}\n`);
 
