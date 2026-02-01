@@ -1,6 +1,6 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { CreateProduct } from '../../components/CreateProduct';
+import { CreateProductComplete } from '../../components/CreateProductComplete';
 ---
 
 <AdminLayout title="New Product">
@@ -20,26 +20,21 @@ import { CreateProduct } from '../../components/CreateProduct';
   <div class="mb-8">
     <h1 class="text-2xl font-semibold text-text-primary">Create New Product</h1>
     <p class="mt-1 text-sm text-text-secondary">
-      Add a new product to your catalog. You can add variants after creating the
-      product.
+      Add a new product to your catalog with pricing, images, and a default
+      variant.
     </p>
   </div>
 
   <!-- Product Form -->
-  <div class="max-w-2xl">
+  <div class="max-w-3xl">
     <div
-      class="bg-background-secondary rounded-xl border border-border shadow-sm"
+      class="bg-background-secondary rounded-xl border border-border shadow-sm p-6"
     >
-      <div class="px-6 py-4 border-b border-border">
-        <h2 class="text-lg font-semibold text-text-primary">Product Details</h2>
-      </div>
-      <div class="p-6">
-        <CreateProduct
-          client:load
-          successRedirect="/products"
-          cancelRedirect="/products"
-        />
-      </div>
+      <CreateProductComplete
+        client:load
+        successRedirect="/products"
+        cancelRedirect="/products"
+      />
     </div>
   </div>
 </AdminLayout>

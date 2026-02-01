@@ -44,6 +44,27 @@ export const GET: APIRoute = async ({ url }) => {
   }
 };
 
+/**
+ * Extended create product payload that includes optional default variant fields.
+ * This allows creating a product with its first variant in a single API call.
+ */
+interface CreateProductWithVariantPayload {
+  // Product fields (from CreateProductParams)
+  title: string;
+  description?: string;
+  featured_image_url?: string;
+  featured_image_alt?: string;
+  status?: 'active' | 'draft';
+  tags?: string[];
+  drop_id?: string;
+  // Optional default variant fields
+  sku?: string;
+  variant_title?: string;
+  price_cents?: number;
+  variant_image_url?: string;
+  variant_image_alt?: string;
+}
+
 export const POST: APIRoute = async ({ request }) => {
   const client = getAdminMerchantClient();
 
@@ -55,15 +76,84 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   try {
-    const data = await request.json();
+    const data: CreateProductWithVariantPayload = await request.json();
 
+    // Create the product with all supported fields
     const product = await client.createProduct({
       title: data.title,
       description: data.description,
+      featured_image_url: data.featured_image_url,
+      featured_image_alt: data.featured_image_alt,
       status: data.status,
+      tags: data.tags,
+      drop_id: data.drop_id,
     });
 
-    return new Response(JSON.stringify(product), {
+    // If variant fields are provided, create the default variant
+    const hasVariantData = data.sku || data.variant_title || data.price_cents;
+
+    if (hasVariantData) {
+      // Validate required variant fields
+      if (!data.sku) {
+        return new Response(
+          JSON.stringify({
+            error: 'SKU is required when creating a variant',
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      if (!data.variant_title) {
+        return new Response(
+          JSON.stringify({
+            error: 'Variant title is required when creating a variant',
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      if (data.price_cents === undefined || data.price_cents === null) {
+        return new Response(
+          JSON.stringify({
+            error: 'Price is required when creating a variant',
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      // Create the variant
+      const variant = await client.createVariant(product.id, {
+        sku: data.sku,
+        title: data.variant_title,
+        price_cents: data.price_cents,
+        image_url: data.variant_image_url,
+        image_alt: data.variant_image_alt,
+      });
+
+      // Return product with the variant populated
+      return new Response(
+        JSON.stringify({
+          ...product,
+          variants: [variant],
+        }),
+        {
+          status: 201,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Return product without variants
+    return new Response(JSON.stringify({ ...product, variants: [] }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' },
     });
